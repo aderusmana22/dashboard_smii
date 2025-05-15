@@ -14,6 +14,7 @@ use App\Http\Controllers\Role\RoleController;
 use App\Http\Controllers\UserController;
 use Artesaos\SEOTools\Facades\SEOMeta;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\MapDashboardController;
 
 
 
@@ -166,12 +167,11 @@ Route::group(['middleware' => ['role:super-admin|admin']], function () {
     Route::delete('levels/{level:level_slug}/delete', [LevelController::class, 'destroy'])->name('level.destroy');
 });
 
+// sales
+Route::get('/map-dashboard', [MapDashboardController::class, 'showMapDashboard'])->name('map.dashboard.sales');
 
-
-
-
-
-
+Route::get('/api/sales-data', [MapDashboardController::class, 'getSalesData'])->name('api.sales.data');
+Route::get('/api/months-for-year', [MapDashboardController::class, 'getMonthsForYear'])->name('api.months.for.year');
 
 
 require __DIR__ . '/auth.php';

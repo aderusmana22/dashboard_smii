@@ -15,6 +15,7 @@ use App\Http\Controllers\UserController;
 use Artesaos\SEOTools\Facades\SEOMeta;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardSalesController;
+use App\Http\Controllers\StandardBudgetController;
 
 /*
 |--------------------------------------------------------------------------
@@ -70,8 +71,26 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
     /*sales routes*/
     Route::get('sales', [SalesController::class, 'index'])->name('data.sales');
 
+    /* Standard Budget */
+    Route::prefix('standard-budgets')->name('standard-budgets.')->group(function () {
+        Route::get('/', [StandardBudgetController::class, 'index'])->name('index');
+        Route::post('/', [StandardBudgetController::class, 'store'])->name('store');
+        Route::get('/{standardBudget}/edit', [StandardBudgetController::class, 'edit'])->name('edit');
+        Route::put('/{standardBudget}', [StandardBudgetController::class, 'update'])->name('update');
+        Route::delete('/{standardBudget}', [StandardBudgetController::class, 'destroy'])->name('destroy');
 
+        // Route::get('/import', [StandardBudgetController::class, 'showImportForm'])->name('import.form'); // HAPUS BARIS INI
+        Route::post('/import', [StandardBudgetController::class, 'importExcel'])->name('import.excel');
+    });
+    Route::get('/standard-budgets/sample/download', function () {
+        $filePath = storage_path('app/files/sample.xlsx');
 
+        if (!file_exists($filePath)) {
+            abort(404, 'File tidak ditemukan.');
+        }
+
+        return response()->download($filePath, 'template_budget.xlsx');
+    })->name('standard-budgets.download-sample');
 
 
 

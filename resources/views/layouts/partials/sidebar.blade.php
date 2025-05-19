@@ -65,11 +65,19 @@
                             class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>Standard
                         Warehouse</a></li>
                 @endcan
+                
                 @can('view standard shipment dashboard')
                 <li><a href="{{ route('data.sales') }}"
                         class="{{ request()->is('sales') ? 'current' : '' }}"><i
                             class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>Data
                         Sales</a></li>
+                @endcan
+                @can('view standard shipment dashboard')
+                <li><a href="{{ route('standard-budgets.index') }}"
+                class="{{ request()->is('standard-budgets.index') ? 'current' : '' }}">
+
+                <i class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>
+                Standard Budgets</a></li>
                 @endcan
             </ul>
         </li>

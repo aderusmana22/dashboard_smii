@@ -76,27 +76,28 @@
             z-index: 700;
         }
 
+        /* This container holds the Indonesia stats table, positioned on the right */
         #left-column-stats-container {
             position: absolute;
             top: 65px;
             right: 15px;
             left: auto;
             z-index: 709;
-            width: 380px;
-            display: flex;
+            width: 450px;
+            display: flex; /* Will be controlled by JS to always be flex now */
             flex-direction: column;
-            max-height: calc(100vh - 75px - 200px - 20px - 10px);
+            max-height: calc(100vh - 75px - 200px - 20px - 10px); /* Adjust as needed */
             padding-bottom: 10px;
         }
 
-        #super-region-stats-container {
+        #super-region-stats-container { /* The actual Indonesia table container */
             background: rgba(255, 255, 255, 0.92);
             padding: 10px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
             font-size: 12px;
             width: 100%;
-            display: block;
+            display: block; /* Will be controlled by JS to always be block */
         }
         #super-region-stats-container h3 {
             margin-top: 0;
@@ -113,12 +114,12 @@
         #super-region-stats-table thead,
         #super-region-stats-table tfoot {
             display: table;
-            width: 96%;
+            width: 97%;
             table-layout: fixed;
         }
         #super-region-stats-table tbody {
             display: block;
-            max-height: 150px;
+            max-height: 150px; /* Adjust as needed */
             overflow-y: auto;
             width: 100%;
         }
@@ -130,9 +131,9 @@
         #super-region-stats-table th,
         #super-region-stats-table td {
             border: 1px solid #ddd;
-            padding: 5px;
+            padding: 4px;
             text-align: left;
-            font-size: 11px;
+            font-size: 10px;
         }
         #super-region-stats-table th {
             background-color: #f2f2f2;
@@ -141,19 +142,13 @@
             text-align: right;
         }
 
-        #super-region-stats-table .col-region {
-            width: 35%;
-        }
-        #super-region-stats-table .col-budget {
-            width: 23%;
-        }
-        #super-region-stats-table .col-dispatch {
-            width: 22%;
-        }
-        #super-region-stats-table .col-achieve {
-            width: 20%;
-        }
+        #super-region-stats-table .col-region { width: 28%; }
+        #super-region-stats-table .col-budget { width: 18%; }
+        #super-region-stats-table .col-dispatch { width: 18%; }
+        #super-region-stats-table .col-achieve { width: 16%; }
+        #super-region-stats-table .col-lastyear { width: 20%; }
 
+        /* This container holds the International stats table, positioned on the left */
         #international-stats-container {
             position: absolute;
             top: 55px;
@@ -165,10 +160,10 @@
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
             font-size: 12px;
-            width: 340px;
-            max-height: calc(100vh - 55px - 20px);
+            width: 430px;
+            max-height: calc(100vh - 55px - 20px - 200px - 20px); /* Adjust if needed to avoid overlap with chart */
             overflow-y: auto;
-            display: none;
+            display: none; /* Controlled by JS */
         }
         #international-stats-container h3 {
             margin-top: 0;
@@ -184,9 +179,9 @@
         #international-stats-table th,
         #international-stats-table td {
             border: 1px solid #ddd;
-            padding: 5px;
+            padding: 4px;
             text-align: left;
-            font-size: 11px;
+            font-size: 10px;
         }
         #international-stats-table th {
             background-color: #f2f2f2;
@@ -194,22 +189,16 @@
         #international-stats-table td.number-cell {
             text-align: right;
         }
-        #international-stats-table .col-country {
-            width: 35%;
-        }
-        #international-stats-table .col-sales {
-            width: 23%;
-        }
-        #international-stats-table .col-budget-est {
-            width: 22%;
-        }
-        #international-stats-table .col-achieve-est {
-            width: 20%;
-        }
+        #international-stats-table .col-country { width: 28%; }
+        #international-stats-table .col-sales { width: 18%; }
+        #international-stats-table .col-budget { width: 18%; }
+        #international-stats-table .col-achieve { width: 16%; }
+        #international-stats-table .col-lastyear { width: 20%; }
+
 
         #chart-container {
             position: absolute;
-            bottom: 80px;
+            bottom: 80px; /* Positioned below international stats */
             left: 10px;
             width: 380px;
             height: 180px;
@@ -218,7 +207,7 @@
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
             z-index: 710;
-            display: block;
+            display: block; /* Chart always visible, content changes */
         }
         #chart-container canvas {
             width: 100% !important;
@@ -269,7 +258,7 @@
 
         #indonesia-legend-floating {
             position: absolute;
-            bottom: 80px;
+            bottom: 80px; /* Positioned below Indonesia stats */
             right: 10px;
             background: rgba(255, 255, 255, 0.9);
             padding: 10px;
@@ -277,7 +266,7 @@
             box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2);
             z-index: 700;
             width: 200px;
-            display: none;
+            display: none; /* Controlled by JS */
         }
         #indonesia-legend-floating h4 {
             margin-top: 0;
@@ -313,9 +302,10 @@
                 rel="noopener noreferrer">geoBoundaries</a>.
         </div>
 
+        <!-- Container for Indonesia Stats (Right Side) -->
         <div id="left-column-stats-container">
             <div id="super-region-stats-container">
-                <h3>Indonesia Super Region Sales</h3>
+                <h3>Indonesia Region Sales</h3>
                 <table id="super-region-stats-table">
                     <thead>
                         <tr>
@@ -323,6 +313,7 @@
                             <th class="col-budget">Budget (Ton)</th>
                             <th class="col-dispatch">Dispatch (Ton)</th>
                             <th class="col-achieve">Achieve %</th>
+                            <th class="col-lastyear">Dispatch LY (Ton)</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -332,21 +323,24 @@
                             <td class="col-budget"></td>
                             <td class="col-dispatch"></td>
                             <td class="col-achieve"></td>
+                            <td class="col-lastyear"></td>
                         </tr>
                     </tfoot>
                 </table>
             </div>
         </div>
 
+        <!-- Container for International Stats (Left Side) -->
         <div id="international-stats-container">
             <h3>International Export Sales</h3>
             <table id="international-stats-table">
                 <thead>
                     <tr>
                         <th class="col-country">Country</th>
-                        <th class="col-sales">Sales (Ton)</th>
-                        <th class="col-budget-est">Budget (Est.)</th>
-                        <th class="col-achieve-est">Achieve % (Est.)</th>
+                        <th class="col-sales">Dispatch (Ton)</th>
+                        <th class="col-budget">Budget (Ton)</th>
+                        <th class="col-achieve">Achieve %</th>
+                        <th class="col-lastyear">Dispatch LY (Ton)</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -354,8 +348,9 @@
                      <tr>
                         <td class="col-country"></td>
                         <td class="col-sales"></td>
-                        <td class="col-budget-est"></td>
-                        <td class="col-achieve-est"></td>
+                        <td class="col-budget"></td>
+                        <td class="col-achieve"></td>
+                        <td class="col-lastyear"></td>
                     </tr>
                 </tfoot>
             </table>
@@ -434,6 +429,7 @@
             "REGION2A": "#80b1d3", "REGION2B": "#fdb462", "REGION2C": "#b3de69", "REGION2D": "#fccde5",
             "REGION3A": "#bc80bd", "REGION3B": "#ccebc5", "REGION3C": "#ffed6f",
             "REGION4A": "#99cce0", "REGION4B": "#f7cac9",
+            "KEYACCOUNT": "#d9d9d9", "COMMERCIAL": "#a9a9a9",
             "OTHER_BASE": "#cccccc"
         };
 
@@ -448,7 +444,7 @@
         let backToWorldBtnDynamic;
         let indonesiaLegendContainer;
         let legendItemsScrollContainer;
-        let internationalStatsContainer;
+        let internationalStatsContainer; // Already declared
 
         const infoTooltipGlobalDiv = document.getElementById('info-box');
         const salesTooltipIndonesiaDiv = document.getElementById('sales-tooltip-indonesia');
@@ -465,13 +461,14 @@
         document.addEventListener('DOMContentLoaded', () => {
             internationalStatsContainer = document.getElementById('international-stats-container');
             indonesiaLegendContainer = document.getElementById('indonesia-legend-floating');
-            legendItemsScrollContainer = indonesiaLegendContainer.querySelector('.legend-items-scroll-container');
-
+            if (indonesiaLegendContainer) { // Ensure it exists before querySelector
+                 legendItemsScrollContainer = indonesiaLegendContainer.querySelector('.legend-items-scroll-container');
+            }
 
             initMap();
             initUIElements();
-            updateUIVisibilityBasedOnView(currentMapView);
-            handleFilterChange();
+            updateUIVisibilityBasedOnView(currentMapView); // Initial UI setup
+            handleFilterChange(); // Initial data load
         });
 
         function initMap() {
@@ -479,7 +476,7 @@
                 worldCopyJump: true,
                 zoomControl: false,
                  zoomSnap: 0.25,
-                zoomDelta: 0.25 
+                zoomDelta: 0.25
             }).setView(INDIA_CENTER, WORLD_DEFAULT_ZOOM_LEVEL);
 
             map.getContainer().style.backgroundColor = '#aadaff';
@@ -506,12 +503,13 @@
             const todayISO = `${yyyy}-${mm}-${dd}`;
 
             startDateSelect.min = dateRanges.min_date_iso;
-            startDateSelect.max = todayISO;
+            startDateSelect.max = dateRanges.max_date_iso;
             startDateSelect.value = todayISO;
 
             endDateSelect.min = dateRanges.min_date_iso;
-            endDateSelect.max = todayISO;
+            endDateSelect.max = dateRanges.max_date_iso;
             endDateSelect.value = todayISO;
+
 
             startDateSelect.addEventListener('change', handleFilterChange);
             endDateSelect.addEventListener('change', handleFilterChange);
@@ -539,22 +537,41 @@
         }
 
         function updateUIVisibilityBasedOnView(viewType) {
+            const superRegionContainer = document.getElementById('super-region-stats-container');
+            const leftColContainer = document.getElementById('left-column-stats-container'); // Parent of superRegionContainer
+
+            // International Stats (Export) - only for world view
             if (internationalStatsContainer) {
                 internationalStatsContainer.style.display = (viewType === 'world') ? 'block' : 'none';
             }
+
+            // Back to World Button - only for Indonesia view
             if (backToWorldBtnDynamic) {
                 backToWorldBtnDynamic.style.display = (viewType === 'indonesia') ? 'block' : 'none';
             }
+
+            // Indonesia Legend - only for Indonesia view
             if (indonesiaLegendContainer) {
                 indonesiaLegendContainer.style.display = (viewType === 'indonesia') ? 'block' : 'none';
             }
+
+            // Indonesia Region Sales Table (and its parent container)
+            // This table should be visible in BOTH world view and Indonesia view.
+            // CSS positions it on the right.
+            if (superRegionContainer) {
+                superRegionContainer.style.display = 'block';
+            }
+            if (leftColContainer) {
+                leftColContainer.style.display = 'flex';
+            }
         }
+
 
         function switchToView(viewType) {
             const oldView = currentMapView;
             currentMapView = viewType;
             showLoading(viewType === 'world' ? 'Memuat Peta Dunia...' : 'Memuat Peta Indonesia...');
-            updateUIVisibilityBasedOnView(currentMapView);
+            updateUIVisibilityBasedOnView(currentMapView); // Update UI elements based on the new view
             infoTooltipGlobalDiv.style.display = 'none';
             salesTooltipIndonesiaDiv.style.display = 'none';
 
@@ -562,13 +579,15 @@
                 previousIndonesiaZoom = null;
             }
 
+            // If view type changed OR data for the current view is missing OR map layer is for a different view
             if (oldView !== viewType ||
                 (viewType === 'world' && Object.keys(salesDataGlobal).length === 0) ||
-                (viewType === 'indonesia' && Object.keys(superRegionSales).length === 0) ||
+                (viewType === 'indonesia' && Object.keys(superRegionSales).length === 0) || // superRegionSales is for Indonesia
                 (geoLayer && geoLayer.options && geoLayer.options.viewType !== viewType)
             ) {
-                handleFilterChange();
+                handleFilterChange(); // This will fetch data and then load/refresh the map
             } else {
+                 // Data likely exists, just adjust map view and styles
                  if (viewType === 'world') {
                     if (geoLayer && geoLayer.options && geoLayer.options.viewType === 'world') {
                         map.options.minZoom = WORLD_MIN_MAX_ZOOM;
@@ -576,7 +595,7 @@
                         map.setView(INDIA_CENTER, WORLD_DEFAULT_ZOOM_LEVEL);
                         map.setMaxBounds([[-85.0511, -Infinity], [85.0511, Infinity]]);
                         geoLayer.setStyle(styleFeatureMap);
-                    } else { handleFilterChange(); return; }
+                    } else { handleFilterChange(); return; } // Mismatch, reload
                 } else if (viewType === 'indonesia') {
                      if (geoLayer && geoLayer.options && geoLayer.options.viewType === 'indonesia') {
                         map.options.minZoom = INDONESIA_MIN_ZOOM;
@@ -593,9 +612,9 @@
                             map.setMaxBounds(null);
                         }
                         geoLayer.setStyle(styleFeatureMap);
-                    } else { handleFilterChange(); return; }
+                    } else { handleFilterChange(); return; } // Mismatch, reload
                 }
-                updateDashboardPanels();
+                updateDashboardPanels(); // Update tables and chart with existing data
                 hideLoading();
             }
         }
@@ -657,7 +676,7 @@
             else if (viewType === 'indonesia') {
                 seedRegionData = []; featureCentroidCache.clear();
                 geojson.features.forEach(f => {
-                    const cN = getCleanedShapeNameFromProps(f.properties), sRN = cityToSuperRegionMap[cN];
+                    const cN = getCleanedShapeNameFromProps(f.properties), sRN = cityToSuperRegionMap[cN.toLowerCase().trim()];
                     if (sRN) { const cen = getFeatureCentroid(f.geometry); if (cen) seedRegionData.push({ centroid: cen, superRegionName: sRN }); }
                 });
                 await calculateNearestSuperRegionsAsync(geojson.features);
@@ -755,22 +774,52 @@
         }
 
         function calculateWorldMinMaxSales() {
-            const salesValues = Object.values(salesDataGlobal).map(s=>Number(s)||0).filter(s=>s>0);
-            if(salesValues.length>0){ worldMinSales=Math.min(...salesValues); worldMaxSales=Math.max(...salesValues); }
-            else { worldMinSales=0; worldMaxSales=1; }
-            const indonesiaSales = salesDataGlobal["indonesia"]||0;
-            if(indonesiaSales > worldMaxSales) worldMaxSales = indonesiaSales;
-            if(indonesiaSales > 0 && indonesiaSales < worldMinSales) worldMinSales = indonesiaSales;
-            if(worldMinSales===0 && worldMaxSales > 0) worldMinSales = Math.min(1, worldMaxSales/10);
-            else if(worldMinSales===0 && worldMaxSales===0) worldMinSales = 1;
+            const salesValues = Object.values(salesDataGlobal)
+                .map(data => Number(data.sales) || 0)
+                .filter(s => s > 0);
+
+            if(salesValues.length > 0){
+                worldMinSales = Math.min(...salesValues);
+                worldMaxSales = Math.max(...salesValues);
+            } else {
+                worldMinSales = 0; worldMaxSales = 1; // Default if no positive sales
+            }
+
+            const indonesiaData = salesDataGlobal["Indonesia"];
+            if (indonesiaData) {
+                const indonesiaSales = Number(indonesiaData.sales) || 0;
+                if(indonesiaSales > worldMaxSales) worldMaxSales = indonesiaSales;
+                if(indonesiaSales > 0) { // Only update minSales if indonesiaSales is positive
+                    if (worldMinSales === 0 || indonesiaSales < worldMinSales) {
+                        worldMinSales = indonesiaSales;
+                    }
+                }
+            }
+
+            if(worldMinSales === 0 && worldMaxSales > 0) worldMinSales = Math.min(1, worldMaxSales / 10); // Avoid log(0)
+            else if(worldMinSales === 0 && worldMaxSales === 0) { worldMinSales = 0; worldMaxSales = 1; } // Ensure max is at least 1
+            if (worldMinSales > worldMaxSales) worldMinSales = worldMaxSales; // Ensure min is not greater than max
+             if (worldMaxSales === 0) worldMaxSales =1; // ensure max is not 0
         }
 
-        function getWorldFeatureColor(sales) {
+
+        function getWorldFeatureColor(salesAmount) {
+            const sales = Number(salesAmount) || 0;
             if (sales <= 0) return worldBaseColor;
-            if (worldMaxSales === worldMinSales) return tinycolor(worldBaseColor).darken(20).toString();
-            const logMax = Math.log10(worldMaxSales||1), logMin = Math.log10(worldMinSales > 0 ? worldMinSales : 1), logSales = Math.log10(sales||1);
-            let intensity = 0.5; if (logMax > logMin) intensity = (logSales - logMin) / (logMax - logMin);
+            if (worldMaxSales <= worldMinSales || worldMaxSales === 0) { // if max is 0 or min/max invalid
+                return tinycolor(worldBaseColor).darken(10 + Math.random()*10).toString(); // slightly darker base
+            }
+
+            const logMax = Math.log10(worldMaxSales); // MaxSales should be >0 here
+            const logMin = Math.log10(worldMinSales > 0 ? worldMinSales : (worldMaxSales / 1000 > 0 ? worldMaxSales/1000 : 0.001) ); // Avoid log(0) or log(<0)
+            const logSales = Math.log10(sales > 0 ? sales : (worldMinSales > 0 ? worldMinSales : 0.001));
+
+            let intensity = 0.5;
+            if (logMax > logMin) {
+                intensity = (logSales - logMin) / (logMax - logMin);
+            }
             intensity = Math.max(0, Math.min(1, intensity));
+
             const sC={r:255,g:255,b:204}, eC={r:128,g:0,b:38};
             const r=Math.round(sC.r+(eC.r-sC.r)*intensity), g=Math.round(sC.g+(eC.g-sC.g)*intensity), b=Math.round(sC.b+(eC.b-sC.b)*intensity);
             return `rgb(${r},${g},${b})`;
@@ -779,20 +828,37 @@
         function styleFeatureMap(feature) {
             if (currentMapView === 'world') {
                 let name = getCleanedShapeNameFromProps(feature.properties); if (name === "united states of america") name = "united states";
-                const sales = salesDataGlobal[name] || 0;
+                const countryKey = Object.keys(salesDataGlobal).find(k => k.toLowerCase() === name);
+                const countryData = countryKey ? salesDataGlobal[countryKey] : null;
+                const sales = countryData ? (countryData.sales || 0) : 0;
                 return { fillColor: getWorldFeatureColor(sales), weight: 0.5, opacity: 1, color: '#bbb', fillOpacity: 0.7 };
             } else if (currentMapView === 'indonesia') {
-                const cN=getCleanedShapeNameFromProps(feature.properties); let fC=regionColors.OTHER_BASE,fO=0.70;
-                const sRKFA=cityToSuperRegionMap[cN];
-                if(sRKFA && superRegionSales[sRKFA]){ fC=regionColors[sRKFA]; fO=0.85; }
-                else if(feature.properties.calculatedSuperRegion){
-                    const nSRN=feature.properties.calculatedSuperRegion.name, nSRC=regionColors[nSRN];
-                    if(nSRC && tinycolor){
-                        if(superRegionSales[nSRN]) fC=tinycolor(nSRC).setAlpha(0.75).toRgbString();
-                        else fC=tinycolor(nSRC).lighten(15).setAlpha(0.60).toRgbString();
+                const cleanedName = getCleanedShapeNameFromProps(feature.properties);
+                let fillColor = regionColors.OTHER_BASE; let fillOpacity = 0.70;
+                const superRegionKeyFromDirectMap = cityToSuperRegionMap[cleanedName];
+                const regionData = superRegionKeyFromDirectMap ? superRegionSales[superRegionKeyFromDirectMap] : null;
+
+                if (superRegionKeyFromDirectMap && regionColors[superRegionKeyFromDirectMap]) {
+                    fillColor = regionColors[superRegionKeyFromDirectMap];
+                    fillOpacity = (regionData && regionData.sales > 0) ? 0.85 : 0.70;
+                }
+                else if (feature.properties.calculatedSuperRegion) {
+                    const calculatedSRName = feature.properties.calculatedSuperRegion.name;
+                    const calculatedRegionData = superRegionSales[calculatedSRName];
+                    if (regionColors[calculatedSRName] && tinycolor) {
+                        if (calculatedRegionData && calculatedRegionData.sales > 0) {
+                            fillColor = tinycolor(regionColors[calculatedSRName]).setAlpha(0.75).toRgbString();
+                        } else {
+                            fillColor = tinycolor(regionColors[calculatedSRName]).lighten(15).setAlpha(0.60).toRgbString();
+                        }
+                        fillOpacity = 1; // Opacity is in the color string
                     }
-                } else if(sRKFA && regionColors[sRKFA]){ fC=tinycolor(regionColors[sRKFA]).lighten(10).setAlpha(0.65).toRgbString(); }
-                return { weight: 0.5, opacity: 1, color: 'white', fillOpacity:fO, fillColor:fC };
+                }
+                else if (superRegionKeyFromDirectMap && regionColors[superRegionKeyFromDirectMap] && tinycolor) { // Mapped but no sales
+                     fillColor = tinycolor(regionColors[superRegionKeyFromDirectMap]).lighten(10).setAlpha(0.65).toRgbString();
+                     fillOpacity = 1; // Opacity is in the color string
+                }
+                return { weight: 0.5, opacity: 1, color: 'white', fillOpacity: fillOpacity, fillColor: fillColor };
             }
             return { fillColor: '#ccc', weight: 1, opacity: 1, color: 'white', fillOpacity: 0.7 };
         }
@@ -800,115 +866,144 @@
         function onEachFeatureMap(feature, layer) {
              if (currentMapView === 'world') {
                 layer.on({
-                    mouseover: (e)=>{ let p=e.target.feature.properties, n=getCleanedShapeNameFromProps(p); if(n==="united states of america")n="united states"; const s=salesDataGlobal[n]||0, dN=n.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' '); infoTooltipGlobalDiv.innerHTML=`<strong>${dN||'Unknown'}</strong><br>Sales: ${s.toLocaleString()} Ton`; infoTooltipGlobalDiv.style.display='block'; layer.setStyle({weight:1.5,color:'#666'}); },
+                    mouseover: (e)=>{
+                        let p=e.target.feature.properties; let name=getCleanedShapeNameFromProps(p); if(name==="united states of america") name="united states";
+                        const countryKey = Object.keys(salesDataGlobal).find(k => k.toLowerCase() === name);
+                        const countryData = countryKey ? salesDataGlobal[countryKey] : null;
+                        const sales = countryData ? (countryData.sales || 0) : 0; const budget = countryData ? (countryData.budget || 0) : 0; const lastYearSales = countryData ? (countryData.lastYearSales || 0) : 0;
+                        const displayName = name.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ');
+                        let tooltipText = `<strong>${displayName||'Unknown'}</strong><br>Sales: ${sales.toLocaleString()} Ton`;
+                        tooltipText += `<br>Budget: ${budget.toLocaleString()} Ton`;
+                        tooltipText += `<br>Sales LY: ${lastYearSales.toLocaleString()} Ton`;
+                        infoTooltipGlobalDiv.innerHTML = tooltipText; infoTooltipGlobalDiv.style.display='block'; layer.setStyle({weight:1.5,color:'#666'});
+                    },
                     mouseout: ()=>{ infoTooltipGlobalDiv.style.display='none'; if (geoLayer) geoLayer.resetStyle(layer); },
                     click: (e)=>{ const p=e.target.feature.properties, n=getCleanedShapeNameFromProps(p); if(n==='indonesia')switchToView('indonesia'); }
                 });
             } else if (currentMapView === 'indonesia') {
                 layer.on({
-                    mouseover: (e)=>{ const p=e.target.feature.properties, cN=getCleanedShapeNameFromProps(p), sRK=cityToSuperRegionMap[cN]||p.calculatedSuperRegion?.name, dRN=sRK?sRK.replace(/([A-Z])([0-9])/g,'$1 $2'):'Tidak terpetakan', dNKK=cN.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' '); let tT=`<strong>${dNKK}</strong><br>Super Region: ${dRN}`; if(sRK && superRegionSales.hasOwnProperty(sRK)) tT+=`<br>Sales Region Ini: ${(superRegionSales[sRK]||0).toLocaleString()} Ton`; else if(sRK) tT+=`<br>Sales Region Ini: 0 Ton`; if(p.calculatedSuperRegion && !cityToSuperRegionMap[cN]) tT+=`<br><small>(Estimasi via kedekatan)</small>`; salesTooltipIndonesiaDiv.innerHTML=tT; salesTooltipIndonesiaDiv.style.display='block'; layer.setStyle({weight:2,color:'#555'}); },
+                    mouseover: (e)=>{
+                        const p=e.target.feature.properties, cN=getCleanedShapeNameFromProps(p);
+                        let sRK = cityToSuperRegionMap[cN] || p.calculatedSuperRegion?.name;
+                        const dNKK=cN.split(' ').map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ');
+                        let displayNameSuperRegion = 'Tidak terpetakan';
+                        if (sRK) {
+                            displayNameSuperRegion = sRK.replace(/([A-Z]+)([0-9]+[A-Z]*)/g, '$1 $2');
+                        }
+                        let tT=`<strong>${dNKK}</strong><br>Super Region: ${displayNameSuperRegion}`;
+                        if(sRK && superRegionSales[sRK]) {
+                            const srData = superRegionSales[sRK];
+                            tT+=`<br>Sales (Region): ${(srData.sales || 0).toLocaleString()} Ton`;
+                            tT+=`<br>Budget (Region): ${(srData.budget || 0).toLocaleString()} Ton`;
+                            tT+=`<br>Sales LY (Region): ${(srData.lastYearSales || 0).toLocaleString()} Ton`;
+                        } else if(sRK) {
+                             tT+=`<br>Sales (Region): 0 Ton<br>Budget (Region): 0 Ton<br>Sales LY (Region): 0 Ton`;
+                        }
+                        if(p.calculatedSuperRegion && !cityToSuperRegionMap[cN]) tT+=`<br><small>(Estimasi via kedekatan)</small>`;
+                        salesTooltipIndonesiaDiv.innerHTML=tT; salesTooltipIndonesiaDiv.style.display='block'; layer.setStyle({weight:2,color:'#555'});
+                    },
                     mouseout: ()=>{ salesTooltipIndonesiaDiv.style.display='none'; if (geoLayer) geoLayer.resetStyle(layer); }
                 });
             }
         }
 
         function updateDashboardPanels() {
-            updateSuperRegionStatsTable();
-            updateInternationalStatsTable();
+            updateSuperRegionStatsTable(); // Always update, visibility handled by CSS/updateUIVisibility
+            updateInternationalStatsTable(); // Update based on currentMapView, visibility handled by updateUIVisibility
             updateSalesChart();
             updateLegend();
         }
 
+        function formatRegionKeyForDisplay(regionKey) {
+            if (!regionKey) return '';
+            return regionKey.replace(/([A-Z]+)([0-9]+[A-Z]*)/g, '$1 $2');
+        }
+
         function updateSuperRegionStatsTable() {
             const tableBody = document.querySelector('#super-region-stats-table tbody');
-            if (!tableBody) return;
-            tableBody.innerHTML = '';
+            const tfootRow = document.querySelector('#super-region-stats-table tfoot tr');
+            if (!tableBody || !tfootRow) return;
+            tableBody.innerHTML = ''; Array.from(tfootRow.cells).forEach(cell => cell.textContent = '');
 
             if (Object.keys(superRegionSales).length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No super region data.</td></tr>';
-                const tfoot = document.querySelector('#super-region-stats-table tfoot tr');
-                if (tfoot) Array.from(tfoot.cells).forEach(cell => cell.textContent = '');
+                tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No Indonesia region data.</td></tr>';
                 return;
             }
-
-            let totalDispatch = 0, totalBudget = 0;
+            let totalDispatch = 0, totalBudget = 0, totalLastYearDispatch = 0;
             const sortedRegionKeys = Object.keys(superRegionSales).sort();
 
             for (const regionKey of sortedRegionKeys) {
-                const dispatch = superRegionSales[regionKey]||0;
-                const budget = (dispatch>0 ? Math.max(1000, dispatch * (0.8 + Math.random()*0.4)) : (5000 + Math.random()*2000));
+                const regionData = superRegionSales[regionKey]; if (!regionData) continue;
+                const dispatch = regionData.sales || 0; const budget = regionData.budget || 0; const lastYearDispatch = regionData.lastYearSales || 0;
                 const achievement = budget > 0 ? (dispatch / budget * 100) : 0;
-                totalDispatch += dispatch; totalBudget += budget;
+                totalDispatch += dispatch; totalBudget += budget; totalLastYearDispatch += lastYearDispatch;
 
                 const row = tableBody.insertRow();
-                row.insertCell().textContent = regionKey.replace(/([A-Z])([0-9])/g, '$1 $2'); row.cells[0].classList.add('col-region');
+                row.insertCell().textContent = formatRegionKeyForDisplay(regionKey); row.cells[0].classList.add('col-region');
                 row.insertCell().textContent = budget.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0}); row.cells[1].classList.add('number-cell', 'col-budget');
                 row.insertCell().textContent = dispatch.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0}); row.cells[2].classList.add('number-cell', 'col-dispatch');
                 row.insertCell().textContent = achievement.toFixed(1) + '%'; row.cells[3].classList.add('number-cell', 'col-achieve');
+                row.insertCell().textContent = lastYearDispatch.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0}); row.cells[4].classList.add('number-cell', 'col-lastyear');
             }
-
-            const tfootRow = document.querySelector('#super-region-stats-table tfoot tr');
-            if (tfootRow) {
-                const totalAch = totalBudget > 0 ? (totalDispatch / totalBudget * 100) : 0;
-                tfootRow.cells[0].textContent = "TOTAL INDONESIA"; tfootRow.cells[0].style.fontWeight = "bold";
-                tfootRow.cells[1].textContent = totalBudget.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0}); tfootRow.cells[1].style.fontWeight = "bold"; tfootRow.cells[1].classList.add('number-cell');
-                tfootRow.cells[2].textContent = totalDispatch.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0}); tfootRow.cells[2].style.fontWeight = "bold"; tfootRow.cells[2].classList.add('number-cell');
-                tfootRow.cells[3].textContent = totalAch.toFixed(1) + '%'; tfootRow.cells[3].style.fontWeight = "bold"; tfootRow.cells[3].classList.add('number-cell');
-            }
+            const totalAchievement = totalBudget > 0 ? (totalDispatch / totalBudget * 100) : 0;
+            tfootRow.cells[0].textContent = "TOTAL INDONESIA"; tfootRow.cells[0].style.fontWeight = "bold";
+            tfootRow.cells[1].textContent = totalBudget.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0}); tfootRow.cells[1].style.fontWeight = "bold"; tfootRow.cells[1].classList.add('number-cell');
+            tfootRow.cells[2].textContent = totalDispatch.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0}); tfootRow.cells[2].style.fontWeight = "bold"; tfootRow.cells[2].classList.add('number-cell');
+            tfootRow.cells[3].textContent = totalAchievement.toFixed(1) + '%'; tfootRow.cells[3].style.fontWeight = "bold"; tfootRow.cells[3].classList.add('number-cell');
+            tfootRow.cells[4].textContent = totalLastYearDispatch.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0}); tfootRow.cells[4].style.fontWeight = "bold"; tfootRow.cells[4].classList.add('number-cell');
         }
 
         function updateInternationalStatsTable() {
             const tableBody = document.querySelector('#international-stats-table tbody');
-            if(!tableBody) return; tableBody.innerHTML = '';
-
             const tfootRow = document.querySelector('#international-stats-table tfoot tr');
-            if(tfootRow) Array.from(tfootRow.cells).forEach(cell => cell.textContent = '');
+            if(!tableBody || !tfootRow) return; tableBody.innerHTML = ''; Array.from(tfootRow.cells).forEach(cell => cell.textContent = '');
 
-
+            // This table is only relevant for world view, data source is salesDataGlobal
             if (currentMapView !== 'world' || Object.keys(salesDataGlobal).length === 0) {
-                 tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No export data.</td></tr>';
+                 tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No export data for world view.</td></tr>';
                 return;
             }
-
             let dataForTable = [];
-            const exportCountries = Object.entries(salesDataGlobal)
-                .filter(([country, sales]) => country.toLowerCase() !== 'indonesia' && (Number(sales) || 0) > 0)
-                .sort(([,a],[,b]) => (Number(b) || 0) - (Number(a) || 0));
+            const exportCountriesData = Object.entries(salesDataGlobal)
+                .filter(([country, data]) => country.toLowerCase() !== 'indonesia' && ((data.sales || 0) > 0 || (data.budget || 0) > 0 || (data.lastYearSales || 0) > 0)) // Show if any data exists
+                .sort(([,a],[,b]) => (b.sales || 0) - (a.sales || 0));
 
-            const maxOtherCountriesInTable = 5;
-            let otherExportSalesSum = 0, otherExportBudgetSum = 0;
+            const maxCountriesInTable = 7;
+            let otherSalesSum = 0, otherBudgetSum = 0, otherLYSalesSum = 0;
 
-            exportCountries.forEach(([country, sales], index) => {
-                const actualSales = Number(sales)||0, budget = actualSales*(0.8+Math.random()*0.3), achieve = budget>0?(actualSales/budget*100):0;
-                if (index < maxOtherCountriesInTable) dataForTable.push({ country, sales: actualSales, budget, achieve });
-                else { otherExportSalesSum += actualSales; otherExportBudgetSum += budget; }
+            exportCountriesData.forEach(([country, data], index) => {
+                if (index < maxCountriesInTable) dataForTable.push({ country, ...data });
+                else { otherSalesSum += (data.sales || 0); otherBudgetSum += (data.budget || 0); otherLYSalesSum += (data.lastYearSales || 0); }
             });
-
-            if (otherExportSalesSum > 0) {
-                const achieveOther = otherExportBudgetSum > 0 ? (otherExportSalesSum / otherExportBudgetSum * 100) : 0;
-                dataForTable.push({ country: "Other Export", sales: otherExportSalesSum, budget: otherExportBudgetSum, achieve: achieveOther });
+            if (otherSalesSum > 0 || otherBudgetSum > 0 || otherLYSalesSum > 0) { // Add "Other" if it has any data
+                dataForTable.push({ country: "Other Exports", sales: otherSalesSum, budget: otherBudgetSum, lastYearSales: otherLYSalesSum });
             }
-
             if (dataForTable.length === 0) {
-                 tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">No significant export sales.</td></tr>'; return;
+                 tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No significant export sales.</td></tr>'; return;
             }
-
-            let salesSumForTableFooter = 0, budgetSumForTableFooter = 0;
+            let totalSalesFooter = 0, totalBudgetFooter = 0, totalLYSalesFooter = 0;
             dataForTable.forEach(item => {
+                const sales = item.sales || 0; const budget = item.budget || 0; const lastYearSales = item.lastYearSales || 0;
+                const achieve = budget > 0 ? (sales / budget * 100) : 0;
                 const row = tableBody.insertRow();
-                row.insertCell().textContent = item.country.charAt(0).toUpperCase()+item.country.slice(1); row.cells[0].classList.add('col-country');
-                row.insertCell().textContent = item.sales.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0}); row.cells[1].classList.add('number-cell','col-sales');
-                row.insertCell().textContent = item.budget.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0}); row.cells[2].classList.add('number-cell','col-budget-est');
-                row.insertCell().textContent = item.achieve.toFixed(1) + '%'; row.cells[3].classList.add('number-cell','col-achieve-est');
-                salesSumForTableFooter += item.sales; budgetSumForTableFooter += item.budget;
+                row.insertCell().textContent = item.country; row.cells[0].classList.add('col-country');
+                row.insertCell().textContent = sales.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0}); row.cells[1].classList.add('number-cell','col-sales');
+                row.insertCell().textContent = budget.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0}); row.cells[2].classList.add('number-cell','col-budget');
+                row.insertCell().textContent = achieve.toFixed(1) + '%'; row.cells[3].classList.add('number-cell','col-achieve');
+                row.insertCell().textContent = lastYearSales.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0}); row.cells[4].classList.add('number-cell','col-lastyear');
+                // Sum for footer, always sum what's displayed in the table rows
+                totalSalesFooter += sales;
+                totalBudgetFooter += budget;
+                totalLYSalesFooter += lastYearSales;
             });
 
-            if (tfootRow && salesSumForTableFooter > 0) {
-                const totalAchExport = budgetSumForTableFooter > 0 ? (salesSumForTableFooter / budgetSumForTableFooter * 100) : 0;
+            if (tfootRow && (totalSalesFooter > 0 || totalBudgetFooter > 0 || totalLYSalesFooter > 0)) {
+                const totalAchExport = totalBudgetFooter > 0 ? (totalSalesFooter / totalBudgetFooter * 100) : 0;
                 tfootRow.cells[0].textContent = "TOTAL EXPORT"; tfootRow.cells[0].style.fontWeight = "bold";
-                tfootRow.cells[1].textContent = salesSumForTableFooter.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0}); tfootRow.cells[1].style.fontWeight="bold"; tfootRow.cells[1].classList.add('number-cell');
-                tfootRow.cells[2].textContent = budgetSumForTableFooter.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0}); tfootRow.cells[2].style.fontWeight="bold"; tfootRow.cells[2].classList.add('number-cell');
+                tfootRow.cells[1].textContent = totalSalesFooter.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0}); tfootRow.cells[1].style.fontWeight="bold"; tfootRow.cells[1].classList.add('number-cell');
+                tfootRow.cells[2].textContent = totalBudgetFooter.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0}); tfootRow.cells[2].style.fontWeight="bold"; tfootRow.cells[2].classList.add('number-cell');
                 tfootRow.cells[3].textContent = totalAchExport.toFixed(1) + '%'; tfootRow.cells[3].style.fontWeight="bold"; tfootRow.cells[3].classList.add('number-cell');
+                tfootRow.cells[4].textContent = totalLYSalesFooter.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0}); tfootRow.cells[4].style.fontWeight="bold"; tfootRow.cells[4].classList.add('number-cell');
             }
         }
 
@@ -921,13 +1016,18 @@
             const sCC=document.getElementById('salesChart'); if(!sCC)return; if(salesPieChart)salesPieChart.destroy();
             const ctx=sCC.getContext('2d'); let chartConfig;
             if(currentMapView==='world'){
-                const iS=Number(salesDataGlobal['indonesia'])||0,tGS=Object.values(salesDataGlobal).reduce((s,sl)=>s+(Number(sl)||0),0),oES=tGS-iS;
-                let L=[],D=[],B=[]; if(iS>0){L.push('Indonesia');D.push(iS);B.push('#FF6384');} if(oES>0){L.push('Global Export');D.push(oES);B.push('#36A2EB');}
+                const indonesiaData = salesDataGlobal['Indonesia']; // Key is "Indonesia"
+                const iS = indonesiaData ? (indonesiaData.sales || 0) : 0;
+                let tGS=0; Object.values(salesDataGlobal).forEach(data => { tGS += (data.sales || 0); });
+                const oES=tGS-iS; // Other Export Sales
+                let L=[],D=[],B=[];
+                if(iS>0){L.push('Indonesia');D.push(iS);B.push('#FF6384');} // Pink/Red for Indonesia
+                if(oES>0){L.push('Global Export');D.push(oES);B.push('#36A2EB');} // Blue for Export
                 if(L.length===0){L.push('No Sales Data');D.push(1);B.push('#CCCCCC');}
                 chartConfig={type:'pie',data:{labels:L,datasets:[{label:'Global Sales',data:D,backgroundColor:B,hoverOffset:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:10},padding:3}},title:{display:true,text:'Sales: Indonesia vs Global Export',font:{size:13},padding:{bottom:8}},tooltip:{callbacks:{label:chartTooltipCallback}}}}};
             } else if(currentMapView==='indonesia'){
-                const sSRFC=Object.entries(superRegionSales).filter(([,s])=>(Number(s)||0)>0).sort(([,a],[,b])=>(Number(b)||0)-(Number(a)||0));
-                let l_sr=sSRFC.map(([r])=>r.replace(/([A-Z])([0-9])/g,'$1 $2')),d_sr=sSRFC.map(([,s])=>s),c_sr=sSRFC.map(([r])=>regionColors[r]||'#808080');
+                const sSRFC=Object.entries(superRegionSales).filter(([,data])=>(data.sales || 0)>0).sort(([,a],[,b])=>(b.sales || 0)-(a.sales || 0));
+                let l_sr=sSRFC.map(([r])=>formatRegionKeyForDisplay(r)),d_sr=sSRFC.map(([,data])=>data.sales),c_sr=sSRFC.map(([r])=>regionColors[r]||'#808080');
                 if(l_sr.length===0){l_sr.push('No Super Region Sales');d_sr.push(1);c_sr.push('#CCCCCC');}
                 chartConfig={type:'pie',data:{labels:l_sr,datasets:[{label:'Super Region Sales',data:d_sr,backgroundColor:c_sr,borderColor:'#fff',borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{title:{display:true,text:'Sales per Super-Region (ID)',font:{size:13},padding:{bottom:8}},legend:{position:'bottom',labels:{font:{size:9},boxWidth:10,padding:5}},tooltip:{callbacks:{label:chartTooltipCallback}}}}};
             }
@@ -935,30 +1035,26 @@
         }
 
         function updateLegend() {
-            if (!legendItemsScrollContainer) return;
-            legendItemsScrollContainer.innerHTML = '';
-
-            if (currentMapView === 'indonesia') {
+            if (!legendItemsScrollContainer) return; legendItemsScrollContainer.innerHTML = '';
+            if (currentMapView === 'indonesia') { // Legend is only for Indonesia view
                 let legendHTML = '';
-                const regionsWithSales = Object.entries(superRegionSales)
-                    .filter(([, sales]) => (Number(sales) || 0) > 0)
-                    .map(([regionName]) => regionName)
-                    .sort();
+                // Sort keys from regionColors to ensure consistent legend order, excluding OTHER_BASE
+                const legendOrder = Object.keys(regionColors).filter(k => k !== "OTHER_BASE").sort();
 
-                regionsWithSales.forEach(superRegKey => {
-                    if (regionColors[superRegKey]) {
-                        let salesVal = superRegionSales[superRegKey] || 0;
-                        let salesInfo = (salesVal > 0) ? ` (${salesVal.toLocaleString()})` : "";
-                        let displayName = superRegKey.replace(/([A-Z])([0-9])/g, '$1 $2');
+                legendOrder.forEach(superRegKey => {
+                    if (regionColors[superRegKey] && superRegionSales[superRegKey] !== undefined) { // Ensure region is part of current data scope
+                        const regionData = superRegionSales[superRegKey];
+                        const salesVal = regionData ? (regionData.sales || 0) : 0;
+                        let salesInfo = (salesVal > 0) ? ` (${salesVal.toLocaleString()} Ton)` : "";
+                        let displayName = formatRegionKeyForDisplay(superRegKey);
                         legendHTML += `<div><i style="background:${regionColors[superRegKey]}"></i> ${displayName}${salesInfo}</div>`;
                     }
                 });
                  const exampleMappedNoSalesColor = (tinycolor && regionColors.REGION1A) ? tinycolor(regionColors.REGION1A).lighten(10).setAlpha(0.65).toRgbString() : '#e0e0e0';
                  legendHTML += `<div><i style="background:${exampleMappedNoSalesColor}"></i> Area S.Region (No Sales)</div>`;
-                const otherExampleColor = (tinycolor && regionColors.REGION1A) ? tinycolor(regionColors.REGION1A).lighten(15).setAlpha(0.60).toRgbString() : '#e0e0e0';
+                const otherExampleColor = (tinycolor && regionColors.REGION1A) ? tinycolor(regionColors.REGION1A).lighten(15).setAlpha(0.60).toRgbString() : '#d3d3d3';
                 legendHTML += `<div><i style="background:${otherExampleColor}"></i> Estimasi Dekat (No Sales)</div>`;
                 legendHTML += `<div><i style="background:${regionColors.OTHER_BASE}"></i> Lainnya/Tanpa Data</div>`;
-
                 legendItemsScrollContainer.innerHTML = legendHTML;
             }
         }
@@ -966,15 +1062,9 @@
         async function handleFilterChange() {
             const startDate = document.getElementById('start-date-select').value;
             const endDate = document.getElementById('end-date-select').value;
-
-            if (currentMapView === 'indonesia' && map) {
-                previousIndonesiaZoom = map.getZoom();
-            } else {
-                previousIndonesiaZoom = null;
-            }
-
-            if (!startDate || !endDate) { alert("Please select dates."); hideLoading(); return; }
-            if (new Date(startDate) > new Date(endDate)) { alert("Start date after end date."); hideLoading(); return; }
+            if (currentMapView === 'indonesia' && map && map.getZoom) { previousIndonesiaZoom = map.getZoom(); } else { previousIndonesiaZoom = null; }
+            if (!startDate || !endDate) { alert("Please select valid start and end dates."); hideLoading(); return; }
+            if (new Date(startDate) > new Date(endDate)) { alert("Start date cannot be after end date."); hideLoading(); return; }
 
             showLoading('Mengambil data penjualan...');
             try {
@@ -986,19 +1076,36 @@
                     throw new Error(eD.message || `HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
-                salesDataGlobal = {};
+                salesDataGlobal = {}; // For world map countries + "Indonesia" summary
                 if (data.worldSales) {
-                    for (const key in data.worldSales) {
-                        let nK = key.toLowerCase().trim(); if (nK === "united states of america") nK = "united states";
-                        salesDataGlobal[nK] = data.worldSales[key];
+                    for (const countryName in data.worldSales) {
+                        let key = countryName;
+                        // Normalize "United States of America" to "United States" for consistency with map keys
+                        if (countryName.toLowerCase() === "united states of america") key = "United States";
+                        else if (countryName.toLowerCase() === "indonesia") key = "Indonesia"; // Ensure casing
+
+                        salesDataGlobal[key] = { // Store with potentially normalized key
+                            sales: Number(data.worldSales[countryName].sales) || 0,
+                            budget: Number(data.worldSales[countryName].budget) || 0,
+                            lastYearSales: Number(data.worldSales[countryName].lastYearSales) || 0
+                        };
                     }
                 }
-                superRegionSales = data.indonesiaSuperRegionSales || {};
+                superRegionSales = {}; // For Indonesia detailed regions
+                if (data.indonesiaSuperRegionSales) {
+                     for (const regionKey in data.indonesiaSuperRegionSales) {
+                        superRegionSales[regionKey] = {
+                            sales: Number(data.indonesiaSuperRegionSales[regionKey].sales) || 0,
+                            budget: Number(data.indonesiaSuperRegionSales[regionKey].budget) || 0,
+                            lastYearSales: Number(data.indonesiaSuperRegionSales[regionKey].lastYearSales) || 0
+                        };
+                    }
+                }
                 const mapUrl = currentMapView === 'world' ? WORLD_TOPOJSON_URL : INDONESIA_TOPOJSON_URL;
                 const cacheKey = currentMapView === 'world' ? WORLD_CACHE_KEY : INDONESIA_CACHE_KEY;
 
-                await loadAndDisplayMapData(mapUrl, currentMapView, cacheKey);
-                updateDashboardPanels();
+                await loadAndDisplayMapData(mapUrl, currentMapView, cacheKey); // This will handle map rendering
+                updateDashboardPanels(); // This will update ALL tables and chart with new data
             } catch (error) {
                 console.error('Gagal memproses data:', error); alert(`Gagal memuat data: ${error.message}`);
                 salesDataGlobal = {}; superRegionSales = {}; updateDashboardPanels(); hideLoading();

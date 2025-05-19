@@ -14,10 +14,7 @@ use App\Http\Controllers\Role\RoleController;
 use App\Http\Controllers\UserController;
 use Artesaos\SEOTools\Facades\SEOMeta;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\MapDashboardController;
-
-
-
+use App\Http\Controllers\DashboardSalesController;
 
 /*
 |--------------------------------------------------------------------------
@@ -40,7 +37,6 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard-finance', [DashboardController::class, 'index-finance'])->name('dashboard-finance');
     Route::get('/api/requisitions/{year}', [DashboardController::class, 'getRequisitionsByYear'])->name('dashboard.requisitions.byYear');
-    Route::get('/dashboard-sales', [DashboardController::class, 'index-sales'])->name('dashboard-sales');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -48,6 +44,11 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::get('/get-data-master', [UserController::class, 'getDataMaster'])->name('get.master');
+
+
+    // sales
+    Route::get('/dashboard-sales', [DashboardSalesController::class, 'showMapDashboard'])->name('dashboard.dashboardSales');
+    Route::get('/api/sales-data', [DashboardSalesController::class, 'getSalesData'])->name('api.sales.data');
 
     /*Inventory*/
     /*get wsa inventory*/
@@ -68,6 +69,8 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
     Route::post('dashboard/sales/get', [SalesController::class, 'getSalesDashboard'])->name('dashboard.sales.wsa');
     /*sales routes*/
     Route::get('sales', [SalesController::class, 'index'])->name('data.sales');
+
+
 
 
 
@@ -101,8 +104,6 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
     Route::get('dashboard-warehouse', function () {
         return view("dashboard.dashboardWarehouse");
     })->name('dashboard.dashboardWarehouse');
-    /*Dashboard Sales*/
-    Route::get('dashboard-sales', [SalesController::class, 'dashboardSales'])->name('dashboard.dashboardSales');
     /*Dashboard Production*/
     Route::get('dashboard/dashboard-production', [ProductionController::class, 'dashboardProductionIndex'])->name('dashboard.dashboardProduction');
 
@@ -166,12 +167,5 @@ Route::group(['middleware' => ['role:super-admin|admin']], function () {
     Route::post('levels', [LevelController::class, 'store'])->name('level.store');
     Route::delete('levels/{level:level_slug}/delete', [LevelController::class, 'destroy'])->name('level.destroy');
 });
-
-// sales
-Route::get('/map-dashboard', [MapDashboardController::class, 'showMapDashboard'])->name('map.dashboard.sales');
-
-Route::get('/api/sales-data', [MapDashboardController::class, 'getSalesData'])->name('api.sales.data');
-Route::get('/api/months-for-year', [MapDashboardController::class, 'getMonthsForYear'])->name('api.months.for.year');
-
 
 require __DIR__ . '/auth.php';

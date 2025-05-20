@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\SalesTransaction;
-// If you have a model: use App\Models\StandardBudget;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Carbon\CarbonPeriod; 
 
 class DashboardSalesController extends Controller
 {
@@ -21,7 +21,7 @@ class DashboardSalesController extends Controller
         "HONGKONG" => "Hong Kong",
         "PEOPLE'S REPUBLIC OF CHINA" => "China",
         "BRAZIL" => "Brazil",
-        "UNITED STATES OF AMERICA" => "United States",
+        "UNITED STATES OF AMERICA" => "United States", 
         "GERMANY" => "Germany",
         "INDIA" => "India",
         "CANADA" => "Canada",
@@ -29,6 +29,7 @@ class DashboardSalesController extends Controller
         "NEPAL" => "Nepal",
         "FIJI" => "Fiji",
         "RUSSIAN FEDERATION" => "Russia"
+
     ];
 
     protected $indonesiaSuperRegionKeys = [
@@ -44,30 +45,34 @@ class DashboardSalesController extends Controller
 
     public function __construct()
     {
+
         $this->rawCodeCmmtToSuperRegionKeyMap = collect([
             "REGION 1A", "REGION 1B", "REGION 1C", "REGION 1D",
             "REGION 2A", "REGION 2B", "REGION 2C", "REGION 2D",
             "REGION 3A", "REGION 3B", "REGION 3C",
             "REGION 4A", "REGION 4B",
             "KEY ACCOUNT", "COMMERCIAL"
+
         ])->mapWithKeys(function ($item) {
+
             return [strtoupper($item) => strtoupper(str_replace(' ', '', $item))];
         })->all();
     }
 
-
     protected function getAvailableDateRanges()
     {
+
         $minDateDb = SalesTransaction::selectRaw('MIN(STR_TO_DATE(tr_effdate, "%Y-%m-%d")) as min_date')->value('min_date');
-        $maxDateDb = SalesTransaction::selectRaw('MAX(STR_TO_DATE(tr_effdate, "%Y-%m-%d")) as max_date')->value('max_date');
+
         $today = Carbon::now();
 
         $minDateIso = $minDateDb ? Carbon::parse($minDateDb)->format('Y-m-d') : $today->format('Y-m-d');
-        $maxDateIsoForPicker = $today->format('Y-m-d'); // Picker max should always be today
+
+        $maxDateIsoForPicker = $today->format('Y-m-d');
 
         return [
             'min_date_iso' => $minDateIso,
-            'max_date_iso' => $maxDateIsoForPicker,
+            'max_date_iso' => $maxDateIsoForPicker, 
         ];
     }
 
@@ -84,31 +89,45 @@ class DashboardSalesController extends Controller
             'endDate' => 'required|date_format:Y-m-d|after_or_equal:startDate',
         ]);
 
-        $startDate = $request->input('startDate');
-        $endDate = $request->input('endDate');
-        $budgetYear = Carbon::parse($endDate)->year;
+        $startDate = Carbon::parse($request->input('startDate'));
+        $endDate = Carbon::parse($request->input('endDate'));
+
+        $period = CarbonPeriod::create($startDate, $endDate);
+        $yearsInRange = [];
+        foreach ($period as $date) {
+            $yearsInRange[] = $date->year;
+        }
+        $uniqueYears = array_unique($yearsInRange);
 
         $currentSalesQuery = SalesTransaction::select('code_cmmt', DB::raw('SUM(tr_ton) as total_ton'))
-            ->whereBetween('tr_effdate', [$startDate, $endDate])
+            ->whereBetween('tr_effdate', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->groupBy('code_cmmt')
             ->get();
         $currentSalesData = $currentSalesQuery->pluck('total_ton', 'code_cmmt');
 
-        $lastYearStartDate = Carbon::parse($startDate)->subYear()->format('Y-m-d');
-        $lastYearEndDate = Carbon::parse($endDate)->subYear()->format('Y-m-d');
+        $lastYearStartDate = $startDate->copy()->subYear()->format('Y-m-d');
+        $lastYearEndDate = $endDate->copy()->subYear()->format('Y-m-d');
         $lastYearSalesQuery = SalesTransaction::select('code_cmmt', DB::raw('SUM(tr_ton) as total_ton_ly'))
             ->whereBetween('tr_effdate', [$lastYearStartDate, $lastYearEndDate])
             ->groupBy('code_cmmt')
             ->get();
         $lastYearSalesData = $lastYearSalesQuery->pluck('total_ton_ly', 'code_cmmt');
 
-        $budgetsQuery = DB::table('standard_budgets')
-            ->where('year', $budgetYear)
-            ->pluck('amount', 'name_region');
+        $rawBudgetsQuery = DB::table('standard_budgets')
+            ->whereIn('year', $uniqueYears) 
+            ->select('name_region', 'amount') 
+            ->get();
 
         $budgets = [];
-        foreach ($budgetsQuery as $region => $amount) {
-            $budgets[strtoupper(str_replace(' ', '', $region))] = (float) $amount;
+        foreach ($rawBudgetsQuery as $budgetEntry) {
+
+            $regionKey = strtoupper(str_replace(' ', '', trim($budgetEntry->name_region)));
+            $amount = (float) $budgetEntry->amount;
+
+            if (!isset($budgets[$regionKey])) {
+                $budgets[$regionKey] = 0;
+            }
+            $budgets[$regionKey] += $amount; 
         }
 
         $worldSales = [];
@@ -117,17 +136,22 @@ class DashboardSalesController extends Controller
         foreach ($this->indonesiaSuperRegionKeys as $srKey) {
             $indonesiaSuperRegionSales[$srKey] = [
                 'sales' => 0,
-                'budget' => $budgets[$srKey] ?? 0,
+                'budget' => $budgets[$srKey] ?? 0, 
                 'lastYearSales' => 0
             ];
         }
-        foreach ($this->countryMapping as $rawCountryName => $countryName) {
-             $keyForBudget = strtoupper(str_replace(' ', '', $countryName));
-             if ($keyForBudget === "UNITEDSTATESOFAMERICA") $keyForBudget = "UNITEDSTATES";
 
-            $worldSales[$countryName] = [
+        foreach ($this->countryMapping as $rawCountryNameFromDb => $targetCountryName) {
+
+            $budgetKey = strtoupper(str_replace(' ', '', $targetCountryName));
+            if ($budgetKey === "UNITEDSTATESOFAMERICA") $budgetKey = "UNITEDSTATES"; 
+
+            $alternativeBudgetKey = strtoupper(str_replace(' ', '', $rawCountryNameFromDb));
+            if ($alternativeBudgetKey === "UNITEDSTATESOFAMERICA") $alternativeBudgetKey = "UNITEDSTATES";
+
+            $worldSales[$targetCountryName] = [ 
                 'sales' => 0,
-                'budget' => $budgets[$keyForBudget] ?? ($budgets[strtoupper($rawCountryName)] ?? 0),
+                'budget' => $budgets[$budgetKey] ?? ($budgets[$alternativeBudgetKey] ?? 0),
                 'lastYearSales' => 0
             ];
         }
@@ -139,20 +163,23 @@ class DashboardSalesController extends Controller
 
             if ($superRegionKey && in_array($superRegionKey, $this->indonesiaSuperRegionKeys)) {
                 $indonesiaSuperRegionSales[$superRegionKey]['sales'] += $totalTon;
-            } elseif (isset($this->countryMapping[$codeCmmtUpper])) {
-                $shapeName = $this->countryMapping[$codeCmmtUpper];
+            } elseif (isset($this->countryMapping[$codeCmmtUpper])) { 
+                $shapeName = $this->countryMapping[$codeCmmtUpper]; 
+
                 if (!isset($worldSales[$shapeName])) {
                     $budgetKey = strtoupper(str_replace(' ', '', $shapeName));
-                     if ($budgetKey === "UNITEDSTATESOFAMERICA") $budgetKey = "UNITEDSTATES";
+                    if ($budgetKey === "UNITEDSTATESOFAMERICA") $budgetKey = "UNITEDSTATES";
                     $worldSales[$shapeName] = ['sales' => 0, 'budget' => $budgets[$budgetKey] ?? 0, 'lastYearSales' => 0];
                 }
                 $worldSales[$shapeName]['sales'] += $totalTon;
-            } elseif ($codeCmmtUpper !== 'INDONESIA') {
-                $budgetKey = strtoupper(str_replace(' ', '', $codeCmmtUpper));
-                if (!isset($worldSales[$codeCmmt])) {
-                     $worldSales[$codeCmmt] = ['sales' => 0, 'budget' => $budgets[$budgetKey] ?? 0, 'lastYearSales' => 0];
+            } elseif ($codeCmmtUpper !== 'INDONESIA') { 
+
+                $displayName = $codeCmmt; 
+                if (!isset($worldSales[$displayName])) {
+                    $budgetKey = strtoupper(str_replace(' ', '', $codeCmmtUpper));
+                    $worldSales[$displayName] = ['sales' => 0, 'budget' => $budgets[$budgetKey] ?? 0, 'lastYearSales' => 0];
                 }
-                $worldSales[$codeCmmt]['sales'] += $totalTon;
+                $worldSales[$displayName]['sales'] += $totalTon;
             }
         }
 
@@ -165,18 +192,19 @@ class DashboardSalesController extends Controller
                 $indonesiaSuperRegionSales[$superRegionKey]['lastYearSales'] += $totalTonLy;
             } elseif (isset($this->countryMapping[$codeCmmtUpper])) {
                 $shapeName = $this->countryMapping[$codeCmmtUpper];
-                 if (!isset($worldSales[$shapeName])) {
+                if (!isset($worldSales[$shapeName])) { 
                     $budgetKey = strtoupper(str_replace(' ', '', $shapeName));
-                     if ($budgetKey === "UNITEDSTATESOFAMERICA") $budgetKey = "UNITEDSTATES";
+                    if ($budgetKey === "UNITEDSTATESOFAMERICA") $budgetKey = "UNITEDSTATES";
                     $worldSales[$shapeName] = ['sales' => 0, 'budget' => $budgets[$budgetKey] ?? 0, 'lastYearSales' => 0];
                 }
                 $worldSales[$shapeName]['lastYearSales'] += $totalTonLy;
             } elseif ($codeCmmtUpper !== 'INDONESIA') {
-                if (!isset($worldSales[$codeCmmt])) {
+                $displayName = $codeCmmt;
+                if (!isset($worldSales[$displayName])) {
                     $budgetKey = strtoupper(str_replace(' ', '', $codeCmmtUpper));
-                    $worldSales[$codeCmmt] = ['sales' => 0, 'budget' => $budgets[$budgetKey] ?? 0, 'lastYearSales' => 0];
+                    $worldSales[$displayName] = ['sales' => 0, 'budget' => $budgets[$budgetKey] ?? 0, 'lastYearSales' => 0];
                 }
-                $worldSales[$codeCmmt]['lastYearSales'] += $totalTonLy;
+                $worldSales[$displayName]['lastYearSales'] += $totalTonLy;
             }
         }
 
@@ -187,22 +215,26 @@ class DashboardSalesController extends Controller
         foreach ($this->indonesiaSuperRegionKeys as $srKey) {
             if (isset($indonesiaSuperRegionSales[$srKey])) {
                 $totalIndonesiaSales += $indonesiaSuperRegionSales[$srKey]['sales'];
-                $totalIndonesiaBudget += $indonesiaSuperRegionSales[$srKey]['budget'];
+                $totalIndonesiaBudget += $indonesiaSuperRegionSales[$srKey]['budget']; 
                 $totalIndonesiaLastYearSales += $indonesiaSuperRegionSales[$srKey]['lastYearSales'];
             }
         }
 
         $indonesiaOverallBudgetKey = strtoupper("INDONESIA");
-        if (isset($budgets[$indonesiaOverallBudgetKey]) && $budgets[$indonesiaOverallBudgetKey] > 0) {
+        if (isset($budgets[$indonesiaOverallBudgetKey])) {
+
             $totalIndonesiaBudget = $budgets[$indonesiaOverallBudgetKey];
         }
-        
-        $worldSales["Indonesia"] = [ // Ensure "Indonesia" always exists in worldSales for map coloring and chart
+
+        $worldSales["Indonesia"] = [
             'sales' => $totalIndonesiaSales,
             'budget' => $totalIndonesiaBudget,
             'lastYearSales' => $totalIndonesiaLastYearSales
         ];
 
+        if (isset($worldSales['INDONESIA']) && array_key_exists('INDONESIA', $currentSalesData)) {
+            unset($worldSales['INDONESIA']);
+        }
 
         return response()->json([
             'worldSales' => $worldSales,

@@ -7,14 +7,12 @@
 
     <div class="">
         <div class="flex justify-end mb-3">
-            {{-- Tombol Import Excel akan membuka modal --}}
             <button type="button" class="btn btn-info" id="btnOpenImportModal">Import Excel</button>
             <button type="button" class="ml-2 btn btn-primary" id="btnOpenCreateModal">
                 Tambah Data
             </button>
         </div>
 
-        {{-- Tempat untuk menampilkan notifikasi global, termasuk dari session --}}
         <div id="alert-placeholder" class="mb-3">
             @if (session('success'))
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -46,7 +44,6 @@
                 </div>
             @endif
         </div>
-
 
         <div class="card mt-3">
             <div class="card-body">
@@ -81,7 +78,6 @@
         </div>
     </div>
 
-    {{-- Modal CRUD --}}
     <div id="budgetModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/30 backdrop-blur-sm">
         <div class="flex items-center justify-center min-h-screen px-4">
             <div class="bg-white rounded-lg shadow-xl w-full max-w-3xl relative">
@@ -117,15 +113,13 @@
         </div>
     </div>
 
-    {{-- Modal Import Excel --}}
     <div id="importExcelModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/30 backdrop-blur-sm">
         <div class="flex items-center justify-center min-h-screen px-4">
-            <div class="bg-white rounded-lg shadow-xl w-full max-w-lg relative"> {{-- max-w-lg untuk modal import --}}
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-lg relative">
                 <div class="flex items-center justify-between px-4 py-2 border-b">
                     <h5 class="text-xl font-semibold" id="importExcelModalLabel">Import Standard Budgets dari Excel</h5>
                     <button id="btnCloseImportModal" type="button" class="text-gray-600 hover:text-red-600 text-2xl">×</button>
                 </div>
-                {{-- Form ini akan submit secara normal, bukan AJAX --}}
                 <form action="{{ route('standard-budgets.import.excel') }}" method="POST" enctype="multipart/form-data" class="p-6">
                     @csrf
                     <div class="mb-4">
@@ -170,31 +164,28 @@
         </div>
     </div>
 
-
     @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
         $(document).ready(function() {
             const budgetModal = $('#budgetModal');
-            const importExcelModal = $('#importExcelModal'); // Modal baru
+            const importExcelModal = $('#importExcelModal'); 
 
             function showBudgetModal() { budgetModal.removeClass('hidden'); }
             function hideBudgetModal() { budgetModal.addClass('hidden'); }
             function showImportExcelModal() { importExcelModal.removeClass('hidden'); }
             function hideImportExcelModal() { importExcelModal.addClass('hidden'); }
 
-
             function clearValidationErrors() {
-                // Penamaan ID input di CRUD modal sudah diubah (cth: name_region_modal)
+
                 $('#budgetForm .form-input').removeClass('border-red-500');
                 $('#budgetForm .text-red-600').text('');
             }
 
-            // Fungsi notifikasi ini akan lebih banyak digunakan oleh AJAX CRUD
             function showAjaxNotification(message, type = 'success') {
                 const alertPlaceholder = $('#alert-placeholder');
-                // Hapus notifikasi lama dari AJAX sebelum menampilkan yang baru
+
                 alertPlaceholder.find('.ajax-notification').remove();
 
                 const alertDiv = $(
@@ -203,15 +194,13 @@
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>`
                 );
-                alertPlaceholder.append(alertDiv); // Append, jangan html() agar notif session tidak hilang
+                alertPlaceholder.append(alertDiv); 
                 setTimeout(() => alertDiv.alert('close'), 5000);
             }
 
-            // Auto-close notifikasi dari session (jika ada)
             $('#alert-placeholder .alert').not('.ajax-notification').delay(7000).slideUp(300, function() {
                 $(this).alert('close');
             });
-
 
             const table = $('#standardBudgetsTable').DataTable({
                 processing: true,
@@ -241,13 +230,12 @@
                 ]
             });
 
-            // CRUD Modal
             $('#btnOpenCreateModal').on('click', () => {
                 $('#budgetForm')[0].reset();
                 clearValidationErrors();
                 $('#budgetModalLabel').text('Tambah Standard Budget');
                 $('#budgetId').val('');
-                $('#year_modal').val(new Date().getFullYear()); // ID input tahun di modal: year_modal
+                $('#year_modal').val(new Date().getFullYear()); 
                 showBudgetModal();
             });
 
@@ -274,7 +262,7 @@
                         if (xhr.status === 422) {
                             const errors = xhr.responseJSON.errors;
                             $.each(errors, (key, value) => {
-                                // Sesuaikan dengan ID input di modal
+
                                 $('#' + key + '_modal').addClass('border-red-500');
                                 $('#' + key + '_error').text(value[0]);
                             });
@@ -290,12 +278,12 @@
 
             $('body').on('click', '.edit-btn', function() {
                 const id = $(this).data('id');
-                clearValidationErrors(); // Panggil ini sebelum mengisi form
+                clearValidationErrors(); 
                 $.get("{{ url('standard-budgets') }}/" + id + "/edit", function(data) {
                     $('#budgetId').val(data.id);
-                    $('#name_region_modal').val(data.name_region); // ID input name_region di modal
-                    $('#amount_modal').val(parseFloat(data.amount).toFixed(2)); // ID input amount di modal
-                    $('#year_modal').val(data.year); // ID input year di modal
+                    $('#name_region_modal').val(data.name_region); 
+                    $('#amount_modal').val(parseFloat(data.amount).toFixed(2)); 
+                    $('#year_modal').val(data.year); 
                     $('#budgetModalLabel').text('Edit Standard Budget');
                     showBudgetModal();
                 }).fail(xhr => {
@@ -304,16 +292,11 @@
                 });
             });
 
-
-            // Import Excel Modal
             $('#btnOpenImportModal').on('click', showImportExcelModal);
             $('#btnCloseImportModal, #btnCancelImportModal').on('click', hideImportExcelModal);
-            // Tidak ada AJAX untuk form import, submit biasa
 
-
-            // Delete
             $('body').on('click', '.delete-btn', function() {
-                // ... (kode delete tetap sama)
+
                 const id = $(this).data('id');
                 Swal.fire({
                     title: 'Anda yakin?',

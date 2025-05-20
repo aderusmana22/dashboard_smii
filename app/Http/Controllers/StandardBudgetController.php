@@ -34,10 +34,9 @@ class StandardBudgetController extends Controller
         }
 
         $years = StandardBudget::select('year')->distinct()->orderBy('year', 'desc')->pluck('year');
-        // Path view sudah benar jika file ada di resources/views/page/standard_budgets/index.blade.php
+
         return view('page.standard_budgets.index', compact('years'));
     }
-
 
     public function store(Request $request)
     {
@@ -87,11 +86,6 @@ class StandardBudgetController extends Controller
         }
     }
 
-    // public function showImportForm() // HAPUS METHOD INI
-    // {
-    //     // return view('standard_budgets.import_form'); // Tidak digunakan lagi
-    // }
-
 public function importExcel(Request $request){
         $request->validate([
             'excel_file' => 'required|mimes:xlsx,xls',
@@ -100,21 +94,19 @@ public function importExcel(Request $request){
         $file = $request->file('excel_file');
 
         try {
-            // Log import attempt
+
             Log::info('Starting Excel import for standard budgets');
-            
-            // Create import instance
+
             $import = new StandardBudgetsImport();
-            
-            // Import the file with explicit configuration
+
             Excel::import($import, $file);
 
             $failures = $import->failures();
 
             if (count($failures) > 0) {
-                // Log failures
+
                 Log::warning('Some rows failed during import: ' . count($failures) . ' failure(s)');
-                
+
                 return redirect()->route('standard-budgets.index')
                                  ->with('warning', 'Beberapa data berhasil diimport, namun ada beberapa yang gagal.')
                                  ->with('failures', $failures);
@@ -127,14 +119,14 @@ public function importExcel(Request $request){
         } catch (ValidationException $e) {
             $failures = $e->failures();
             Log::error('Excel validation exception: ' . $e->getMessage());
-            
+
             return redirect()->route('standard-budgets.index')
                              ->with('error', 'Gagal mengimport data. Ada kesalahan validasi pada file Excel.')
                              ->with('failures', $failures);
         } catch (\Exception $e) {
             Log::error('Excel import error: ' . $e->getMessage());
             Log::error($e->getTraceAsString());
-            
+
             return redirect()->route('standard-budgets.index')
                              ->with('error', 'Terjadi kesalahan saat mengimport file: ' . $e->getMessage());
         }

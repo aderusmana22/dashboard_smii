@@ -16,63 +16,58 @@
         {{-- Alert Placeholder for dynamic AJAX messages and session messages --}}
         <div id="alert-placeholder" class="mb-3">
             @if (session('success'))
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    {{ session('success') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
             @endif
             @if (session('error'))
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    {{ session('error') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                {{ session('error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
             @endif
             @if (session('warning')) {{-- General warning for import --}}
-                <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                    {{ session('warning') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                {{ session('warning') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
             @endif
             @if (session()->has('failures') && is_iterable(session()->get('failures')) && count(session()->get('failures')) > 0)
-               <div class="alert alert-danger alert-dismissible fade show" role="alert"> {{-- Changed to danger for more impact --}}
-                    <strong>Peringatan! Beberapa baris gagal diimport dari Excel:</strong>
-                    <ul class="list-disc pl-5 mt-2 mb-0" style="max-height: 200px; overflow-y: auto;">
-                        @foreach (session()->get('failures') as $failure)
-                            <li>
-                                Baris ke-{{ $failure->row() }}:
-                                {{ implode(', ', $failure->errors()) }}
-                                @if($failure->values())
-                                    (Nilai yang diberikan:
-                                    @foreach($failure->values() as $key => $value)
-                                        {{ $key }}: '{{ $value ?? 'Kosong' }}'{{ !$loop->last ? ',' : '' }}
-                                    @endforeach
-                                    )
-                                @endif
-                            </li>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert"> {{-- Changed to danger for more impact --}}
+                <strong>Peringatan! Beberapa baris gagal diimport dari Excel:</strong>
+                <ul class="list-disc pl-5 mt-2 mb-0" style="max-height: 200px; overflow-y: auto;">
+                    @foreach (session()->get('failures') as $failure)
+                    <li>
+                        Baris ke-{{ $failure->row() }}:
+                        {{ implode(', ', $failure->errors()) }}
+                        @if($failure->values())
+                        (Nilai yang diberikan:
+                        @foreach($failure->values() as $key => $value)
+                        {{ $key }}: '{{ $value ?? 'Kosong' }}'{{ !$loop->last ? ',' : '' }}
                         @endforeach
-                    </ul>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
+                        )
+                        @endif
+                    </li>
+                    @endforeach
+                </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
             @endif
         </div>
 
         <div class="card mt-3">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
-                    <div>
-                        <select id="year_filter" class="form-select w-auto d-inline-block">
-                            <option value="">Semua Tahun</option>
-                            @if(isset($years) && count($years) > 0)
-                                @foreach($years as $year)
-                                <option value="{{ $year }}">{{ $year }}</option>
-                                @endforeach
-                            @endif
-                        </select>
-                    </div>
+                    <select id="year_filter" class="form-select w-auto d-inline-block">
+                        <option value="">Semua Tahun</option>
+                        @if(isset($years) && count($years) > 0)
+                        @foreach($years as $year)
+                        <option value="{{ $year }}">{{ $year }}</option>
+                        @endforeach
+                        @endif
+                    </select>
                     <a href="{{ route('standard-budgets.download-sample') }}" class="btn btn-success">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
-                        </svg>
                         Download Template
                     </a>
                 </div>
@@ -157,7 +152,9 @@
                         <div class="overflow-x-auto">
                             <table class="w-full text-xs table-auto border border-gray-300 my-1">
                                 <thead class="bg-gray-100">
-                                    <tr><td colspan="3" class="border px-2 py-1 text-center font-semibold italic">Judul File Anda (Baris 1)</td></tr>
+                                    <tr>
+                                        <td colspan="3" class="border px-2 py-1 text-center font-semibold italic">Judul File Anda (Baris 1)</td>
+                                    </tr>
                                     <tr>
                                         <th class="border px-2 py-1">name_region</th>
                                         <th class="border px-2 py-1">amount</th>
@@ -170,7 +167,7 @@
                                         <td class="border px-2 py-1 text-right">1500000.75</td>
                                         <td class="border px-2 py-1 text-center">2023</td>
                                     </tr>
-                                     <tr>
+                                    <tr>
                                         <td class="border px-2 py-1">Region 2B / USA</td>
                                         <td class="border px-2 py-1 text-right">250000</td>
                                         <td class="border px-2 py-1 text-center">2024</td>
@@ -178,7 +175,6 @@
                                 </tbody>
                             </table>
                         </div>
-                        <a href="{{ route('standard-budgets.download-sample') }}" class="text-sm text-blue-600 hover:underline">Download Template Excel</a>
                     </div>
 
                     <div class="mb-4">
@@ -192,9 +188,7 @@
                     <div class="flex justify-end mt-6 space-x-2 border-t pt-4">
                         <button type="button" class="btn btn-light" id="btnCancelImportModal">Batal</button>
                         <button type="submit" class="btn btn-success" id="btnSubmitImport">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM10 2a1 1 0 011 1v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 111.414-1.414L9 10.586V3a1 1 0 011-1z" clip-rule="evenodd" />
-                            </svg>
+
                             Import Data
                         </button>
                     </div>
@@ -212,10 +206,25 @@
             const importExcelModal = $('#importExcelModal');
             const csrfToken = $('meta[name="csrf-token"]').attr('content');
 
-            function showBudgetModal() { budgetModal.removeClass('hidden'); $('body').addClass('overflow-hidden');}
-            function hideBudgetModal() { budgetModal.addClass('hidden'); $('body').removeClass('overflow-hidden');}
-            function showImportExcelModal() { importExcelModal.removeClass('hidden'); $('body').addClass('overflow-hidden');}
-            function hideImportExcelModal() { importExcelModal.addClass('hidden'); $('body').removeClass('overflow-hidden');}
+            function showBudgetModal() {
+                budgetModal.removeClass('hidden');
+                $('body').addClass('overflow-hidden');
+            }
+
+            function hideBudgetModal() {
+                budgetModal.addClass('hidden');
+                $('body').removeClass('overflow-hidden');
+            }
+
+            function showImportExcelModal() {
+                importExcelModal.removeClass('hidden');
+                $('body').addClass('overflow-hidden');
+            }
+
+            function hideImportExcelModal() {
+                importExcelModal.addClass('hidden');
+                $('body').removeClass('overflow-hidden');
+            }
 
             function clearValidationErrors(formId = 'budgetForm') {
                 $('#' + formId + ' .form-input').removeClass('border-red-500 is-invalid');
@@ -224,13 +233,13 @@
             }
 
             function displayValidationErrors(errors, formId = 'budgetForm') {
-                 $.each(errors, (key, value) => {
+                $.each(errors, (key, value) => {
                     const inputField = $('#' + key + '_modal, #' + key); // Handles _modal suffix and direct ID
                     inputField.addClass('border-red-500 is-invalid');
                     // Ensure the error div exists or create it
                     let errorDiv = $('#' + key + '_error');
                     if (errorDiv.length === 0) {
-                         // Create a generic error display if a specific one isn't found
+                        // Create a generic error display if a specific one isn't found
                         inputField.after('<div class="text-red-500 text-xs mt-1 invalid-feedback" id="' + key + '_error">' + value[0] + '</div>');
                     } else {
                         errorDiv.text(value[0]);
@@ -250,9 +259,13 @@
                     </div>`
                 );
                 alertPlaceholder.prepend(alertDiv); // Prepend to show at top
-                $('html, body').animate({ scrollTop: alertPlaceholder.offset().top - 20 }, 'smooth'); // Scroll to message
+                $('html, body').animate({
+                    scrollTop: alertPlaceholder.offset().top - 20
+                }, 'smooth'); // Scroll to message
                 setTimeout(() => {
-                    alertDiv.fadeOut(500, function() { $(this).remove(); });
+                    alertDiv.fadeOut(500, function() {
+                        $(this).remove();
+                    });
                 }, 7000);
             }
 
@@ -260,9 +273,9 @@
             $('#alert-placeholder .alert').not('.ajax-notification').not('.alert-danger').delay(7000).slideUp(300, function() {
                 $(this).alert('close');
             });
-             // Keep danger alerts (like import failures) visible longer or until manually closed
+            // Keep danger alerts (like import failures) visible longer or until manually closed
             $('#alert-placeholder .alert-danger').not('.ajax-notification').delay(20000).slideUp(300, function() {
-                 $(this).alert('close');
+                $(this).alert('close');
             });
 
 
@@ -277,7 +290,7 @@
                         d.year = $('#year_filter').val();
                         // d.search_term = $('#customSearchInput').val(); // Example if you add custom search
                     },
-                    error: function (xhr, error, code) {
+                    error: function(xhr, error, code) {
                         console.error("DataTables AJAX error: ", xhr.responseText);
                         showAjaxNotification('Gagal memuat data tabel. Coba lagi nanti.', 'danger');
                     }
@@ -298,11 +311,21 @@
                     },
                     processing: '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Memuat...</span></div> <span class="ms-2">Memuat data...</span>'
                 },
-                columns: [
-                    { data: 'DT_RowIndex', name: 'DT_RowIndex', orderable: false, searchable: false, className: 'text-center' },
-                    { data: 'name_region', name: 'name_region' },
+                columns: [{
+                        data: 'DT_RowIndex',
+                        name: 'DT_RowIndex',
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-center'
+                    },
                     {
-                        data: 'amount', name: 'amount', className: 'text-right',
+                        data: 'name_region',
+                        name: 'name_region'
+                    },
+                    {
+                        data: 'amount',
+                        name: 'amount',
+                        className: 'text-right',
                         render: function(data, type, row) {
                             // Data from server is already formatted as string "1.234,56"
                             // For sorting, DataTables might need raw number.
@@ -311,10 +334,23 @@
                             return data; // Assuming 'amount' is already formatted from controller editColumn
                         }
                     },
-                    { data: 'year', name: 'year', className: 'text-center' },
-                    { data: 'action', name: 'action', orderable: false, searchable: false, className: 'text-center' }
+                    {
+                        data: 'year',
+                        name: 'year',
+                        className: 'text-center'
+                    },
+                    {
+                        data: 'action',
+                        name: 'action',
+                        orderable: false,
+                        searchable: false,
+                        className: 'text-center'
+                    }
                 ],
-                order: [[3, 'desc'], [1, 'asc']] // Default sort by year desc, then name_region asc
+                order: [
+                    [3, 'desc'],
+                    [1, 'asc']
+                ] // Default sort by year desc, then name_region asc
             });
 
             $('#btnOpenCreateModal').on('click', () => {
@@ -342,7 +378,9 @@
                     url: url,
                     type: method,
                     data: $(this).serialize(),
-                    headers: { 'X-CSRF-TOKEN': csrfToken },
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken
+                    },
                     success: function(response) {
                         hideBudgetModal();
                         table.ajax.reload(null, false); // false to keep current page

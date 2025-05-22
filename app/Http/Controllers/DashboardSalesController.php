@@ -10,6 +10,7 @@ use Carbon\CarbonPeriod;
 
 class DashboardSalesController extends Controller
 {
+    // ... (definisi property $countryMapping, $indonesiaSuperRegionKeys, dll. tetap sama) ...
     protected $countryMapping = [
         "TAIWAN" => "Taiwan", "PHILLIPPINES" => "Philippines", "MALAYSIA" => "Malaysia",
         "MYANMAR" => "Myanmar", "EXPORT AUSTRALIA" => "Australia", "SRILANKA" => "Sri Lanka",
@@ -28,8 +29,6 @@ class DashboardSalesController extends Controller
 
     protected $rawCodeCmmtToSuperRegionKeyMap;
 
-    // Display Name (for UI) => ['lat', 'lng', 'db_key (exact value in ad_city, UPPERCASE)']
-    // Ensure db_key is accurate and matches what's in your SalesTransaction ad_city column
     protected $indonesiaCityData = [
         "Tangerang Selatan" => ['lat' => -6.2887, 'lng' => 106.7194, 'db_key' => "TANGERANG SELATAN"], "Bali" => ['lat' => -8.3405, 'lng' => 115.0919, 'db_key' => "BALI"],
         "Denpasar" => ['lat' => -8.6705, 'lng' => 115.2126, 'db_key' => "DENPASAR"], "Bogor" => ['lat' => -6.5950, 'lng' => 106.8060, 'db_key' => "BOGOR"],
@@ -37,7 +36,7 @@ class DashboardSalesController extends Controller
         "Jakarta Pusat" => ['lat' => -6.1751, 'lng' => 106.8272, 'db_key' => "JAKARTA PUSAT"], "Jakarta Utara" => ['lat' => -6.1384, 'lng' => 106.8639, 'db_key' => "JAKARTA UTARA"],
         "Jakarta Barat" => ['lat' => -6.1676, 'lng' => 106.7663, 'db_key' => "JAKARTA BARAT"], "Jakarta Selatan" => ['lat' => -6.2615, 'lng' => 106.8106, 'db_key' => "JAKARTA SELATAN"],
         "Adm. Jakarta Selatan" => ['lat' => -6.2615, 'lng' => 106.8106, 'db_key' => "ADM. JAKARTA SELATAN"], "Jakarta Timur" => ['lat' => -6.2259, 'lng' => 106.9004, 'db_key' => "JAKARTA TIMUR"],
-        "Bekasi" => ['lat' => -6.2383, 'lng' => 106.9756, 'db_key' => "BEKASI"], "Bekas" => ['lat' => -6.2383, 'lng' => 106.9756, 'db_key' => "BEKAS"], // "BEKAS" might be a data variant for BEKASI
+        "Bekasi" => ['lat' => -6.2383, 'lng' => 106.9756, 'db_key' => "BEKASI"], "Bekas" => ['lat' => -6.2383, 'lng' => 106.9756, 'db_key' => "BEKAS"],
         "Serang" => ['lat' => -6.1181, 'lng' => 106.1558, 'db_key' => "SERANG"], "Surabaya" => ['lat' => -7.2575, 'lng' => 112.7521, 'db_key' => "SURABAYA"],
         "Bandung" => ['lat' => -6.9175, 'lng' => 107.6191, 'db_key' => "BANDUNG"], "Medan" => ['lat' => 3.5952, 'lng' => 98.6722, 'db_key' => "MEDAN"],
         "Palembang" => ['lat' => -2.9761, 'lng' => 104.7754, 'db_key' => "PALEMBANG"], "Makassar" => ['lat' => -5.1477, 'lng' => 119.4327, 'db_key' => "MAKASSAR"],
@@ -87,32 +86,30 @@ class DashboardSalesController extends Controller
         "COLOMBO" => ['lat' => 6.9271, 'lng' => 79.8612, 'country_code_cmmt_key' => "SRILANKA", 'display_name' => "Colombo"],
         "PYONG YANG" => ['lat' => 39.0392, 'lng' => 125.7625, 'country_code_cmmt_key' => "NORTH KOREA", 'display_name' => "Pyongyang"],
         "TAIPEI" => ['lat' => 25.0330, 'lng' => 121.5654, 'country_code_cmmt_key' => "TAIWAN", 'display_name' => "Taipei"],
-        "HONGKONG" => ['lat' => 22.3193, 'lng' => 114.1694, 'country_code_cmmt_key' => "HONGKONG", 'display_name' => "Hong Kong"],
+        "HONGKONG CITY" => ['lat' => 22.3193, 'lng' => 114.1694, 'country_code_cmmt_key' => "HONGKONG", 'display_name' => "Hong Kong"],
         "SEOUL" => ['lat' => 37.5665, 'lng' => 126.9780, 'country_code_cmmt_key' => "SOUTH KOREA", 'display_name' => "Seoul"],
-        "WELLINGTON" => ['lat' => -41.2865, 'lng' => 174.7762, 'country_code_cmmt_key' => "EXPORT AUSTRALIA", 'display_name' => "Wellington"], // Assuming EXPORT AUSTRALIA means New Zealand for Wellington
+        "WELLINGTON" => ['lat' => -41.2865, 'lng' => 174.7762, 'country_code_cmmt_key' => "EXPORT AUSTRALIA", 'display_name' => "Wellington"],
     ];
 
     protected function getCitiesForSuperRegion(string $superRegionKey): array
     {
-        // Ensure city names here are the UPPERCASE DB_KEYs (exact values from ad_city)
         $superRegionDefinitions = [
-            "REGION1A" => ["PONTIANAK", "KALIMANTAN BARAT", "SERANG", "TANGERANG", "LAMPUNG"], // LAMPUNG is a province, ensure ad_city has this value if intended
+            "REGION1A" => ["PONTIANAK", "KALIMANTAN BARAT", "SERANG", "TANGERANG", "LAMPUNG"],
             "REGION1B" => ["BANDUNG", "TASIKMALAYA", "CIREBON"],
             "REGION1C" => ["JAKARTA TIMUR", "JAKARTA PUSAT", "JAKARTA UTARA", "JAKARTA BARAT", "JAKARTA SELATAN", "JAKARTA", "DKI JAKARTA", "DKI JAKARTA RAYA", "ADM. JAKARTA SELATAN", "DEPOK"],
             "REGION1D" => ["KARAWANG", "BEKASI", "BOGOR", "BEKAS"],
             "REGION2A" => ["SEMARANG", "KUDUS", "TEGAL", "PEKALONGAN", "BOJONEGORO"],
-            "REGION2B" => ["MALANG", "SURABAYA", "JEMBER", "MADURA", "BANYUWANGI", "PASURUAN", "SIDOARJO", "GRESIK", "PROBOLINGGO", "KEDIRI"], // MADURA is an island, check ad_city values
-            "REGION2C" => ["BALI", "FLORES", "KUPANG", "LOMBOK", "MATARAM", "ALOK", "DENPASAR"], // FLORES, LOMBOK are islands
-            "REGION2D" => ["SOLO", "PURWOKERTO", "MAGELANG", "YOGYAKARTA", "D.I.YOGYAKARTA", "DI YOGYAKARTA", "SLEMAN", "TULUNGAGUNG", "TULUNG AGUNG", "MADIUN"], // SOLO is a common name for SURAKARTA
-            "REGION3A" => ["PALEMBANG", "BANGKA BELITUNG", "PANGKALPINANG", "JAMBI", "MUARA BUNGO"], // BANGKA BELITUNG is a province
+            "REGION2B" => ["MALANG", "SURABAYA", "JEMBER", "MADURA", "BANYUWANGI", "PASURUAN", "SIDOARJO", "GRESIK", "PROBOLINGGO", "KEDIRI"],
+            "REGION2C" => ["BALI", "FLORES", "KUPANG", "LOMBOK", "MATARAM", "ALOK", "DENPASAR"],
+            "REGION2D" => ["SOLO", "PURWOKERTO", "MAGELANG", "YOGYAKARTA", "D.I.YOGYAKARTA", "DI YOGYAKARTA", "SLEMAN", "TULUNGAGUNG", "TULUNG AGUNG", "MADIUN"],
+            "REGION3A" => ["PALEMBANG", "BANGKA BELITUNG", "PANGKALPINANG", "JAMBI", "MUARA BUNGO"],
             "REGION3B" => ["PADANG", "PEKANBARU", "PEKAN BARU", "BATAM", "DURI", "BINTAN"],
-            "REGION3C" => ["MEDAN", "ACEH", "BANDA ACEH", "NIAS", "DELI SERDANG", "TEBING TINGGI", "KABAN JAHE KARO"], // ACEH is a province, NIAS an island
-            "REGION4A" => ["SORONG", "GORONTALO", "TERNATE", "JAYAPURA", "MANADO", "MANOKWARI", "MANOKWARI PAPUA", "TIMIKA", "MERAUKE", "AMBON", "PAPUA BARAT"], // PAPUA BARAT is a province
+            "REGION3C" => ["MEDAN", "ACEH", "BANDA ACEH", "NIAS", "DELI SERDANG", "TEBING TINGGI", "KABAN JAHE KARO"],
+            "REGION4A" => ["SORONG", "GORONTALO", "TERNATE", "JAYAPURA", "MANADO", "MANOKWARI", "MANOKWARI PAPUA", "TIMIKA", "MERAUKE", "AMBON", "PAPUA BARAT"],
             "REGION4B" => ["TARAKAN", "PALU", "SAMARINDA", "BAUBAU", "BANJARMASIN", "PALANGKARAYA", "SAMPIT", "PANGKALANBUN", "MAKASSAR", "KENDARI", "BALIKPAPAN", "KOTAWARINGIN"],
         ];
         return $superRegionDefinitions[$superRegionKey] ?? [];
     }
-
 
     public function __construct()
     {
@@ -131,8 +128,7 @@ class DashboardSalesController extends Controller
         $minDateIso = $minDateDb ? Carbon::parse($minDateDb)->format('Y-m-d') : $today->format('Y-m-d');
         $maxDateIsoForPicker = $today->format('Y-m-d');
         
-        // For default dates, you might want to set a sensible range, e.g., start of current month to today
-        $defaultStartDateIso = $today->copy()->startOfMonth()->format('Y-m-d');
+        $defaultStartDateIso = $today->format('Y-m-d');
         $defaultEndDateIso = $today->format('Y-m-d');
 
         return [
@@ -148,7 +144,6 @@ class DashboardSalesController extends Controller
         $dateRanges = $this->getAvailableDateRanges();
         $dbBrands = SalesTransaction::distinct()->orderBy('pl_desc')->pluck('pl_desc')->filter()->sort()->values()->all();
         
-        // Standardize city and code_cmmt names from DB for filters
         $dbCities = SalesTransaction::distinct()->pluck('ad_city')
             ->filter()
             ->map(fn($city) => strtoupper(trim($city)))
@@ -182,120 +177,203 @@ class DashboardSalesController extends Controller
         $filterCodeCmmt = $request->input('code_cmmt') ? strtoupper(trim($request->input('code_cmmt'))) : null;
         $filterCityDbKey = $request->input('city') ? strtoupper(trim($request->input('city'))) : null;
 
-        $period = CarbonPeriod::create($startDate, $endDate); $yearsInRange = [];
-        foreach ($period as $date) $yearsInRange[] = $date->year; $uniqueYears = array_unique($yearsInRange);
+        // --- Base Query Builder ---
+        $baseQuery = fn($start, $end) => SalesTransaction::query()
+            ->whereBetween('tr_effdate', [$start->format('Y-m-d'), $end->format('Y-m-d')])
+            ->when($filterBrand && $filterBrand !== 'ALL', fn($q) => $q->where('pl_desc', $filterBrand))
+            ->when($filterCodeCmmt && $filterCodeCmmt !== 'ALL', fn($q) => $q->where(DB::raw('UPPER(TRIM(code_cmmt))'), $filterCodeCmmt))
+            ->when($filterCityDbKey && $filterCityDbKey !== 'ALL', fn($q) => $q->where(DB::raw('UPPER(TRIM(ad_city))'), $filterCityDbKey));
 
-        $masterFilteredQuery = SalesTransaction::query()->whereBetween('tr_effdate', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]);
-        if ($filterBrand && $filterBrand !== 'ALL') $masterFilteredQuery->where('pl_desc', $filterBrand);
+        // --- Get Aggregated Sales Data (Current Period) ---
+        $aggregatedSales = $baseQuery($startDate, $endDate)
+            ->select(
+                DB::raw('UPPER(TRIM(code_cmmt)) as code_cmmt_upper'),
+                DB::raw('UPPER(TRIM(ad_city)) as ad_city_upper'), // Untuk city markers
+                DB::raw('SUM(tr_ton) as total_sales')
+            )
+            ->groupBy('code_cmmt_upper', 'ad_city_upper') // Group by city juga untuk city markers
+            ->get();
+
+        // --- Get Aggregated Sales Data (Last Year Period) ---
+        $lastYearStartDate = $startDate->copy()->subYear();
+        $lastYearEndDate = $endDate->copy()->subYear();
+        $aggregatedSalesLy = $baseQuery($lastYearStartDate, $lastYearEndDate)
+            ->select(
+                DB::raw('UPPER(TRIM(code_cmmt)) as code_cmmt_upper'),
+                // ad_city tidak perlu diagregat di sini jika hanya untuk total LY per region/country
+                DB::raw('SUM(tr_ton) as total_sales_ly')
+            )
+            ->groupBy('code_cmmt_upper')
+            ->get()
+            ->keyBy('code_cmmt_upper'); // Key by code_cmmt_upper for easier lookup
+
+        // --- Get Budgets ---
+        $period = CarbonPeriod::create($startDate, $endDate);
+        $uniqueYears = array_unique(array_map(fn($date) => $date->year, iterator_to_array($period)));
         
+        $rawBudgetsQuery = DB::table('standard_budgets')->whereIn('year', $uniqueYears)->select('name_region', 'amount')->get();
+        $budgets = [];
+        foreach ($rawBudgetsQuery as $be) {
+            $rk = strtoupper(str_replace(' ', '', trim($be->name_region)));
+            $budgets[$rk] = ($budgets[$rk] ?? 0) + (float)$be->amount;
+        }
+
+        // --- Initialize Sales Arrays ---
+        $worldSales = [];
+        $indonesiaSuperRegionSales = [];
+        foreach ($this->indonesiaSuperRegionKeys as $srk) {
+            $indonesiaSuperRegionSales[$srk] = ['sales' => 0, 'budget' => $budgets[$srk] ?? 0, 'lastYearSales' => 0];
+        }
+        // Inisialisasi worldSales dari countryMapping dan juga code_cmmt unik dari data sales (jika ada negara baru)
+        $allCountryDbKeys = array_unique(array_merge(
+            array_keys($this->countryMapping),
+            $aggregatedSales->pluck('code_cmmt_upper')->filter(fn($cc) => 
+                !in_array($cc, $this->indonesiaSuperRegionKeys) && 
+                !isset($this->rawCodeCmmtToSuperRegionKeyMap[$cc]) && 
+                $cc !== 'INDONESIA'
+            )->all(),
+            $aggregatedSalesLy->pluck('code_cmmt_upper')->filter(fn($cc) => 
+                !in_array($cc, $this->indonesiaSuperRegionKeys) && 
+                !isset($this->rawCodeCmmtToSuperRegionKeyMap[$cc]) && 
+                $cc !== 'INDONESIA'
+            )->all()
+        ));
+
+        foreach ($allCountryDbKeys as $rawDbK) {
+            $tName = $this->countryMapping[$rawDbK] ?? $rawDbK; // Display name
+            $budgetKey = strtoupper(str_replace(' ', '', $rawDbK));
+            if($budgetKey === "UNITEDSTATESOFAMERICA") $budgetKey = "UNITEDSTATES";
+
+            $worldSales[$tName] = [
+                'sales' => 0,
+                'budget' => $budgets[$budgetKey] ?? 0,
+                'lastYearSales' => 0
+            ];
+        }
+        if (!isset($worldSales["Indonesia"])) { // Pastikan Indonesia ada
+             $worldSales["Indonesia"] = ['sales' => 0, 'budget' => $budgets[strtoupper("INDONESIA")] ?? 0, 'lastYearSales' => 0];
+        }
+
+
+        // --- Process Aggregated Sales (Current Period) ---
+        // Buat lookup untuk sales per kota dari aggregatedSales
+        $citySalesAggregation = $aggregatedSales->groupBy('ad_city_upper')
+                                               ->map(fn($group) => $group->sum('total_sales'));
+
+        foreach ($aggregatedSales as $aggSale) {
+            $codeCmmtUp = $aggSale->code_cmmt_upper;
+            $totalTon = (float)$aggSale->total_sales;
+
+            $srk = $this->rawCodeCmmtToSuperRegionKeyMap[$codeCmmtUp] ?? (in_array($codeCmmtUp, $this->indonesiaSuperRegionKeys) ? $codeCmmtUp : null);
+
+            if ($srk && isset($indonesiaSuperRegionSales[$srk])) {
+                $indonesiaSuperRegionSales[$srk]['sales'] += $totalTon;
+            } elseif (isset($this->countryMapping[$codeCmmtUp])) {
+                $sName = $this->countryMapping[$codeCmmtUp];
+                if (isset($worldSales[$sName])) $worldSales[$sName]['sales'] += $totalTon;
+            } elseif ($codeCmmtUp !== 'INDONESIA' && !isset($this->rawCodeCmmtToSuperRegionKeyMap[$codeCmmtUp]) && !in_array($codeCmmtUp, $this->indonesiaSuperRegionKeys)) {
+                // Negara tidak di mapping
+                $displayName = $codeCmmtUp;
+                if(isset($worldSales[$displayName])) $worldSales[$displayName]['sales'] += $totalTon;
+            }
+        }
+        // Hitung total sales Indonesia dari super regions
+        $totalIdnSales = 0; foreach($indonesiaSuperRegionSales as $data) $totalIdnSales += $data['sales'];
+        if(isset($worldSales["Indonesia"])) $worldSales["Indonesia"]['sales'] = $totalIdnSales;
+
+
+        // --- Process Aggregated Sales (Last Year Period) ---
+        foreach ($aggregatedSalesLy as $codeCmmtUp => $aggSaleLy) {
+            $totalTonLy = (float)$aggSaleLy->total_sales_ly;
+            $srk = $this->rawCodeCmmtToSuperRegionKeyMap[$codeCmmtUp] ?? (in_array($codeCmmtUp, $this->indonesiaSuperRegionKeys) ? $codeCmmtUp : null);
+
+            if ($srk && isset($indonesiaSuperRegionSales[$srk])) {
+                $indonesiaSuperRegionSales[$srk]['lastYearSales'] += $totalTonLy;
+            } elseif (isset($this->countryMapping[$codeCmmtUp])) {
+                $sName = $this->countryMapping[$codeCmmtUp];
+                if (isset($worldSales[$sName])) $worldSales[$sName]['lastYearSales'] += $totalTonLy;
+            } elseif ($codeCmmtUp !== 'INDONESIA' && !isset($this->rawCodeCmmtToSuperRegionKeyMap[$codeCmmtUp]) && !in_array($codeCmmtUp, $this->indonesiaSuperRegionKeys)) {
+                 $displayName = $codeCmmtUp;
+                if(isset($worldSales[$displayName])) $worldSales[$displayName]['lastYearSales'] += $totalTonLy;
+            }
+        }
+        $totalIdnLySales = 0; foreach($indonesiaSuperRegionSales as $data) $totalIdnLySales += $data['lastYearSales'];
+        if(isset($worldSales["Indonesia"])) $worldSales["Indonesia"]['lastYearSales'] = $totalIdnLySales;
+
+
+        // --- Prepare City Markers ---
+        $cityMarkers = [];
+        $internationalCityMarkers = [];
+
         $isIndonesianSuperRegionFilter = false;
         $normalizedSrKeyForFilter = null;
-
         if ($filterCodeCmmt && $filterCodeCmmt !== 'ALL') {
-            $masterFilteredQuery->where(DB::raw('UPPER(TRIM(code_cmmt))'), $filterCodeCmmt);
-            // Use the direct filterCodeCmmt if it's a super region key, otherwise check mapping.
-            // This assumes filterCodeCmmt might already be in the "REGION1A" format from the JS filter.
-            if (in_array($filterCodeCmmt, $this->indonesiaSuperRegionKeys)) {
-                $normalizedSrKeyForFilter = $filterCodeCmmt;
-            } else {
-                $normalizedSrKeyForFilter = $this->rawCodeCmmtToSuperRegionKeyMap[$filterCodeCmmt] ?? $filterCodeCmmt;
-            }
-            
-            if (in_array($normalizedSrKeyForFilter, $this->indonesiaSuperRegionKeys)) {
+            $normalizedSrKeyForFilter = $this->rawCodeCmmtToSuperRegionKeyMap[$filterCodeCmmt] ??
+                                       (in_array($filterCodeCmmt, $this->indonesiaSuperRegionKeys) ? $filterCodeCmmt : null);
+            if ($normalizedSrKeyForFilter && in_array($normalizedSrKeyForFilter, $this->indonesiaSuperRegionKeys)) {
                 $isIndonesianSuperRegionFilter = true;
             }
         }
-        if ($filterCityDbKey && $filterCityDbKey !== 'ALL') $masterFilteredQuery->where(DB::raw('UPPER(TRIM(ad_city))'), $filterCityDbKey);
-        $filteredTransactions = (clone $masterFilteredQuery)->select('code_cmmt', 'ad_city', 'tr_ton', 'ad_country')->get();
-
-        $lastYearStartDate = $startDate->copy()->subYear()->format('Y-m-d'); $lastYearEndDate = $endDate->copy()->subYear()->format('Y-m-d');
-        $masterFilteredLyQuery = SalesTransaction::query()->whereBetween('tr_effdate', [$lastYearStartDate, $lastYearEndDate]);
-        if ($filterBrand && $filterBrand !== 'ALL') $masterFilteredLyQuery->where('pl_desc', $filterBrand);
-        if ($filterCodeCmmt && $filterCodeCmmt !== 'ALL') $masterFilteredLyQuery->where(DB::raw('UPPER(TRIM(code_cmmt))'), $filterCodeCmmt);
-        if ($filterCityDbKey && $filterCityDbKey !== 'ALL') $masterFilteredLyQuery->where(DB::raw('UPPER(TRIM(ad_city))'), $filterCityDbKey);
-        $filteredLyTransactions = (clone $masterFilteredLyQuery)->select('code_cmmt', 'ad_city', 'tr_ton', 'ad_country')->get();
-
-        $rawBudgetsQuery = DB::table('standard_budgets')->whereIn('year', $uniqueYears)->select('name_region', 'amount')->get();
-        $budgets = []; foreach ($rawBudgetsQuery as $be) { $rk = strtoupper(str_replace(' ', '', trim($be->name_region))); $budgets[$rk] = ($budgets[$rk] ?? 0) + (float)$be->amount; }
-
-        $worldSales = []; $indonesiaSuperRegionSales = [];
-        foreach ($this->indonesiaSuperRegionKeys as $srk) $indonesiaSuperRegionSales[$srk] = ['sales' => 0, 'budget' => $budgets[$srk] ?? 0, 'lastYearSales' => 0];
-        foreach ($this->countryMapping as $rawDbK => $tName) { $bK = strtoupper(str_replace(' ','',$tName)); if($bK==="UNITEDSTATESOFAMERICA") $bK="UNITEDSTATES"; $aBK = strtoupper(str_replace(' ','',$rawDbK)); if($aBK==="UNITEDSTATESOFAMERICA") $aBK="UNITEDSTATES"; $worldSales[$tName] = ['sales'=>0,'budget'=>$budgets[$bK]??($budgets[$aBK]??0),'lastYearSales'=>0]; }
-        $worldSales["Indonesia"] = ['sales' => 0, 'budget' => $budgets[strtoupper("INDONESIA")] ?? ($budgets[strtoupper(str_replace(' ', '', "INDONESIA"))] ?? 0), 'lastYearSales' => 0];
-
-
-        foreach ($filteredTransactions as $tx) {
-            $codeCmmtUp = strtoupper(trim($tx->code_cmmt)); $totalTon = (float)$tx->tr_ton; 
-            $srk = $this->rawCodeCmmtToSuperRegionKeyMap[$codeCmmtUp] ?? ($this->indonesiaSuperRegionKeys[array_search($codeCmmtUp, $this->indonesiaSuperRegionKeys)] ?? null);
-
-            if ($srk && isset($indonesiaSuperRegionSales[$srk])) $indonesiaSuperRegionSales[$srk]['sales'] += $totalTon;
-            elseif (isset($this->countryMapping[$codeCmmtUp])) { $sName = $this->countryMapping[$codeCmmtUp]; if(isset($worldSales[$sName])) $worldSales[$sName]['sales'] += $totalTon; }
-            elseif ($codeCmmtUp !== 'INDONESIA' && !isset($this->rawCodeCmmtToSuperRegionKeyMap[$codeCmmtUp]) && !in_array($codeCmmtUp, $this->indonesiaSuperRegionKeys)) { 
-                $dName = $tx->code_cmmt; // Use original casing if not in mappings for display
-                if(!isset($worldSales[$dName])){$bK=strtoupper(str_replace(' ','',$codeCmmtUp)); $worldSales[$dName]=['sales'=>0,'budget'=>$budgets[$bK]??0,'lastYearSales'=>0];} 
-                $worldSales[$dName]['sales']+=$totalTon; 
-            }
-        }
-        $totalIdnSales = 0; foreach($indonesiaSuperRegionSales as $d) $totalIdnSales+=$d['sales']; if(isset($worldSales["Indonesia"])) $worldSales["Indonesia"]['sales']=$totalIdnSales;
-
-        foreach ($filteredLyTransactions as $tx) {
-            $codeCmmtUp = strtoupper(trim($tx->code_cmmt)); $totalTonLy = (float)$tx->tr_ton; 
-            $srk = $this->rawCodeCmmtToSuperRegionKeyMap[$codeCmmtUp] ?? ($this->indonesiaSuperRegionKeys[array_search($codeCmmtUp, $this->indonesiaSuperRegionKeys)] ?? null);
-
-            if ($srk && isset($indonesiaSuperRegionSales[$srk])) $indonesiaSuperRegionSales[$srk]['lastYearSales'] += $totalTonLy;
-            elseif (isset($this->countryMapping[$codeCmmtUp])) { $sName = $this->countryMapping[$codeCmmtUp]; if(isset($worldSales[$sName])) $worldSales[$sName]['lastYearSales'] += $totalTonLy; }
-            elseif ($codeCmmtUp !== 'INDONESIA' && !isset($this->rawCodeCmmtToSuperRegionKeyMap[$codeCmmtUp]) && !in_array($codeCmmtUp, $this->indonesiaSuperRegionKeys)) { 
-                $dName = $tx->code_cmmt; 
-                if(!isset($worldSales[$dName])){$bK=strtoupper(str_replace(' ','',$codeCmmtUp)); $worldSales[$dName]=['sales'=>0,'budget'=>$budgets[$bK]??0,'lastYearSales'=>0];} 
-                $worldSales[$dName]['lastYearSales']+=$totalTonLy; 
-            }
-        }
-        $totalIdnLySales = 0; foreach($indonesiaSuperRegionSales as $d) $totalIdnLySales+=$d['lastYearSales']; if(isset($worldSales["Indonesia"])) $worldSales["Indonesia"]['lastYearSales']=$totalIdnLySales;
-
-        $cityMarkers = []; $internationalCityMarkers = [];
-        $citySalesAggregation = collect($filteredTransactions)->groupBy(fn($item) => strtoupper(trim($item->ad_city)))->map(fn($group) => $group->sum('tr_ton'));
-
+        
         $allowedIndonesianCitiesForRegionFilter = null;
         if ($isIndonesianSuperRegionFilter && $normalizedSrKeyForFilter) {
             $allowedIndonesianCitiesForRegionFilter = $this->getCitiesForSuperRegion($normalizedSrKeyForFilter);
         }
 
+        // Loop untuk kota Indonesia
         foreach ($this->indonesiaCityData as $displayName => $cityInfo) {
-            $dbKey = strtoupper(trim($cityInfo['db_key'])); $sales = (float)($citySalesAggregation->get($dbKey, 0));
-            
+            $dbKey = strtoupper(trim($cityInfo['db_key']));
+            $sales = (float)($citySalesAggregation->get($dbKey, 0));
+
             $passesRegionFilter = true;
-            if ($isIndonesianSuperRegionFilter) { 
+            if ($isIndonesianSuperRegionFilter) {
                 $passesRegionFilter = $allowedIndonesianCitiesForRegionFilter !== null && in_array($dbKey, $allowedIndonesianCitiesForRegionFilter);
                  if ($allowedIndonesianCitiesForRegionFilter === null && ($normalizedSrKeyForFilter === "KEYACCOUNT" || $normalizedSrKeyForFilter === "COMMERCIAL")){
-                    $passesRegionFilter = true; 
+                    $passesRegionFilter = true;
                  }
             } elseif ($filterCodeCmmt && $filterCodeCmmt !== 'ALL' && $filterCodeCmmt !== 'INDONESIA' && !$isIndonesianSuperRegionFilter) {
-                 $passesRegionFilter = false; 
+                 $passesRegionFilter = false;
             }
 
             if ($passesRegionFilter) {
-                // FIX 1.2: Changed $sales >= 0 to $sales > 0
-                if (($filterCityDbKey && $filterCityDbKey !== 'ALL' && $dbKey === $filterCityDbKey && $sales > 0) || 
-                    (($filterCityDbKey === null || $filterCityDbKey === 'ALL') && $sales > 0)) {
-                    $cityMarkers[] = ['name' => $displayName, 'db_key' => $dbKey, 'lat' => $cityInfo['lat'], 'lng' => $cityInfo['lng'], 'sales' => $sales];
-                }
-            }
-        }
-
-        if (!empty($this->internationalCityData)) {
-            foreach ($this->internationalCityData as $cityDbKey => $cityInfo) {
-                $sales = (float)($citySalesAggregation->get($cityDbKey, 0));
-                $countryCodeForThisCity = strtoupper(trim($cityInfo['country_code_cmmt_key']));
-                $countryMatchesCodeCmmtFilter = (!$filterCodeCmmt || $filterCodeCmmt === 'ALL' || $countryCodeForThisCity === $filterCodeCmmt);
-
-                if ($countryMatchesCodeCmmtFilter && !$isIndonesianSuperRegionFilter) { 
-                    if (($filterCityDbKey && $filterCityDbKey !== 'ALL' && $cityDbKey === $filterCityDbKey && $sales > 0) || 
-                        (($filterCityDbKey === null || $filterCityDbKey === 'ALL') && $sales > 0)) {
-                        $internationalCityMarkers[] = ['name' => $cityInfo['display_name'], 'db_key' => $cityDbKey, 'lat' => $cityInfo['lat'], 'lng' => $cityInfo['lng'], 'sales' => $sales, 'country' => $this->countryMapping[$countryCodeForThisCity] ?? $countryCodeForThisCity];
+                if ($filterCityDbKey && $filterCityDbKey !== 'ALL') {
+                    if ($dbKey === $filterCityDbKey && $sales > 0) {
+                        $cityMarkers[] = ['name' => $displayName, 'db_key' => $dbKey, 'lat' => $cityInfo['lat'], 'lng' => $cityInfo['lng'], 'sales' => $sales];
+                    }
+                } else {
+                    if ($sales > 0) {
+                         $cityMarkers[] = ['name' => $displayName, 'db_key' => $dbKey, 'lat' => $cityInfo['lat'], 'lng' => $cityInfo['lng'], 'sales' => $sales];
                     }
                 }
             }
         }
-        return response()->json(['worldSales' => $worldSales, 'indonesiaSuperRegionSales' => $indonesiaSuperRegionSales, 'cityMarkers' => $cityMarkers, 'internationalCityMarkers' => $internationalCityMarkers]);
+
+        // Loop untuk kota Internasional
+        if (!empty($this->internationalCityData)) {
+            foreach ($this->internationalCityData as $cityDbKeyForMarker => $cityInfo) {
+                $sales = (float)($citySalesAggregation->get($cityDbKeyForMarker, 0));
+                $countryCodeForThisCity = strtoupper(trim($cityInfo['country_code_cmmt_key']));
+                $countryMatchesCodeCmmtFilter = (!$filterCodeCmmt || $filterCodeCmmt === 'ALL' || $countryCodeForThisCity === $filterCodeCmmt);
+
+                if (!$isIndonesianSuperRegionFilter && $countryMatchesCodeCmmtFilter) {
+                    if ($filterCityDbKey && $filterCityDbKey !== 'ALL') {
+                        if ($cityDbKeyForMarker === $filterCityDbKey && $sales > 0) {
+                            $internationalCityMarkers[] = ['name' => $cityInfo['display_name'], 'db_key' => $cityDbKeyForMarker, 'lat' => $cityInfo['lat'], 'lng' => $cityInfo['lng'], 'sales' => $sales, 'country' => $this->countryMapping[$countryCodeForThisCity] ?? $countryCodeForThisCity];
+                        }
+                    } else {
+                        if ($sales > 0) {
+                            $internationalCityMarkers[] = ['name' => $cityInfo['display_name'], 'db_key' => $cityDbKeyForMarker, 'lat' => $cityInfo['lat'], 'lng' => $cityInfo['lng'], 'sales' => $sales, 'country' => $this->countryMapping[$countryCodeForThisCity] ?? $countryCodeForThisCity];
+                        }
+                    }
+                }
+            }
+        }
+
+        return response()->json([
+            'worldSales' => $worldSales,
+            'indonesiaSuperRegionSales' => $indonesiaSuperRegionSales,
+            'cityMarkers' => $cityMarkers,
+            'internationalCityMarkers' => $internationalCityMarkers
+        ]);
     }
 }

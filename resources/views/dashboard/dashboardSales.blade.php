@@ -48,6 +48,7 @@
             --chart-bg: rgba(255, 255, 255, 0.92);
             --link-color: #337ab7;
             --back-to-world-bg: #fff;
+            --world-feature-base-color: #e0e0e0; 
         }
 
         .dark-mode {
@@ -80,6 +81,7 @@
             --chart-bg: rgba(28, 44, 68, 0.92);
             --link-color: #8ab4f8;
             --back-to-world-bg: #1c2c44;
+            --world-feature-base-color: #2a3b58; 
         }
 
         body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--main-bg-color); color: var(--text-color-primary); }
@@ -244,9 +246,9 @@
         #super-region-stats-container { background: var(--panel-bg); padding: 10px; border-radius: 8px; box-shadow: var(--panel-shadow); font-size: 12px; width: 100%; display: block; margin-top: 15px; color: var(--text-color-primary); }
         #super-region-stats-container h3 { margin-top: 0; margin-bottom: 8px; font-size: 15px; border-bottom: 1px solid var(--border-color-dark); padding-bottom: 5px; color: var(--text-color-primary); }
         #super-region-stats-table { width: 100%; border-collapse: collapse; }
-        #super-region-stats-table thead, #super-region-stats-table tfoot tr { /* Target tfoot tr for width adjustment */
+        #super-region-stats-table thead, #super-region-stats-table tfoot tr { 
             display: table;
-            width: 100%; 
+            width: 100%;
             table-layout: fixed;
         }
         #super-region-stats-table tbody { display: block; max-height: 120px; overflow-y: auto; width: 100%; }
@@ -263,12 +265,12 @@
 
         #international-stats-container h3 { margin-top: 0; margin-bottom: 8px; font-size: 15px; border-bottom: 1px solid var(--border-color-dark); padding-bottom: 5px; color: var(--text-color-primary); }
         #international-stats-table { width: 100%; border-collapse: collapse; }
-        #international-stats-table thead, #international-stats-table tfoot tr { /* Target tfoot tr for width adjustment */
+        #international-stats-table thead, #international-stats-table tfoot tr { 
             display: table;
             width: 100%;
             table-layout: fixed;
         }
-        #international-stats-table tbody { display: block; max-height: calc(100vh - 57px - 70px - 200px - 20px - 15px - 85px - 40px - 40px); /* Adjust as needed */ overflow-y: auto; width: 100%; }
+        #international-stats-table tbody { display: block; max-height: calc(100vh - 57px - 70px - 200px - 20px - 15px - 85px - 40px - 40px); overflow-y: auto; width: 100%; }
         #international-stats-table tbody tr { display: table; width: 100%; table-layout: fixed; }
 
         #international-stats-table th, #international-stats-table td { border: 1px solid var(--border-color-dark); padding: 4px; text-align: left; font-size: 10px; color: var(--text-color-primary); }
@@ -333,8 +335,6 @@
                     </div>
                 </div>
             </div>
-            {{-- The dark mode toggle button itself is assumed to be in another layout file --}}
-            {{-- This button is for resetting filters only --}}
             <button id="reset-all-filters">Reset Filters</button>
         </div>
 
@@ -449,7 +449,7 @@
         const regionColors = { "REGION1A": "#8dd3c7", "REGION1B": "#ffffb3", "REGION1C": "#bebada", "REGION1D": "#fb8072", "REGION2A": "#80b1d3", "REGION2B": "#fdb462", "REGION2C": "#b3de69", "REGION2D": "#fccde5", "REGION3A": "#bc80bd", "REGION3B": "#ccebc5", "REGION3C": "#ffed6f", "REGION4A": "#99cce0", "REGION4B": "#f7cac9", "KEYACCOUNT": "#d9d9d9", "COMMERCIAL": "#a9a9a9", "OTHER_BASE": "#cccccc" };
         let seedRegionData = [];
         const featureCentroidCache = new Map();
-        const worldBaseColor = "#dddddd"; // Used as fallback, dark mode CSS vars will override for display
+        const worldBaseColor = "#dddddd";
         let worldMaxSales = 1, worldMinSales = 0;
         let salesPieChart;
         const mapUiContainer = document.getElementById('map-ui-container');
@@ -470,13 +470,13 @@
             if (indonesiaLegendContainer) legendItemsScrollContainer = indonesiaLegendContainer.querySelector('.legend-items-scroll-container');
 
             initMap();
-            initAppDarkMode(); // Initialize dark mode based on app's toggle
+            initAppDarkMode(); 
             populateFilterDropdowns(initialFilterValues.brands, initialFilterValues.code_cmmts, initialFilterValues.cities, [], [], []);
             initUIElements();
             updateAllDropdownTriggers();
 
             updateUIVisibilityBasedOnView(currentMapView);
-            handleFilterChange(); // This will also populate tables and call adjustTableHeadersAndFooters
+            handleFilterChange(); 
 
             window.addEventListener('resize', () => {
                 adjustTableHeadersAndFooters('super-region-stats-table');
@@ -485,17 +485,25 @@
         });
         
         function applyCurrentThemeStyles() {
-            // This function is called after theme is set or changed.
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            // Determine the new global font color based on the current theme
+            const newGlobalFontColor = isDarkMode 
+                                        ? '#ffffff' 
+                                        : getComputedStyle(document.documentElement).getPropertyValue('--text-color-primary').trim(); // Fallback to CSS var for light mode
+
+            if (typeof Chart !== 'undefined' && Chart.defaults) { // Ensure Chart.js is loaded
+                Chart.defaults.color = newGlobalFontColor; 
+            }
+
             if (salesPieChart) {
-                updateSalesChart(); // Rebuilds chart with new theme colors
+                updateSalesChart(); 
             }
             if (geoLayer) {
-                geoLayer.setStyle(styleFeatureMap); // Re-applies style to all map features
+                geoLayer.setStyle(styleFeatureMap); 
             }
-            updateLegend(); // Rebuilds legend with new theme colors
-            updateCityMarkers(); // Rebuilds markers (important if icons change with theme)
+            updateLegend(); 
+            updateCityMarkers(); 
             
-            // Adjust tables after other UI elements that might affect layout are updated
             adjustTableHeadersAndFooters('super-region-stats-table');
             adjustTableHeadersAndFooters('international-stats-table');
         }
@@ -512,7 +520,8 @@
                     document.body.classList.remove('dark-mode');
                     if (darkModeCheckbox) darkModeCheckbox.checked = false;
                 }
-                applyCurrentThemeStyles(); // Apply styles after initial theme is set
+                // Crucially, call applyCurrentThemeStyles AFTER the body class is set.
+                applyCurrentThemeStyles(); 
             };
 
             if (darkModeCheckbox) {
@@ -524,16 +533,15 @@
                         document.body.classList.remove('dark-mode');
                         localStorage.setItem('darkMode', 'false');
                     }
-                    applyCurrentThemeStyles(); // Apply styles on theme change
+                    // Crucially, call applyCurrentThemeStyles AFTER the body class is set.
+                    applyCurrentThemeStyles(); 
                 });
-                setInitialTheme(); // Set theme on load
             } else {
                 console.warn("Dark mode toggle checkbox (e.g., ID 'toggle_left_sidebar_skin') not found. Dark mode may not sync.");
-                // Fallback: if app toggle not found, check localStorage directly
-                setInitialTheme(); // Still try to set theme from localStorage
             }
+            
+            setInitialTheme(); // Set theme on load
         }
-
 
         function showLoading(message = 'Memuat...') { if (loadingDiv) { loadingDiv.textContent = message; loadingDiv.style.display = 'block'; } }
         function hideLoading() { if (loadingDiv) { loadingDiv.style.display = 'none'; } }
@@ -692,7 +700,6 @@
                 });
             });
 
-            // Chart initialization is handled by updateSalesChart, called after data load and theme setup.
             backToWorldBtnDynamic = document.getElementById('back-to-world-btn-dynamic');
             if (backToWorldBtnDynamic) backToWorldBtnDynamic.addEventListener('click', (e) => { e.preventDefault(); switchToView('world'); });
             else console.error("back-to-world-btn-dynamic element not found.");
@@ -703,7 +710,7 @@
             if (backToWorldBtnDynamic) backToWorldBtnDynamic.style.display = (viewType === 'indonesia') ? 'block' : 'none';
             if (indonesiaLegendContainer) indonesiaLegendContainer.style.display = (viewType === 'indonesia') ? 'block' : 'none';
             const superRegionContainer = document.getElementById('super-region-stats-container');
-            if (superRegionContainer) superRegionContainer.style.display = 'block'; // Always visible, content changes
+            if (superRegionContainer) superRegionContainer.style.display = 'block'; 
             const leftColContainer = document.getElementById('left-column-stats-container');
             if (leftColContainer) leftColContainer.style.display = 'flex';
         }
@@ -715,7 +722,7 @@
             if (cityMarkersLayerGroup) { cityMarkersLayerGroup.clearLayers(); if (map.hasLayer(cityMarkersLayerGroup)) map.removeLayer(cityMarkersLayerGroup); }
             superRegionPolygonLayers = {};
             updateUIVisibilityBasedOnView(currentMapView);
-            handleFilterChange(); // This will trigger data fetch and map reload
+            handleFilterChange(); 
         }
 
         async function loadAndDisplayMapData(url, viewType, cacheKey = null) {
@@ -764,7 +771,7 @@
             }
 
             if (geoLayer) map.removeLayer(geoLayer);
-            geoLayer = L.geoJSON(geojson, { style: styleFeatureMap, onEachFeature: onEachFeatureMap }).addTo(map); // Removed viewType from here, styleFeatureMap uses currentMapView
+            geoLayer = L.geoJSON(geojson, { style: styleFeatureMap, onEachFeature: onEachFeatureMap }).addTo(map); 
 
             if (viewType === 'world') { map.options.minZoom = WORLD_MIN_ZOOM; map.options.maxZoom = WORLD_MAX_ZOOM; map.setView(INDIA_CENTER, WORLD_DEFAULT_ZOOM_LEVEL); map.setMaxBounds(null); }
             else if (viewType === 'indonesia') { map.options.minZoom = INDONESIA_MIN_ZOOM; map.options.maxZoom = INDONESIA_MAX_ZOOM; const bounds = geoLayer.getBounds(); if (bounds.isValid()) { map.fitBounds(bounds.pad(0.05)); map.setMaxBounds(bounds.pad(0.2)); if (previousIndonesiaZoom !== null && previousIndonesiaZoom >= INDONESIA_MIN_ZOOM && previousIndonesiaZoom <= INDONESIA_MAX_ZOOM) map.setZoom(previousIndonesiaZoom); } else { map.setView([-2.5, 118], INDONESIA_DEFAULT_ZOOM_LEVEL); map.setMaxBounds(null); } }
@@ -784,15 +791,10 @@
             const sales = Number(salesAmount) || 0;
             const isDarkMode = document.body.classList.contains('dark-mode');
             
-            // Use CSS variables for base colors if possible, or define them clearly here.
-            // --map-bg is for the map's overall background, not necessarily uncolored features.
-            // Let's use a specific variable or a hardcoded color for "no data" features.
-            const baseClr = isDarkMode ? getComputedStyle(document.documentElement).getPropertyValue('--map-bg').trim() || '#1a2b41' 
-                                       : getComputedStyle(document.documentElement).getPropertyValue('--world-feature-base-color') || '#e0e0e0'; // Add --world-feature-base-color to :root if needed
+            const baseClr = getComputedStyle(document.documentElement).getPropertyValue('--world-feature-base-color').trim() || (isDarkMode ? '#2a3b58' : '#e0e0e0');
 
             if (sales <= 0) return baseClr;
             if (worldMaxSales <= worldMinSales || worldMaxSales === 0) {
-                // Fallback for no/uniform sales: slightly darken the base color
                 return tinycolor(baseClr).darken(isDarkMode ? 5 : 10).toString();
             }
 
@@ -801,18 +803,17 @@
             const logMin = Math.log10(logMinVal);
             const logSales = Math.log10(sales > 0 ? sales : logMinVal);
             
-            let intensity = 0.5; // Default intensity if logMin equals logMax
+            let intensity = 0.5; 
             if (logMax > logMin) {
                 intensity = (logSales - logMin) / (logMax - logMin);
             }
             intensity = Math.max(0, Math.min(1, intensity));
 
-            // Define start and end colors for the gradient
-            const startColorLight = {r:255,g:255,b:204}; // Light yellow
-            const endColorLight = {r:128,g:0,b:38};       // Dark red
+            const startColorLight = {r:255,g:255,b:204}; 
+            const endColorLight = {r:128,g:0,b:38};       
 
-            const startColorDark = {r:50,g:70,b:100};    // Dark desaturated blue/grey
-            const endColorDark = {r:220,g:90,b:90};      // Lighter, desaturated red/pink
+            const startColorDark = {r:50,g:70,b:100};    
+            const endColorDark = {r:220,g:90,b:90};      
 
             const startColor = isDarkMode ? startColorDark : startColorLight;
             const endColor = isDarkMode ? endColorDark : endColorLight;
@@ -832,24 +833,22 @@
             const hoverBorderColor = isDarkMode ? 'var(--text-color-secondary)' : '#444';
             const worldBorderColor = isDarkMode ? 'var(--border-color-light)' : '#bbb';
 
-            // For highlighted super regions (Indonesia view)
             if (feature.properties.isHighlightedSuperRegion) { 
                 return { 
                     weight: 1.5, 
                     color: highlightBorderColor, 
                     opacity: 1, 
                     fillOpacity: 0.9, 
-                    fillColor: feature.properties.originalFillColor || (isDarkMode ? 'var(--map-ui-bg)' : regionColors.OTHER_BASE) 
+                    fillColor: feature.properties.originalFillColor || (isDarkMode ? getComputedStyle(document.documentElement).getPropertyValue('--map-ui-bg').trim() : regionColors.OTHER_BASE) 
                 }; 
             }
-            // For other parts of a hovered super region (Indonesia view)
             if (feature.properties.isInHoveredSuperRegion) { 
                 return { 
                     weight: 0.8, 
                     color: hoverBorderColor, 
                     opacity: 0.9, 
                     fillOpacity: 0.85, 
-                    fillColor: feature.properties.originalFillColor || (isDarkMode ? 'var(--map-ui-bg)' : regionColors.OTHER_BASE) 
+                    fillColor: feature.properties.originalFillColor || (isDarkMode ? getComputedStyle(document.documentElement).getPropertyValue('--map-ui-bg').trim() : regionColors.OTHER_BASE) 
                 }; 
             }
 
@@ -864,7 +863,7 @@
                     weight: 0.5, 
                     opacity: 1, 
                     color: worldBorderColor, 
-                    fillOpacity: sales > 0 ? 0.85 : 0.7 // More opacity for sales areas
+                    fillOpacity: sales > 0 ? 0.85 : 0.7 
                 };
             }
             else if (currentMapView === 'indonesia') {
@@ -875,7 +874,6 @@
                 if (effectiveSRKey && regionColors[effectiveSRKey]) {
                     let baseRegionColor = tinycolor(regionColors[effectiveSRKey]);
                     if (isDarkMode) {
-                        // Adjust color for dark mode: make light colors darker, dark colors lighter for visibility
                         fillColor = baseRegionColor.isLight() ? baseRegionColor.darken(20).desaturate(10).toString() 
                                                               : baseRegionColor.lighten(25).desaturate(15).toString();
                     } else {
@@ -886,7 +884,7 @@
                     if (regionData && regionData.sales > 0) {
                         fillOpacity = isDarkMode ? 0.80 : 0.75;
                     } else {
-                        fillOpacity = isDarkMode ? 0.65 : 0.60; // Slightly more opaque for mapped regions without sales
+                        fillOpacity = isDarkMode ? 0.65 : 0.60; 
                     }
                 }
                 feature.properties.originalFillColor = fillColor; 
@@ -898,9 +896,8 @@
                     fillColor: fillColor 
                 };
             }
-            // Fallback style
             return { 
-                fillColor: (isDarkMode ? 'var(--map-ui-bg)' : '#ccc'), 
+                fillColor: (isDarkMode ? getComputedStyle(document.documentElement).getPropertyValue('--map-ui-bg').trim() : '#ccc'), 
                 weight: 1, 
                 opacity: 1, 
                 color: defaultBorderColor, 
@@ -911,10 +908,11 @@
 
         function onEachFeatureMap(feature, layer) {
             const isDarkMode = document.body.classList.contains('dark-mode');
+            const styles = getComputedStyle(document.documentElement);
             const worldHighlightWeight = 1.5;
-            const worldHighlightColor = isDarkMode ? 'var(--text-color-secondary)' : '#666'; // Use var
+            const worldHighlightColor = styles.getPropertyValue('--text-color-secondary').trim(); 
             const indonesiaHighlightWeight = 2;
-            const indonesiaHighlightColor = isDarkMode ? 'var(--text-color-labels)' : '#555'; // Use var
+            const indonesiaHighlightColor = styles.getPropertyValue('--text-color-labels').trim(); 
 
 
             if (currentMapView === 'indonesia') { const srk = feature.properties.superRegionKey; if (srk) { if (!superRegionPolygonLayers[srk]) superRegionPolygonLayers[srk] = []; superRegionPolygonLayers[srk].push(layer); } }
@@ -936,12 +934,11 @@
             if (!table) return;
             const tbody = table.querySelector('tbody');
             const thead = table.querySelector('thead');
-            const tfootTr = table.querySelector('tfoot tr'); // Target the <tr> inside tfoot
+            const tfootTr = table.querySelector('tfoot tr'); 
 
             if (!tbody || !thead || !tfootTr) return;
 
             const hasScrollbar = tbody.scrollHeight > tbody.clientHeight;
-            // Accurately get scrollbar width if present
             const scrollbarWidth = hasScrollbar ? (tbody.offsetWidth - tbody.clientWidth) : 0;
 
             if (hasScrollbar) {
@@ -960,27 +957,24 @@
             tableBody.innerHTML = '';
             Array.from(tfootRow.cells).forEach(cell => cell.textContent = '');
 
-            if (Object.keys(superRegionSales).length === 0) {
-                 tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No Indonesia region data for current filters.</td></tr>';
-                 adjustTableHeadersAndFooters('super-region-stats-table'); // Adjust even if empty
-                 return;
-            }
-
             let totalDispatch = 0, totalBudget = 0, totalLastYearDispatch = 0, totalSalesValueForMarginCalc = 0, grandTotalMarginValue = 0;
             const sortedRegionKeys = Object.keys(superRegionSales).sort((a,b) => a.localeCompare(b));
 
             for (const regionKey of sortedRegionKeys) {
                 const regionData = superRegionSales[regionKey];
-                if (!regionData || ((regionData.sales || 0) === 0 && (regionData.budget || 0) === 0 && (regionData.lastYearSales || 0) === 0)) {
-                    // continue; // Let's show regions even if no sales, if they exist in data
-                }
+                if (!regionData) continue;
 
                 const dispatch = regionData.sales || 0;
                 const budget = regionData.budget || 0;
                 const lastYearDispatch = regionData.lastYearSales || 0;
-                const achievement = budget > 0 ? (dispatch / budget * 100) : (dispatch > 0 ? 100 : 0);
                 const marginValue = regionData.margin_value || 0;
                 const salesValue = regionData.sales_value || 0;
+
+                if (dispatch === 0 && budget === 0 && lastYearDispatch === 0 && marginValue === 0 && salesValue === 0) {
+                    continue; 
+                }
+
+                const achievement = budget > 0 ? (dispatch / budget * 100) : (dispatch > 0 ? 100 : 0);
                 const marginPercent = salesValue > 0 ? (marginValue / salesValue * 100) : 0;
 
                 totalDispatch += dispatch;
@@ -998,7 +992,13 @@
                 row.insertCell().textContent = marginPercent.toFixed(1) + '%'; row.cells[5].classList.add('number-cell', 'col-margin-percent');
             }
 
-            if (tableBody.rows.length > 0) { // Or if totalDispatch > 0 etc.
+            if (tableBody.rows.length === 0) { 
+                if (Object.keys(superRegionSales).length > 0) { 
+                    tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No sales data for selected Indonesia regions/filters.</td></tr>';
+                } else { 
+                    tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No Indonesia region data for current filters.</td></tr>';
+                }
+            } else if (totalDispatch > 0 || totalBudget > 0 || totalLastYearDispatch > 0 || totalSalesValueForMarginCalc > 0) { 
                 const totalAchievement = totalBudget > 0 ? (totalDispatch / totalBudget * 100) : (totalDispatch > 0 ? 100 : 0);
                 const totalMarginPercent = totalSalesValueForMarginCalc > 0 ? (grandTotalMarginValue / totalSalesValueForMarginCalc * 100) : 0;
 
@@ -1008,10 +1008,6 @@
                 tfootRow.cells[3].textContent = totalAchievement.toFixed(1) + '%'; tfootRow.cells[3].style.fontWeight = "bold";
                 tfootRow.cells[4].textContent = totalLastYearDispatch.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0}); tfootRow.cells[4].style.fontWeight = "bold";
                 tfootRow.cells[5].textContent = totalMarginPercent.toFixed(1) + '%'; tfootRow.cells[5].style.fontWeight = "bold";
-            } else if (Object.keys(superRegionSales).length > 0 && totalDispatch === 0) { // Has regions but no sales
-                 tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No sales data for selected Indonesia regions/filters.</td></tr>';
-                 tfootRow.cells[0].textContent = "TOTAL INDONESIA"; tfootRow.cells[0].style.fontWeight = "bold";
-                 // ... fill with zeros or leave blank
             }
             adjustTableHeadersAndFooters('super-region-stats-table');
         }
@@ -1026,7 +1022,7 @@
 
             if (currentMapView !== 'world' || Object.keys(salesDataGlobal).length === 0) {
                 tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No export data for world view or current filters.</td></tr>';
-                adjustTableHeadersAndFooters('international-stats-table'); // Adjust even if empty
+                adjustTableHeadersAndFooters('international-stats-table');
                 return;
             }
 
@@ -1037,7 +1033,7 @@
                 )
                 .sort(([,a],[,b]) => (b.sales || 0) - (a.sales || 0));
 
-            const maxCountriesInTable = 7; // Or determine dynamically based on available height
+            const maxCountriesInTable = 7; 
             let otherSalesSum = 0, otherBudgetSum = 0, otherLYSalesSum = 0, otherMarginValueSum = 0, otherSalesValueForMarginCalcSum = 0;
 
             exportCountriesData.forEach(([country, data], index) => {
@@ -1106,7 +1102,7 @@
                 tfootRow.cells[4].textContent = totalLYSalesFooter.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0}); tfootRow.cells[4].style.fontWeight="bold";
                 tfootRow.cells[5].textContent = totalMarginPercentExport.toFixed(1) + '%'; tfootRow.cells[5].style.fontWeight="bold";
             } else {
-                 tfootRow.cells[0].textContent = ""; // Clear if no totals to show
+                 tfootRow.cells[0].textContent = ""; 
             }
             adjustTableHeadersAndFooters('international-stats-table');
         }
@@ -1120,11 +1116,14 @@
             const ctx = sCC.getContext('2d');
 
             const isDarkMode = document.body.classList.contains('dark-mode');
-            // Get computed style for CSS variables
             const styles = getComputedStyle(document.documentElement);
-            const chartTextColor = styles.getPropertyValue('--text-color-primary').trim();
+            // This chartTextColor is critical. It's fetched every time the chart updates,
+            // so it will reflect the current theme's --text-color-primary.
+const chartTextColor = isDarkMode 
+                                   ? '#ffffff' 
+                                   : styles.getPropertyValue('--text-color-primary').trim(); // Fallback to CSS var for light mode
             const chartTooltipBgColor = styles.getPropertyValue('--panel-bg-solid').trim();
-            const chartBorderColor = styles.getPropertyValue('--map-ui-bg').trim(); // Or use --panel-bg-solid for contrast
+            const chartBorderColor = styles.getPropertyValue('--map-ui-bg').trim(); 
             const chartLegendBorderColor = styles.getPropertyValue('--border-color-light').trim();
 
 
@@ -1137,9 +1136,8 @@
                     if (country.toLowerCase() !== 'indonesia') tES += (data.sales || 0);
                 });
                 let L = [], D = [], B = [];
-                 // Define explicit colors for dark/light mode to ensure good visibility
-                const indonesiaColor = isDarkMode ? '#B71C1C' : '#FF6384'; // Darker red / Standard red
-                const exportColor = isDarkMode ? '#0D47A1' : '#36A2EB'; // Darker blue / Standard blue
+                const indonesiaColor = isDarkMode ? '#B71C1C' : '#FF6384'; 
+                const exportColor = isDarkMode ? '#0D47A1' : '#36A2EB'; 
                 const noDataColor = isDarkMode ? styles.getPropertyValue('--border-color-medium').trim() : '#CCCCCC';
 
 
@@ -1153,13 +1151,27 @@
                     options: {
                         responsive: true, maintainAspectRatio: false,
                         plugins: {
-                            legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 }, padding: 3, color: chartTextColor } },
-                            title: { display: true, text: 'Sales: Indonesia vs Global Export', font: { size: 13 }, padding: { bottom: 8 }, color: chartTextColor },
+                            legend: { 
+                                position: 'bottom', 
+                                labels: { 
+                                    boxWidth: 12, 
+                                    font: { size: 10 }, 
+                                    padding: 3, 
+                                    color: chartTextColor // Explicitly set legend text color
+                                } 
+                            },
+                            title: { 
+                                display: true, 
+                                text: 'Sales: Indonesia vs Global Export', 
+                                font: { size: 13 }, 
+                                padding: { bottom: 8 }, 
+                                color: chartTextColor // Explicitly set title text color
+                            },
                             tooltip: {
                                 callbacks: { label: chartTooltipCallback },
                                 backgroundColor: chartTooltipBgColor,
-                                titleColor: chartTextColor, // Use main text color for title
-                                bodyColor: chartTextColor,  // Use main text color for body
+                                titleColor: chartTextColor, // Explicitly set tooltip title text color
+                                bodyColor: chartTextColor,  // Explicitly set tooltip body text color
                                 borderColor: chartLegendBorderColor,
                                 borderWidth: 1
                             }
@@ -1192,20 +1204,31 @@
                     options: {
                         responsive: true, maintainAspectRatio: false,
                         plugins: {
-                            title: { display: true, text: 'Sales per Super-Region (ID)', font: { size: 13 }, padding: { bottom: 8 }, color: chartTextColor },
+                            title: { 
+                                display: true, 
+                                text: 'Sales per Super-Region (ID)', 
+                                font: { size: 13 }, 
+                                padding: { bottom: 8 }, 
+                                color: chartTextColor // Explicitly set title text color
+                            },
                             legend: {
-                                position: 'bottom', labels: {
-                                    font: { size: 9 }, boxWidth: 10, padding: 5, color: chartTextColor,
+                                position: 'bottom', 
+                                labels: {
+                                    font: { size: 9 }, 
+                                    boxWidth: 10, 
+                                    padding: 5, 
+                                    color: chartTextColor, // Explicitly set legend text color (default for generated items)
                                     generateLabels: function (chart) {
                                         const data = chart.data;
                                         if (data.labels.length && data.datasets.length) {
                                             const dataset = data.datasets[0];
                                             const totalSum = dataset.data.reduce((a, b) => a + b, 0);
                                             const sortedLabels = data.labels.map((label, i) => ({ label, value: dataset.data[i], color: dataset.backgroundColor[i] })).sort((a, b) => b.value - a.value);
-                                            // Use current chartTextColor for legend items
-                                            const currentChartTextColor = chart.options.plugins.legend.labels.color;
-                                            const legendItems = sortedLabels.slice(0, 5).map(item => ({ text: `${item.label} (${totalSum > 0 ? ((item.value / totalSum) * 100).toFixed(1) : '0.0'}%)`, fillStyle: item.color, hidden: false, index: data.labels.indexOf(item.label.split(' (')[0]), fontColor: currentChartTextColor }));
-                                            if (sortedLabels.length > 5) { legendItems.push({ text: 'Others...', fillStyle: isDarkMode ? styles.getPropertyValue('--text-color-secondary').trim() : '#ccc', hidden: false, index: -1, fontColor: currentChartTextColor }); }
+                                            
+                                            const currentChartTextColor = chart.options.plugins.legend.labels.color; // Get the color from options
+                                            
+                                            const legendItems = sortedLabels.slice(0, 5).map(item => ({ text: `${item.label} (${totalSum > 0 ? ((item.value / totalSum) * 100).toFixed(1) : '0.0'}%)`, fillStyle: item.color, hidden: false, index: data.labels.indexOf(item.label.split(' (')[0]), fontColor: currentChartTextColor })); // Use it here
+                                            if (sortedLabels.length > 5) { legendItems.push({ text: 'Others...', fillStyle: isDarkMode ? styles.getPropertyValue('--text-color-secondary').trim() : '#ccc', hidden: false, index: -1, fontColor: currentChartTextColor }); } // And here
                                             return legendItems;
                                         } return [];
                                     }
@@ -1214,8 +1237,8 @@
                             tooltip: {
                                 callbacks: { label: chartTooltipCallback },
                                 backgroundColor: chartTooltipBgColor,
-                                titleColor: chartTextColor,
-                                bodyColor: chartTextColor,
+                                titleColor: chartTextColor, // Explicitly set tooltip title text color
+                                bodyColor: chartTextColor, // Explicitly set tooltip body text color
                                 borderColor: chartLegendBorderColor,
                                 borderWidth: 1
                             }
@@ -1234,13 +1257,14 @@
             legendItemsScrollContainer.innerHTML = '';
             let legendHTML = '';
             const isDarkMode = document.body.classList.contains('dark-mode');
-            const styles = getComputedStyle(document.documentElement); // For CSS vars
+            const styles = getComputedStyle(document.documentElement); 
 
             const legendOrder = Object.keys(regionColors).filter(k => k !== "OTHER_BASE").sort();
             legendOrder.forEach(superRegKey => {
                 if (regionColors[superRegKey] && typeof superRegionSales[superRegKey] !== 'undefined') {
                     const regionData = superRegionSales[superRegKey];
                     const salesVal = regionData ? (regionData.sales || 0) : 0;
+
                     let salesInfo = (salesVal > 0) ? ` (${salesVal.toLocaleString(undefined, {maximumFractionDigits:0})} Ton)` : "";
                     let displayName = formatRegionKeyForDisplay(superRegKey);
                     
@@ -1254,15 +1278,14 @@
                 }
             });
             
-            // Use derived colors for examples to ensure they match map logic
-            const exampleBaseColor = regionColors.REGION1A || '#8dd3c7'; // A sample color
+            const exampleBaseColor = regionColors.REGION1A || '#8dd3c7'; 
             let exampleMappedNoSalesColor, otherExampleColor;
 
             if (isDarkMode) {
-                exampleMappedNoSalesColor = tinycolor(exampleBaseColor).darken(20).desaturate(15).setAlpha(0.65).toRgbString(); // Based on styleFeatureMap logic for dark
-                otherExampleColor = tinycolor(exampleBaseColor).darken(20).desaturate(15).setAlpha(0.60).toRgbString(); // Slightly different alpha
+                exampleMappedNoSalesColor = tinycolor(exampleBaseColor).darken(20).desaturate(15).setAlpha(0.65).toRgbString(); 
+                otherExampleColor = tinycolor(exampleBaseColor).darken(20).desaturate(15).setAlpha(0.60).toRgbString(); 
             } else {
-                exampleMappedNoSalesColor = tinycolor(exampleBaseColor).setAlpha(0.60).toRgbString(); // Based on styleFeatureMap logic for light
+                exampleMappedNoSalesColor = tinycolor(exampleBaseColor).setAlpha(0.60).toRgbString(); 
                 otherExampleColor = tinycolor(exampleBaseColor).setAlpha(0.55).toRgbString();
             }
 
@@ -1279,19 +1302,13 @@
             cityMarkersLayerGroup.clearLayers();
             const isDarkMode = document.body.classList.contains('dark-mode');
             
-            // If you have different markers for dark mode, specify the path here.
-            // For now, assuming the same marker is fine, or its SVG adapts.
             const markerIconUrl = '{{ asset("maps/marker.svg") }}'; 
-            // const markerIconUrl = isDarkMode ? '{{ asset("maps/marker_dark.svg") }}' : '{{ asset("maps/marker_light.svg") }}';
-
 
             const commonMarkerIcon = L.icon({
                 iconUrl: markerIconUrl,
                 iconSize: [28, 28],
                 iconAnchor: [14, 28],
                 popupAnchor: [0, -28]
-                // You might want to add a className here if popups need dark mode specific styling via CSS
-                // className: isDarkMode ? 'dark-mode-marker-popup' : '' 
             });
 
 
@@ -1406,19 +1423,19 @@
                 const cacheKey = currentMapView === 'world' ? WORLD_CACHE_KEY : INDONESIA_CACHE_KEY;
                 await loadAndDisplayMapData(mapUrl, currentMapView, cacheKey);
                 
-                // Update panels and markers AFTER map data is loaded and processed
-                updateDashboardPanels(); // This includes table updates which call adjustTableHeadersAndFooters
+                updateDashboardPanels(); 
                 updateCityMarkers();
 
             } catch (error) {
                 console.error('Gagal memproses data:', error);
                 alert(`Gagal memuat data: ${error.message}`);
                 salesDataGlobal = {}; superRegionSales = {}; cityMarkersData = []; internationalCityMarkersData = [];
-                populateFilterDropdowns([], [], [], [], [], []); // Clear dropdowns or show error
+                populateFilterDropdowns([], [], [], [], [], []); 
                 updateDashboardPanels(); 
                 updateCityMarkers();
             } finally {
                 hideLoading();
+                updateAllDropdownTriggers(); 
             }
         }
     </script>

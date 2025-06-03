@@ -14,9 +14,9 @@ use App\Http\Controllers\Role\RoleController;
 use App\Http\Controllers\UserController;
 use Artesaos\SEOTools\Facades\SEOMeta;
 use Illuminate\Support\Facades\Route;
-
-
-
+use App\Http\Controllers\DashboardSalesController;
+use App\Http\Controllers\StandardBudgetController;
+use App\Http\Controllers\KanbanController;
 
 /*
 |--------------------------------------------------------------------------
@@ -39,7 +39,6 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard-finance', [DashboardController::class, 'index-finance'])->name('dashboard-finance');
     Route::get('/api/requisitions/{year}', [DashboardController::class, 'getRequisitionsByYear'])->name('dashboard.requisitions.byYear');
-    Route::get('/dashboard-sales', [DashboardController::class, 'index-sales'])->name('dashboard-sales');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -47,6 +46,11 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::get('/get-data-master', [UserController::class, 'getDataMaster'])->name('get.master');
+
+
+    // sales
+    Route::get('/dashboard-sales', [DashboardSalesController::class, 'showMapDashboard'])->name('dashboard.dashboardSales');
+    Route::get('/api/sales-data', [DashboardSalesController::class, 'getSalesData'])->name('api.sales.data');
 
     /*Inventory*/
     /*get wsa inventory*/
@@ -68,6 +72,26 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
     /*sales routes*/
     Route::get('sales', [SalesController::class, 'index'])->name('data.sales');
 
+    /* Standard Budget */
+    Route::prefix('standard-budgets')->name('standard-budgets.')->group(function () {
+        Route::get('/', [StandardBudgetController::class, 'index'])->name('index');
+        Route::post('/', [StandardBudgetController::class, 'store'])->name('store');
+        Route::get('/{standardBudget}/edit', [StandardBudgetController::class, 'edit'])->name('edit');
+        Route::put('/{standardBudget}', [StandardBudgetController::class, 'update'])->name('update');
+        Route::delete('/{standardBudget}', [StandardBudgetController::class, 'destroy'])->name('destroy');
+
+        // Route::get('/import', [StandardBudgetController::class, 'showImportForm'])->name('import.form'); // HAPUS BARIS INI
+        Route::post('/import', [StandardBudgetController::class, 'importExcel'])->name('import.excel');
+    });
+    Route::get('/standard-budgets/sample/download', function () {
+        $filePath = storage_path('app/files/sample.xlsx');
+
+        if (!file_exists($filePath)) {
+            abort(404, 'File tidak ditemukan.');
+        }
+
+        return response()->download($filePath, 'template_budget.xlsx');
+    })->name('standard-budgets.download-sample');
 
 
 
@@ -100,8 +124,6 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
     Route::get('dashboard-warehouse', function () {
         return view("dashboard.dashboardWarehouse");
     })->name('dashboard.dashboardWarehouse');
-    /*Dashboard Sales*/
-    Route::get('dashboard-sales', [SalesController::class, 'dashboardSales'])->name('dashboard.dashboardSales');
     /*Dashboard Production*/
     Route::get('dashboard/dashboard-production', [ProductionController::class, 'dashboardProductionIndex'])->name('dashboard.dashboardProduction');
 
@@ -116,6 +138,14 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
     Route::get('/notifications/count', function () {
         return response()->json(['count' => auth()->user()->unreadNotifications->count()]);
     })->name('notifications.count');
+
+    // kanban
+    Route::get('/kanban', [KanbanController::class, 'index'])->name('page.kanban.index');
+    Route::post('/tasks', [KanbanController::class, 'store'])->name('tasks.store');
+    Route::patch('/tasks/{task}/status', [KanbanController::class, 'updateStatus'])->name('tasks.updateStatus');
+    Route::delete('/tasks/{task}', [KanbanController::class, 'destroy'])->name('tasks.destroy');
+    Route::get('/tasks/approval/{token}', [KanbanController::class, 'handleApproval'])->name('tasks.handle_approval');
+    Route::post('/tasks/approval/{token}', [KanbanController::class, 'handleApproval'])->name('tasks.submit_rejection');
 });
 
 
@@ -165,13 +195,5 @@ Route::group(['middleware' => ['role:super-admin|admin']], function () {
     Route::post('levels', [LevelController::class, 'store'])->name('level.store');
     Route::delete('levels/{level:level_slug}/delete', [LevelController::class, 'destroy'])->name('level.destroy');
 });
-
-
-
-
-
-
-
-
 
 require __DIR__ . '/auth.php';

@@ -16,6 +16,8 @@
         "vite": "^5.0.0"
     },
     "dependencies": {
+        "@popperjs/core": "^2.11.8",
+        "jquery": "^3.7.1",
         "vite-plugin-require": "^1.2.14"
     }
 }

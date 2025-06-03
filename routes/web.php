@@ -16,6 +16,7 @@ use Artesaos\SEOTools\Facades\SEOMeta;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardSalesController;
 use App\Http\Controllers\StandardBudgetController;
+use App\Http\Controllers\KanbanController;
 
 /*
 |--------------------------------------------------------------------------
@@ -137,6 +138,14 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
     Route::get('/notifications/count', function () {
         return response()->json(['count' => auth()->user()->unreadNotifications->count()]);
     })->name('notifications.count');
+
+    // kanban
+    Route::get('/kanban', [KanbanController::class, 'index'])->name('page.kanban.index');
+    Route::post('/tasks', [KanbanController::class, 'store'])->name('tasks.store');
+    Route::patch('/tasks/{task}/status', [KanbanController::class, 'updateStatus'])->name('tasks.updateStatus');
+    Route::delete('/tasks/{task}', [KanbanController::class, 'destroy'])->name('tasks.destroy');
+    Route::get('/tasks/approval/{token}', [KanbanController::class, 'handleApproval'])->name('tasks.handle_approval');
+    Route::post('/tasks/approval/{token}', [KanbanController::class, 'handleApproval'])->name('tasks.submit_rejection');
 });
 
 

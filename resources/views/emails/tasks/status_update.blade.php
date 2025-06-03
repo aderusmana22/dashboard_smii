@@ -1,23 +1,30 @@
+{{-- File: resources/views/emails/tasks/status_update.blade.php (Markdown version) --}}
 @component('mail::message')
-# Pembaruan Status Tugas: {{ $task->id_job }}
+# Pembaruan Status Tugas: {{ $task->id_job ?? 'N/A' }}
 
-Halo {{ $recipientName }},
+Halo {{ $recipientName ?? 'Pengguna' }},
 
-{{ $messageBody }}
+{!! $messageBody !!} {{-- Use {!! !!} if messageBody might contain HTML, otherwise {{ }} --}}
 
 **Detail Tugas:**
-- **ID Job:** {{ $task->id_job }}
-- **Departemen Tujuan:** {{ $task->department->department_name }}
-- **Area:** {{ $task->area }}
-- **Status Saat Ini:** {{ Illuminate\Support\Str::upper(str_replace('_', ' ', $task->status)) }} {{-- More readable status --}}
+- **ID Job:** {{ $task->id_job ?? 'N/A' }}
+- **Pengaju:** {{ $task->pengaju->name ?? 'N/A' }}
+- **Departemen Tujuan:** {{ $task->department->department_name ?? 'N/A' }}
+- **Area/Lokasi:** {{ $task->area ?? 'N/A' }}
+- **Status Saat Ini:** {{ Illuminate\Support\Str::upper(str_replace('_', ' ', $task->status ?? 'N/A')) }}
 
-@if($task->status === \App\Models\Task::STATUS_REJECTED && $task->rejection_reason)
+@if(isset($task->status) && $task->status === \App\Models\Task::STATUS_REJECTED && !empty($rejection_reason))
 **Alasan Penolakan:**
-{{ $task->rejection_reason }}
+{{ $rejection_reason }}
 @endif
 
-Anda dapat melihat detail tugas di sistem Kanban.
+@if(isset($task->status) && $task->status === \App\Models\Task::STATUS_CANCELLED && !empty($cancel_reason))
+**Alasan Pembatalan:**
+{{ $cancel_reason }}
+@endif
+
+Anda dapat melihat detail tugas di sistem {{ config('app.subname', 'Marsho JobBoard') }}.
 
 Terima kasih,
-{{ config('app.name') }}
+Sistem Notifikasi {{ config('app.name') }}
 @endcomponent

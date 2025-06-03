@@ -2,11 +2,10 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 
 use App\Models\PCR\Initiator;
 use App\Models\PCR\PCC;
-use App\Models\QAD\Approver;
+use App\Models\QAD\Approver as QADApprover;
 use App\Models\QAD\RequisitionMaster;
 use Illuminate\Auth\Passwords\CanResetPassword;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,29 +18,14 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable, HasRoles, CanResetPassword;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $guarded = ['id'];
 
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
@@ -57,23 +41,18 @@ class User extends Authenticatable
         return $this->belongsTo(Department::class);
     }
 
+
     public function rqmMstr()
     {
         return $this->hasMany(RequisitionMaster::class);
     }
 
-    public function approvers()
+    public function qadApprovals()
     {
-        return $this->hasMany(Approver::class, 'rqa_apr', 'username');
+        return $this->hasMany(QADApprover::class, 'rqa_apr', 'username');
     }
 
 
-
-    /*
-    * PCR RELATIONS
-    */
-
-    protected $connection = 'mysql';
 
     public function pccs()
     {
@@ -82,13 +61,10 @@ class User extends Authenticatable
 
     public function initiators()
     {
-        return $this->hasMany(Initiator::class, 'user_id', 'id')->connection('mysql_pcr');
+        return $this->hasMany(Initiator::class, 'user_id', 'id');
     }
 
-    public function pcc()
-    {
-        return $this->setConnection('mysql_pcr')->belongsTo(PCC::class, 'user_id', 'id');
-    }
+
 
     public function getUsernameAttribute($value)
     {
@@ -96,39 +72,37 @@ class User extends Authenticatable
     }
 
 
-    // Kanban
-    public function tasksDiajukan()
+    public function createdTasks()
     {
         return $this->hasMany(Task::class, 'pengaju_id');
     }
 
-    public function tasksDitutup()
+    public function closedTasks()
     {
         return $this->hasMany(Task::class, 'penutup_id');
     }
 
-    public function tasksApproved() // New
+    public function jobApprovalDetails()
     {
-        return $this->hasMany(Task::class, 'approver_id');
+        return $this->hasMany(JobApprovalDetail::class, 'approver_nik', 'nik');
     }
 
-    public function isAdminProject()
+    public function departmentApprovals()
     {
-        return $this->level >= 4;
+        return $this->hasMany(DepartmentApprover::class, 'user_nik', 'nik');
     }
 
     public function isSuperAdmin()
     {
-        return $this->position_id == 1 && $this->username === 'super';
+
+        return $this->username === 'superadmin';
+
     }
 
-    // New: Check if user can approve tasks for a specific department
-    // This is a simple check, you might have more complex role/permission system
-    public function canApproveForDepartment(Department $department)
+    public function isAdminProject()
     {
-        // Example: User must belong to the department and have a certain level/role
-        // For simplicity, let's say any user in that department can approve.
-        // Or, perhaps only department heads (e.g., user->is_department_head && user->department_id == $department->id)
-        return $this->department_id === $department->id;
+
+        return optional($this->position)->name === 'Admin Project';
+
     }
 }

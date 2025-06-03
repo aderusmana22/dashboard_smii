@@ -1,27 +1,13 @@
+{{-- File: resources/views/emails/tasks/approval_request.blade.php (Markdown version) --}}
 @component('mail::message')
 # Permintaan Persetujuan Tugas Baru
 
-Halo Tim Departemen {{ $task->department->department_name }},
+Halo Tim Departemen {{ $task->department->department_name ?? 'N/A' }},
 
 Sebuah tugas baru telah diajukan dan membutuhkan persetujuan Anda:
 
-**ID Job:** {{ $task->id_job }}
-**Pengaju:** {{ $task->pengaju->name }}
-**Area:** {{ $task->area }}
-**List Job:** {{ $task->list_job }}
-
-Mohon untuk meninjau dan memberikan persetujuan atau penolakan melalui tautan di bawah ini:
-
-@component('mail::button', ['url' => $approveUrl, 'color' => 'success'])
-Setujui Tugas
-@endcomponent
-
-@component('mail::button', ['url' => $rejectUrl, 'color' => 'error'])
-Tolak Tugas
-@endcomponent
-
-Jika Anda menolak, Anda akan diminta untuk memberikan alasan.
-
-Terima kasih,
-{{ config('app.name') }}
-@endcomponent
+**ID Job:** {{ $task->id_job ?? 'N/A' }}
+**Pengaju:** {{ $task->pengaju->name ?? 'N/A' }}
+**Departemen Tujuan:** {{ $task->department->department_name ?? 'N/A' }}
+**Area/Lokasi:** {{ $task->area ?? 'N/A' }}
+**List Job/Deskripsi:**

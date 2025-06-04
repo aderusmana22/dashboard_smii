@@ -7,517 +7,538 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <style>
-    html::-webkit-scrollbar {
-        display: none;
-    }
-
-    html {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-    }
-
-    :root {
-        --main-bg-color: #f0f0f0;
-        --map-ui-bg: #f0f0f0;
-        --map-bg: #aadaff;
-        --text-color-primary: #333;
-        --text-color-secondary: #555;
-        --text-color-labels: #333;
-        --panel-bg: rgba(255, 255, 255, 0.97);
-        --panel-bg-solid: #fff;
-        --panel-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-        --border-color-light: #ccc;
-        --border-color-medium: #bbb;
-        --border-color-dark: #ddd;
-        --input-bg: #fff;
-        --input-border: #ccc;
-        --button-bg: #e9e9e9;
-        --button-border: #bbb;
-        --button-hover-bg: #dcdcdc;
-        --table-header-bg: #f2f2f2;
-        --tooltip-global-bg: rgba(0, 0, 0, 0.8);
-        --tooltip-global-text: white;
-        --tooltip-indonesia-bg: rgba(255, 255, 255, 0.95);
-        --tooltip-indonesia-text: #333;
-        --tooltip-indonesia-border: #ccc;
-        --watermark-bg: rgba(255, 255, 255, 0.7);
-        --watermark-text: #555;
-        --watermark-link: #337ab7;
-        --chart-bg: rgba(255, 255, 255, 0.92);
-        --link-color: #337ab7;
-        --back-to-world-bg: #fff;
-        --world-feature-base-color: #e0e0e0;
-    }
-
-    .dark-mode {
-        --main-bg-color: #0d1a2e;
-        --map-ui-bg: #12213c;
-        --map-bg: #1a2b41;
-        --text-color-primary: #e0e6eb;
-        --text-color-secondary: #b0b8c0;
-        --text-color-labels: #c0c8d0;
-        --panel-bg: rgba(28, 44, 68, 0.97);
-        --panel-bg-solid: #1c2c44;
-        --panel-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-        --border-color-light: #4a5b78;
-        --border-color-medium: #5a6b88;
-        --border-color-dark: #3a4b68;
-        --input-bg: #1c2c44;
-        --input-border: #4a5b78;
-        --button-bg: #2c3c54;
-        --button-border: #4a5b78;
-        --button-hover-bg: #3c4c64;
-        --table-header-bg: #2a3b58;
-        --tooltip-global-bg: rgba(220, 220, 230, 0.85);
-        --tooltip-global-text: #111;
-        --tooltip-indonesia-bg: rgba(30, 45, 70, 0.95);
-        --tooltip-indonesia-text: #e0e6eb;
-        --tooltip-indonesia-border: #4a5b78;
-        --watermark-bg: rgba(0, 0, 0, 0.5);
-        --watermark-text: #aaa;
-        --watermark-link: #8ab4f8;
-        --chart-bg: rgba(28, 44, 68, 0.92);
-        --link-color: #8ab4f8;
-        --back-to-world-bg: #1c2c44;
-        --world-feature-base-color: #2a3b58;
-    }
-
-
-    body {
-        margin: 0;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background-color: var(--main-bg-color);
-        color: var(--text-color-primary);
-        font-size: 1.6vh;
-    }
-
-    #map-ui-container {
-        position: relative;
-        width: 100%;
-        height: calc(100vh - 57px);
-        overflow: hidden;
-        background-color: var(--map-ui-bg);
-        display: block;
-    }
-
-    .leaflet-control-zoom { display: none !important; }
-
-    #map {
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        height: 100%; width: 100%;
-        background-color: var(--map-bg);
-        z-index: 500;
-    }
-
-    .info-tooltip-global,
-    #sales-tooltip-indonesia {
-        position: absolute; padding: 1vh 1.2vw; border-radius: 4px;
-        font-size: 1.5vh; z-index: 800; pointer-events: none;
-        display: none; box-shadow: var(--panel-shadow);
-    }
-    .info-tooltip-global { background: var(--tooltip-global-bg); color: var(--tooltip-global-text); }
-    #sales-tooltip-indonesia { background: var(--tooltip-indonesia-bg); color: var(--tooltip-indonesia-text); border: 1px solid var(--tooltip-indonesia-border); }
-
-    .loading {
-        position: absolute; top: 50%; left: 50%;
-        transform: translate(-50%, -50%);
-        background: rgba(0, 0, 0, 0.7); color: white;
-        padding: 2.5vh 3vw; border-radius: 8px;
-        z-index: 10000; font-size: 2vh;
-        text-align: center; display: none;
-    }
-
-    .geoboundaries-watermark {
-        position: absolute; bottom: 0.5vh; right: 1vw;
-        font-size: 1.1vh; color: var(--watermark-text);
-        background-color: var(--watermark-bg);
-        padding: 0.3vh 0.6vw; border-radius: 3px;
-        z-index: 700;
-    }
-    .geoboundaries-watermark a { color: var(--watermark-link); }
-
-    /* --- Filter Menu (Top Bar) --- */
-    #filter-menu {
-        position: absolute; top: 1.5vh;
-        right: 1vw;
-        width: auto; max-width: calc(75%);
-        background: var(--panel-bg); padding: 0.8vh 1vw;
-        border-radius: 6px; z-index: 720;
-        box-shadow: var(--panel-shadow);
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.6vh 0.6vw; /* Adjusted gap */
-        align-items: center;
-        overflow-x: hidden;
-        -webkit-overflow-scrolling: touch;
-    }
-    .date-filter-container {
-        display: flex; gap: 0.5vw;
-        align-items: center; flex-shrink: 0; /* Date inputs should not shrink much */
-    }
-    .date-filter-container > div { display: flex; flex-direction: row; align-items: center; }
-    .date-filter-container label {
-        font-size: 1.3vh; font-weight: 500;
-        margin-right: 0.3vw; color: var(--text-color-labels);
-        white-space: nowrap;
-    }
-    #filter-menu input[type="date"] {
-        padding: 0.4vh 0.6vw; border-radius: 3px;
-        border: 1px solid var(--input-border);
-        background-color: var(--input-bg); color: var(--text-color-primary);
-        font-size: 1.4vh; width: 10vw;
-        min-width: 90px; max-width: 100px;
-        height: 3vh; max-height: 23px;
-        box-sizing: border-box; flex-shrink: 0;
-    }
-
-    .filter-group {
-        display: flex; flex-direction: row;
-        align-items: center; gap: 0.3vw;
-        flex-shrink: 1; /* Allow filter groups to shrink a bit if needed */
-        min-width: 0; /* Important for flex-shrink to work with text-overflow */
-    }
-    .filter-group > label {
-        font-size: 1.4vh; font-weight: 600;
-        white-space: nowrap; color: var(--text-color-labels);
-        margin-right: 0.2vw;
-    }
-    .custom-dropdown-container {
-        position: relative;
-        flex-shrink: 1; /* Allow dropdown container to shrink */
-        min-width: 0; /* Allow shrinking below content size */
-    }
-    .custom-dropdown-trigger {
-        background-color: var(--input-bg); border: 1px solid var(--input-border);
-        color: var(--text-color-primary); border-radius: 3px;
-        padding: 0.4vh 1.8vw 0.4vh 0.6vw; font-size: 1.4vh;
-        min-width: 10vw; /* Reduced min-width */
-        max-width: 16vw; /* Reduced max-width */
-        text-align: left; cursor: pointer;
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        position: relative; height: 3vh; max-height: 23px;
-        box-sizing: border-box;
-        display: block; /* Ensure it behaves well with shrinking */
-    }
-    .custom-dropdown-trigger::after {
-        content: '▼'; font-size: 0.8em;
-        position: absolute; right: 0.6vw; top: 50%;
-        transform: translateY(-50%); color: var(--text-color-secondary);
-    }
-    .checkbox-list-container {
-        overflow-y: auto; border: 1px solid var(--input-border);
-        padding: 0.8vh; border-radius: 3px;
-        background-color: var(--input-bg);
-        min-width: 15vw; max-width: 25vw; max-height: 18vh;
-    }
-    .checkbox-list-container div { display: flex; align-items: center; margin-bottom: 0.3vh; }
-    .checkbox-list-container input[type="checkbox"] { margin-right: 0.5vw; }
-    .checkbox-list-container label {
-        font-size: 1.3vh; font-weight: normal; cursor: pointer;
-        user-select: none; color: var(--text-color-primary);
-    }
-    .custom-dropdown-content {
-        display: none; position: absolute;
-        top: calc(100% + 2px); left: 0;
-        z-index: 725; box-shadow: var(--panel-shadow);
-    }
-
-    .filter-actions { /* Wrapper for reset button */
-        margin-left: auto; /* Pushes this div to the right */
-        display: flex; /* To align items if more actions are added */
-        align-items: center;
-        flex-shrink: 0; /* This group should not shrink */
-    }
-
-    #reset-all-filters {
-        padding: 0.5vh 1vw;
-        font-size: 1.4vh;
-        background-color: var(--button-bg); border: 1px solid var(--button-border);
-        color: var(--text-color-primary); border-radius: 3px;
-        cursor: pointer;
-        /* margin-left: auto; << Moved to .filter-actions wrapper */
-        height: 3vh; max-height: 23px;
-        box-sizing: border-box; flex-shrink: 0;
-        white-space: nowrap;
-        width: auto;
-    }
-    #reset-all-filters:hover { background-color: var(--button-hover-bg); }
-
-    #left-column-stats-container {
-        position: absolute; top: 8.1vh; right: 1.5vw;
-        z-index: 709; width: 38vw; max-width: 500px;
-        display: flex; flex-direction: column;
-        max-height: calc(100vh - 57px - 8.1vh - (28vh + 12vh - 8.1vh) - 1vh);
-        padding-bottom: 1vh;
-    }
-    #international-stats-container {
-        position: absolute; top: 8.1vh; left: 1vw;
-        z-index: 709; background: var(--panel-bg); padding: 1.5vh 1vw;
-        border-radius: 8px; box-shadow: var(--panel-shadow);
-        font-size: 1.5vh; width: 38vw; max-width: 500px;
-        max-height: calc(100vh - 57px - 8.1vh - (28vh + 12vh - 8.1vh) - 1vh);
-        overflow-y: auto; display: none; color: var(--text-color-primary);
-    }
-    #back-to-world-btn-dynamic {
-        position: absolute; top: 8.1vh; left: 1.5vw;
-        background: var(--back-to-world-bg); color: var(--link-color);
-        padding: 1vh 1.2vw; border-radius: 5px;
-        text-decoration: none; font-size: 1.6vh;
-        box-shadow: var(--panel-shadow); z-index: 720; display: none;
-    }
-
-    #super-region-stats-container {
-        background: var(--panel-bg); padding: 1.5vh 1vw;
-        border-radius: 8px; box-shadow: var(--panel-shadow);
-        font-size: 1.3vh;
-        width: 100%;
-        display: block;
-        color: var(--text-color-primary);
-        overflow-x: hidden;
-    }
-    #super-region-stats-container h3 {
-        margin-top: 0; margin-bottom: 0.8vh; font-size: 1.6vh; /* MODIFIED */
-        border-bottom: 1px solid var(--border-color-dark);
-        padding-bottom: 0.4vh; color: var(--text-color-primary); /* MODIFIED */
-    }
-    #super-region-stats-table {
-        width: 100%;
-        border-collapse: collapse;
-        table-layout: fixed;
-    }
-    #super-region-stats-table thead,
-    #super-region-stats-table tfoot tr {
-        display: table;
-        width: 100%;
-        table-layout: fixed;
-        box-sizing: border-box;
-    }
-    #super-region-stats-table tbody {
-        display: block;
-        max-height: 12vh; /* MODIFIED */
-        overflow-y: auto;
-        width: 100%;
-        box-sizing: border-box;
-    }
-    #super-region-stats-table tbody tr {
-        display: table;
-        width: 100%;
-        table-layout: fixed;
-    }
-    #super-region-stats-table th, #super-region-stats-table td {
-        border: 1px solid var(--border-color-dark);
-        padding: 0.4vh 0.4vw; /* MODIFIED */
-        text-align: left;
-        font-size: 1.1vh; /* MODIFIED */
-        color: var(--text-color-primary);
-        word-wrap: break-word;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    #super-region-stats-table th {
-        background-color: var(--table-header-bg);
-        font-weight: bold;
-        color: var(--text-color-primary);
-    }
-    #super-region-stats-table td.number-cell { text-align: right; }
-    #super-region-stats-table .col-region { width: 22%; }
-    #super-region-stats-table .col-budget { width: 16%; }
-    #super-region-stats-table .col-dispatch { width: 16%; }
-    #super-region-stats-table .col-achieve { width: 13%; }
-    #super-region-stats-table .col-lastyear { width: 18%; }
-    #super-region-stats-table .col-margin-percent { width: 15%; }
-
-
-    #international-stats-container h3 {
-        margin-top: 0; margin-bottom: 0.8vh; font-size: 1.6vh; /* MODIFIED */
-        border-bottom: 1px solid var(--border-color-dark);
-        padding-bottom: 0.4vh; color: var(--text-color-primary); /* MODIFIED */
-    }
-    #international-stats-table {
-        width: 100%; border-collapse: collapse; table-layout: fixed;
-    }
-    #international-stats-table thead,
-    #international-stats-table tfoot tr { display: table; width: 100%; table-layout: fixed; box-sizing: border-box; }
-    #international-stats-table tbody {
-        display: block;
-        max-height: 18vh; /* MODIFIED for compactness */
-        overflow-y: auto; width: 100%; box-sizing: border-box;
-    }
-    #international-stats-table tbody tr { display: table; width: 100%; table-layout: fixed; }
-    #international-stats-table th, #international-stats-table td {
-        border: 1px solid var(--border-color-dark); padding: 0.4vh 0.4vw; /* MODIFIED */
-        text-align: left; font-size: 1.1vh; /* MODIFIED */
-        color: var(--text-color-primary); word-wrap: break-word;
-    }
-    #international-stats-table th {
-        background-color: var(--table-header-bg); font-weight: bold;
-        color: var(--text-color-primary);
-    }
-    #international-stats-table td.number-cell { text-align: right; }
-    #international-stats-table .col-country { width: 25%; }
-    #international-stats-table .col-sales { width: 15%; }
-    #international-stats-table .col-budget { width: 15%; }
-    #international-stats-table .col-achieve { width: 13%; }
-    #international-stats-table .col-lastyear { width: 17%; }
-    #international-stats-table .col-margin-percent { width: 15%; }
-
-    #chart-container {
-        position: absolute; bottom: 12vh; left: 1vw;
-        width: 28vw; max-width: 350px;
-        height: 28vh; max-height: 220px;
-        background: var(--chart-bg); padding: 1.5vh 1vw;
-        border-radius: 8px; box-shadow: var(--panel-shadow);
-        z-index: 710; display: block;
-    }
-    #chart-container canvas { width: 100% !important; height: 100% !important; }
-
-    #back-to-world-btn-dynamic:hover { background-color: var(--button-hover-bg); }
-
-    #indonesia-legend-floating {
-        position: absolute; bottom: 12vh; right: 1.5vw;
-        background: var(--panel-bg); padding: 1.5vh 1vw;
-        border-radius: 5px; box-shadow: var(--panel-shadow);
-        z-index: 700; width: 17vw; max-width: 180px;
-        display: none;
-    }
-    #indonesia-legend-floating h4 {
-        margin-top: 0; margin-bottom: 0.5vh; font-size: 1.6vh;
-        padding-bottom: 0.3vh; border-bottom: 1px solid var(--border-color-dark);
-        color: var(--text-color-primary);
-    }
-    .legend-items-scroll-container {
-        max-height: calc(10vh);
-        overflow-y: auto; font-size: 1.4vh;
-        color: var(--text-color-primary);
-    }
-    .legend-items-scroll-container div { margin-bottom: 0.3vh; display: flex; align-items: center; }
-    .legend-items-scroll-container i {
-        width: 1.2vh; height: 1.2vh;
-        margin-right: 0.5vw; border: 1px solid var(--border-color-light);
-        flex-shrink: 0;
-    }
-
-    /* --- Responsive Adjustments --- */
-
-    @media (max-width: 1200px) {
-        body { font-size: 1.5vh; }
-        #filter-menu {
-            gap: 0.6vw; top: 1vh; padding: 0.7vh 0.8vw;
+        html::-webkit-scrollbar {
+            display: none;
         }
-        #filter-menu input[type="date"] { width: 9vw; min-width: 80px; max-width: 90px; }
-        .custom-dropdown-trigger { min-width: 10vw; max-width: 15vw; }
+
+        html {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        :root {
+            --main-bg-color: #f0f0f0;
+            --map-ui-bg: #f0f0f0;
+            --map-bg: #aadaff;
+            --text-color-primary: #333;
+            --text-color-secondary: #555;
+            --text-color-labels: #333;
+            --panel-bg: rgba(255, 255, 255, 0.97);
+            --panel-bg-solid: #fff;
+            --panel-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            --border-color-light: #ccc;
+            --border-color-medium: #bbb;
+            --border-color-dark: #ddd;
+            --input-bg: #fff;
+            --input-border: #ccc;
+            --button-bg: #e9e9e9;
+            --button-border: #bbb;
+            --button-hover-bg: #dcdcdc;
+            --table-header-bg: #f2f2f2;
+            --tooltip-global-bg: rgba(0, 0, 0, 0.8);
+            --tooltip-global-text: white;
+            --tooltip-indonesia-bg: rgba(255, 255, 255, 0.95);
+            --tooltip-indonesia-text: #333;
+            --tooltip-indonesia-border: #ccc;
+            --watermark-bg: rgba(255, 255, 255, 0.7);
+            --watermark-text: #555;
+            --watermark-link: #337ab7;
+            --chart-bg: rgba(255, 255, 255, 0.92);
+            --link-color: #337ab7;
+            --back-to-world-bg: #fff;
+            --world-feature-base-color: #e0e0e0;
+        }
+
+        .dark-mode {
+            --main-bg-color: #0d1a2e;
+            --map-ui-bg: #12213c;
+            --map-bg: #1a2b41;
+            --text-color-primary: #e0e6eb;
+            --text-color-secondary: #b0b8c0;
+            --text-color-labels: #c0c8d0;
+            --panel-bg: rgba(28, 44, 68, 0.97);
+            --panel-bg-solid: #1c2c44;
+            --panel-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --border-color-light: #4a5b78;
+            --border-color-medium: #5a6b88;
+            --border-color-dark: #3a4b68;
+            --input-bg: #1c2c44;
+            --input-border: #4a5b78;
+            --button-bg: #2c3c54;
+            --button-border: #4a5b78;
+            --button-hover-bg: #3c4c64;
+            --table-header-bg: #2a3b58;
+            --tooltip-global-bg: rgba(220, 220, 230, 0.85);
+            --tooltip-global-text: #111;
+            --tooltip-indonesia-bg: rgba(30, 45, 70, 0.95);
+            --tooltip-indonesia-text: #e0e6eb;
+            --tooltip-indonesia-border: #4a5b78;
+            --watermark-bg: rgba(0, 0, 0, 0.5);
+            --watermark-text: #aaa;
+            --watermark-link: #8ab4f8;
+            --chart-bg: rgba(28, 44, 68, 0.92);
+            --link-color: #8ab4f8;
+            --back-to-world-bg: #1c2c44;
+            --world-feature-base-color: #2a3b58;
+        }
+
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--main-bg-color);
+            color: var(--text-color-primary);
+            font-size: 1.6vh;
+        }
+
+        #map-ui-container {
+            position: relative;
+            width: 100%;
+            height: calc(100vh - 57px);
+            /* overflow-x: hidden; (Tidak diperlukan lagi jika filter-menu juga hidden) */
+            /* overflow-y: visible; (Tidak diperlukan lagi jika filter-menu juga hidden dan dropdown fixed) */
+            overflow: hidden; /* Lebih sederhana jika dropdown fixed */
+            background-color: var(--map-ui-bg);
+            display: block;
+        }
+
+        .leaflet-control-zoom { display: none !important; }
+
+        #map {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            height: 100%; width: 100%;
+            background-color: var(--map-bg);
+            z-index: 500;
+        }
+
+        .info-tooltip-global,
+        #sales-tooltip-indonesia {
+            position: absolute; padding: 1vh 1.2vw; border-radius: 4px;
+            font-size: 1.5vh; z-index: 800; pointer-events: none;
+            display: none; box-shadow: var(--panel-shadow);
+        }
+        .info-tooltip-global { background: var(--tooltip-global-bg); color: var(--tooltip-global-text); }
+        #sales-tooltip-indonesia { background: var(--tooltip-indonesia-bg); color: var(--tooltip-indonesia-text); border: 1px solid var(--tooltip-indonesia-border); }
+
+        .loading {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.7); color: white;
+            padding: 2.5vh 3vw; border-radius: 8px;
+            z-index: 10000; font-size: 2vh;
+            text-align: center; display: none;
+        }
+
+        .geoboundaries-watermark {
+            position: absolute; bottom: 0.5vh; right: 1vw;
+            font-size: 1.1vh; color: var(--watermark-text);
+            background-color: var(--watermark-bg);
+            padding: 0.3vh 0.6vw; border-radius: 3px;
+            z-index: 700;
+        }
+        .geoboundaries-watermark a { color: var(--watermark-link); }
+
+        /* --- Filter Menu (Top Bar) --- */
+        #filter-menu {
+            position: absolute; top: 1.5vh;
+            right: 1vw;
+            width: auto; max-width: calc(75%);
+            background: var(--panel-bg); padding: 0.8vh 1vw;
+            border-radius: 6px; z-index: 720; /* Dropdown content akan memiliki z-index lebih tinggi */
+            box-shadow: var(--panel-shadow);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6vh 0.6vw;
+            align-items: center;
+            overflow: hidden; /* PENTING: Mencegah filter-menu mendapatkan scrollbar sendiri */
+        }
+        .date-filter-container {
+            display: flex; gap: 0.5vw;
+            align-items: center; flex-shrink: 0;
+        }
+        .date-filter-container > div { display: flex; flex-direction: row; align-items: center; }
+        .date-filter-container label {
+            font-size: 1.3vh; font-weight: 500;
+            margin-right: 0.3vw; color: var(--text-color-labels);
+            white-space: nowrap;
+        }
+        #filter-menu input[type="date"] {
+            padding: 0.4vh 0.6vw; border-radius: 3px;
+            border: 1px solid var(--input-border);
+            background-color: var(--input-bg); color: var(--text-color-primary);
+            font-size: 1.4vh; width: 10vw;
+            min-width: 90px; max-width: 100px;
+            height: 3vh; max-height: 23px;
+            box-sizing: border-box; flex-shrink: 0;
+        }
+
+        .filter-group {
+            display: flex; flex-direction: row;
+            align-items: center; gap: 0.3vw;
+            flex-shrink: 1;
+            min-width: 0;
+        }
+        .filter-group > label {
+            font-size: 1.4vh; font-weight: 600;
+            white-space: nowrap; color: var(--text-color-labels);
+            margin-right: 0.2vw;
+        }
+        .custom-dropdown-container {
+            /* position: relative; Dihapus karena dropdown content sekarang fixed/absolute ke viewport/body */
+            position: static; /* Lebih aman untuk memastikan tidak ada konteks posisi yang tidak diinginkan */
+            flex-shrink: 1;
+            min-width: 0;
+        }
+        .custom-dropdown-trigger {
+            background-color: var(--input-bg); border: 1px solid var(--input-border);
+            color: var(--text-color-primary); border-radius: 3px;
+            padding: 0.4vh 1.8vw 0.4vh 0.6vw; font-size: 1.4vh;
+            min-width: 10vw;
+            max-width: 16vw;
+            text-align: left; cursor: pointer;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            position: relative; height: 3vh; max-height: 23px;
+            box-sizing: border-box;
+            display: block;
+        }
+        .custom-dropdown-trigger::after {
+            content: '▼'; font-size: 0.8em;
+            position: absolute; right: 0.6vw; top: 50%;
+            transform: translateY(-50%); color: var(--text-color-secondary);
+        }
+        /* Konten dropdown yang sebenarnya */
+        .custom-dropdown-content {
+            display: none; /* Diatur oleh JS */
+            position: fixed; /* Diposisikan relatif ke viewport */
+            z-index: 9900; /* Sangat tinggi agar di atas segalanya */
+            box-shadow: var(--panel-shadow);
+            /* top, left, width, height akan diatur oleh JS atau .checkbox-list-container */
+        }
+        /* Kontainer di dalam dropdown yang bisa di-scroll */
+        .checkbox-list-container {
+            overflow-y: auto; /* Ini akan menampilkan scrollbar jika kontennya lebih tinggi dari max-height */
+            border: 1px solid var(--input-border);
+            padding: 0.8vh; border-radius: 3px;
+            background-color: var(--input-bg);
+            min-width: 15vw; /* Lebar minimal dropdown */
+            max-width: 25vw; /* Lebar maksimal dropdown */
+            max-height: 18vh; /* Kunci: Batas tinggi sebelum scrollbar internal muncul */
+        }
+        .checkbox-list-container div { display: flex; align-items: center; margin-bottom: 0.3vh; }
+        .checkbox-list-container input[type="checkbox"] { margin-right: 0.5vw; }
+        .checkbox-list-container label {
+            font-size: 1.3vh; font-weight: normal; cursor: pointer;
+            user-select: none; color: var(--text-color-primary);
+        }
+
+
+        .filter-actions {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        #reset-all-filters {
+            padding: 0.5vh 1vw;
+            font-size: 1.4vh;
+            background-color: var(--button-bg); border: 1px solid var(--button-border);
+            color: var(--text-color-primary); border-radius: 3px;
+            cursor: pointer;
+            height: 3vh; max-height: 23px;
+            box-sizing: border-box; flex-shrink: 0;
+            white-space: nowrap;
+            width: auto;
+        }
+        #reset-all-filters:hover { background-color: var(--button-hover-bg); }
 
         #left-column-stats-container {
-            width: 40vw; max-width: 450px;
-            top: calc(1vh + 3vh + 0.7vh + 1.5vh);
-            max-height: calc(100vh - 57px - 6.2vh - (25vh + 10vh - 6.2vh) - 1vh);
-        }
-        #international-stats-container {
-            width: 40vw; max-width: 450px;
-            top: calc(1vh + 3vh + 0.7vh + 1.5vh);
-            max-height: calc(100vh - 57px - 6.2vh - (25vh + 10vh - 6.2vh) - 1vh);
-        }
-        #chart-container {
-            width: 26vw; max-width: 300px;
-            height: 25vh; max-height: 200px;
-            bottom: 10vh;
-        }
-        #indonesia-legend-floating {
-            width: 18vw; max-width: 170px;
-            bottom: 10vh;
-        }
-    }
-
-    @media (max-width: 991px) {
-        body { font-size: 1.6vh; }
-        #map-ui-container {
+            position: absolute; top: 8.1vh; right: 1.5vw;
+            z-index: 709; width: 38vw; max-width: 500px;
             display: flex; flex-direction: column;
-            height: auto; min-height: calc(100vh - 57px);
-            overflow-y: auto; padding-bottom: 2vh;
+            max-height: calc(100vh - 57px - 8.1vh - (28vh + 12vh - 8.1vh) - 1vh);
+            padding-bottom: 1vh;
         }
-        #filter-menu {
-            position: relative; order: 1;
-            top: auto; right: auto; left: auto;
-            width: 100%; max-width: 100%;
-            border-radius: 0; box-shadow: none;
-            border-bottom: 1px solid var(--border-color-dark);
-            padding: 1.5vh 2vw; margin-bottom: 1.5vh;
-            flex-wrap: wrap; overflow-x: hidden;
-            gap: 1vh 1.5vw;
-        }
-        .date-filter-container { flex-basis: auto; justify-content: flex-start; }
-        #filter-menu input[type="date"] { width: 35vw; max-width: 130px; font-size: 1.6vh; height: 3.5vh; max-height: 28px; }
-        .filter-group { flex-basis: auto; }
-        .custom-dropdown-trigger { min-width: 30vw; max-width: none; font-size: 1.6vh; height: 3.5vh; max-height: 28px; }
-
-        .filter-actions { /* On smaller screens, reset button might not need margin-left: auto if it wraps naturally */
-            margin-left: 0; /* Reset for stacked layout */
-            width: 100%; /* Make it full width if it wraps */
-            order: 99; /* Ensure it's last */
-        }
-        #reset-all-filters {
-            width: 100%; /* Full width button on small screens */
-            margin-left: 0;
-        }
-
-
-        #back-to-world-btn-dynamic { order: 2; position: relative; top: auto; left: auto; width: max-content; margin: 0 auto 1.5vh auto; font-size: 2vh; }
-
-        #left-column-stats-container,
         #international-stats-container {
-            order: 3; position: relative; width: calc(100% - 4vw);
-            margin: 0 auto 1.5vh auto; top: auto; right: auto; left: auto;
-            max-height: 40vh; padding-bottom: 0;
+            position: absolute; top: 8.1vh; left: 1vw;
+            z-index: 709; background: var(--panel-bg); padding: 1.5vh 1vw;
+            border-radius: 8px; box-shadow: var(--panel-shadow);
+            font-size: 1.5vh; width: 38vw; max-width: 500px;
+            max-height: calc(100vh - 57px - 8.1vh - (28vh + 12vh - 8.1vh) - 1vh);
+            overflow-y: auto; display: none; color: var(--text-color-primary);
         }
-        #international-stats-container { order: 4; }
+        #back-to-world-btn-dynamic {
+            position: absolute; top: 8.1vh; left: 1.5vw;
+            background: var(--back-to-world-bg); color: var(--link-color);
+            padding: 1vh 1.2vw; border-radius: 5px;
+            text-decoration: none; font-size: 1.6vh;
+            box-shadow: var(--panel-shadow); z-index: 720; display: none;
+        }
 
         #super-region-stats-container {
-            margin-top: 0;
-            overflow-x: auto;
+            background: var(--panel-bg); padding: 1.5vh 1vw;
+            border-radius: 8px; box-shadow: var(--panel-shadow);
+            font-size: 1.3vh;
+            width: 100%;
+            display: block;
+            color: var(--text-color-primary);
+            overflow-x: hidden;
         }
-        #international-stats-container { overflow-x: auto; }
+        #super-region-stats-container h3 {
+            margin-top: 0; margin-bottom: 0.8vh; font-size: 1.6vh;
+            border-bottom: 1px solid var(--border-color-dark);
+            padding-bottom: 0.4vh; color: var(--text-color-primary);
+        }
+        #super-region-stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        #super-region-stats-table thead,
+        #super-region-stats-table tfoot tr {
+            display: table;
+            width: 100%;
+            table-layout: fixed;
+            box-sizing: border-box;
+        }
+        #super-region-stats-table tbody {
+            display: block;
+            max-height: 12vh;
+            overflow-y: auto;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        #super-region-stats-table tbody tr {
+            display: table;
+            width: 100%;
+            table-layout: fixed;
+        }
+        #super-region-stats-table th, #super-region-stats-table td {
+            border: 1px solid var(--border-color-dark);
+            padding: 0.4vh 0.4vw;
+            text-align: left;
+            font-size: 1.1vh;
+            color: var(--text-color-primary);
+            word-wrap: break-word;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        #super-region-stats-table th {
+            background-color: var(--table-header-bg);
+            font-weight: bold;
+            color: var(--text-color-primary);
+        }
+        #super-region-stats-table td.number-cell { text-align: right; }
+        #super-region-stats-table .col-region { width: 22%; }
+        #super-region-stats-table .col-budget { width: 16%; }
+        #super-region-stats-table .col-dispatch { width: 16%; }
+        #super-region-stats-table .col-achieve { width: 13%; }
+        #super-region-stats-table .col-lastyear { width: 18%; }
+        #super-region-stats-table .col-margin-percent { width: 15%; }
 
-        #super-region-stats-table, #international-stats-table {
-            min-width: 450px;
+
+        #international-stats-container h3 {
+            margin-top: 0; margin-bottom: 0.8vh; font-size: 1.6vh;
+            border-bottom: 1px solid var(--border-color-dark);
+            padding-bottom: 0.4vh; color: var(--text-color-primary);
         }
-        #super-region-stats-table th, #super-region-stats-table td,
+        #international-stats-table {
+            width: 100%; border-collapse: collapse; table-layout: fixed;
+        }
+        #international-stats-table thead,
+        #international-stats-table tfoot tr { display: table; width: 100%; table-layout: fixed; box-sizing: border-box; }
+        #international-stats-table tbody {
+            display: block;
+            max-height: 18vh;
+            overflow-y: auto; width: 100%; box-sizing: border-box;
+        }
+        #international-stats-table tbody tr { display: table; width: 100%; table-layout: fixed; }
         #international-stats-table th, #international-stats-table td {
-             font-size: 1.2vh; /* Slightly larger for tablet readability */
+            border: 1px solid var(--border-color-dark); padding: 0.4vh 0.4vw;
+            text-align: left; font-size: 1.1vh;
+            color: var(--text-color-primary); word-wrap: break-word;
         }
-        #super-region-stats-table tbody { max-height: 25vh; }
-        #international-stats-table tbody { max-height: 30vh; }
-
-        #chart-container { order: 5; position: relative; width: calc(100% - 4vw); height: 35vh; min-height: 200px; margin: 0 auto 1.5vh auto; bottom: auto; left: auto; }
-        #indonesia-legend-floating { order: 6; position: relative; width: calc(100% - 4vw); margin: 0 auto 1.5vh auto; bottom: auto; right: auto; left: auto; }
-        .legend-items-scroll-container { max-height: 20vh; }
-
-        #map { order: 7; position: relative; width: 100%; height: 50vh; min-height: 300px; z-index: 1; }
-        .geoboundaries-watermark { order: 8; position: relative; text-align: center; width: 100%; bottom: auto; right: auto; padding: 0.5vh 0; font-size: 1.2vh; background-color: transparent; z-index: 2; }
-    }
-
-    @media (max-width: 575px) {
-        body { font-size: 1.7vh; }
-        #filter-menu { padding: 1vh 2vw; gap: 1vh 1vw; }
-        .date-filter-container > div { flex-basis: 100%; margin-bottom: 0.8vh; }
-        #filter-menu input[type="date"] { width: calc(100% - 10vw); max-width: none; }
-        .filter-group { flex-basis: 100%; }
-        .custom-dropdown-trigger { min-width: calc(100% - 10vw); }
-
-        #map { height: 45vh; min-height: 250px; }
-        #left-column-stats-container,
-        #international-stats-container { font-size: 1.5vh; max-height: 35vh; }
-
-        #super-region-stats-table th, #super-region-stats-table td,
-        #international-stats-table th, #international-stats-table td {
-            font-size: 1.1vh; /* Keep small for mobile */
-            padding: 0.3vh 0.3vw; /* Further reduce padding */
+        #international-stats-table th {
+            background-color: var(--table-header-bg); font-weight: bold;
+            color: var(--text-color-primary);
         }
-        #super-region-stats-table, #international-stats-table { min-width: 300px; }
-        #chart-container { height: 30vh; min-height: 180px; }
-        .legend-items-scroll-container { font-size: 1.3vh; }
-        #indonesia-legend-floating h4 { font-size: 1.5vh; }
-    }
+        #international-stats-table td.number-cell { text-align: right; }
+        #international-stats-table .col-country { width: 25%; }
+        #international-stats-table .col-sales { width: 15%; }
+        #international-stats-table .col-budget { width: 15%; }
+        #international-stats-table .col-achieve { width: 13%; }
+        #international-stats-table .col-lastyear { width: 17%; }
+        #international-stats-table .col-margin-percent { width: 15%; }
+
+        #chart-container {
+            position: absolute; bottom: 12vh; left: 1vw;
+            width: 28vw; max-width: 350px;
+            height: 28vh; max-height: 220px;
+            background: var(--chart-bg); padding: 1.5vh 1vw;
+            border-radius: 8px; box-shadow: var(--panel-shadow);
+            z-index: 710; display: block;
+        }
+        #chart-container canvas { width: 100% !important; height: 100% !important; }
+
+        #back-to-world-btn-dynamic:hover { background-color: var(--button-hover-bg); }
+
+        #indonesia-legend-floating {
+            position: absolute; bottom: 12vh; right: 1.5vw;
+            background: var(--panel-bg); padding: 1.5vh 1vw;
+            border-radius: 5px; box-shadow: var(--panel-shadow);
+            z-index: 700; width: 17vw; max-width: 180px;
+            display: none;
+        }
+        #indonesia-legend-floating h4 {
+            margin-top: 0; margin-bottom: 0.5vh; font-size: 1.6vh;
+            padding-bottom: 0.3vh; border-bottom: 1px solid var(--border-color-dark);
+            color: var(--text-color-primary);
+        }
+        .legend-items-scroll-container {
+            max-height: calc(10vh);
+            overflow-y: auto; font-size: 1.4vh;
+            color: var(--text-color-primary);
+        }
+        .legend-items-scroll-container div { margin-bottom: 0.3vh; display: flex; align-items: center; }
+        .legend-items-scroll-container i {
+            width: 1.2vh; height: 1.2vh;
+            margin-right: 0.5vw; border: 1px solid var(--border-color-light);
+            flex-shrink: 0;
+        }
+
+        /* --- Responsive Adjustments --- */
+
+        @media (max-width: 1200px) {
+            body { font-size: 1.5vh; }
+            #filter-menu {
+                gap: 0.6vw; top: 1vh; padding: 0.7vh 0.8vw;
+            }
+            #filter-menu input[type="date"] { width: 9vw; min-width: 80px; max-width: 90px; }
+            .custom-dropdown-trigger { min-width: 10vw; max-width: 15vw; }
+
+            #left-column-stats-container {
+                width: 40vw; max-width: 450px;
+                top: calc(1vh + 3vh + 0.7vh + 1.5vh);
+                max-height: calc(100vh - 57px - 6.2vh - (25vh + 10vh - 6.2vh) - 1vh);
+            }
+            #international-stats-container {
+                width: 40vw; max-width: 450px;
+                top: calc(1vh + 3vh + 0.7vh + 1.5vh);
+                max-height: calc(100vh - 57px - 6.2vh - (25vh + 10vh - 6.2vh) - 1vh);
+            }
+            #chart-container {
+                width: 26vw; max-width: 300px;
+                height: 25vh; max-height: 200px;
+                bottom: 10vh;
+            }
+            #indonesia-legend-floating {
+                width: 18vw; max-width: 170px;
+                bottom: 10vh;
+            }
+        }
+
+        @media (max-width: 991px) {
+            body { font-size: 1.6vh; }
+            #map-ui-container {
+                display: flex; flex-direction: column;
+                height: auto; min-height: calc(100vh - 57px);
+                overflow-y: auto;
+                overflow-x: hidden; /* Mencegah scroll horizontal pada container utama di mobile */
+                padding-bottom: 2vh;
+            }
+            #filter-menu {
+                position: relative; order: 1; /* Kembali ke alur normal */
+                top: auto; right: auto; left: auto;
+                width: 100%; max-width: 100%;
+                border-radius: 0; box-shadow: none;
+                border-bottom: 1px solid var(--border-color-dark);
+                padding: 1.5vh 2vw; margin-bottom: 1.5vh;
+                flex-wrap: wrap;
+                overflow: hidden; /* Tetap hidden untuk filter menu */
+            }
+            .date-filter-container { flex-basis: auto; justify-content: flex-start; }
+            #filter-menu input[type="date"] { width: 35vw; max-width: 130px; font-size: 1.6vh; height: 3.5vh; max-height: 28px; }
+            .filter-group { flex-basis: auto; }
+            .custom-dropdown-trigger { min-width: 30vw; max-width: none; font-size: 1.6vh; height: 3.5vh; max-height: 28px; }
+
+            .custom-dropdown-container {
+                 position: relative; /* Penting untuk positioning absolute dropdown content di mobile */
+            }
+            .custom-dropdown-content {
+                position: absolute; /* Gunakan absolute untuk mobile agar tetap terkait dengan trigger */
+                                  /* JS akan mengatur top/left relatif ke .custom-dropdown-container */
+                z-index: 9900; /* Pastikan tetap di atas */
+            }
+
+
+            .filter-actions {
+                margin-left: 0;
+                width: 100%;
+                order: 99;
+            }
+            #reset-all-filters {
+                width: 100%;
+                margin-left: 0;
+            }
+
+
+            #back-to-world-btn-dynamic { order: 2; position: relative; top: auto; left: auto; width: max-content; margin: 0 auto 1.5vh auto; font-size: 2vh; }
+
+            #left-column-stats-container,
+            #international-stats-container {
+                order: 3; position: relative; width: calc(100% - 4vw);
+                margin: 0 auto 1.5vh auto; top: auto; right: auto; left: auto;
+                max-height: 40vh; padding-bottom: 0;
+            }
+            #international-stats-container { order: 4; }
+
+            #super-region-stats-container {
+                margin-top: 0;
+                overflow-x: auto;
+            }
+            #international-stats-container { overflow-x: auto; }
+
+            #super-region-stats-table, #international-stats-table {
+                min-width: 450px;
+            }
+            #super-region-stats-table th, #super-region-stats-table td,
+            #international-stats-table th, #international-stats-table td {
+                font-size: 1.2vh;
+            }
+            #super-region-stats-table tbody { max-height: 25vh; }
+            #international-stats-table tbody { max-height: 30vh; }
+
+            #chart-container { order: 5; position: relative; width: calc(100% - 4vw); height: 35vh; min-height: 200px; margin: 0 auto 1.5vh auto; bottom: auto; left: auto; }
+            #indonesia-legend-floating { order: 6; position: relative; width: calc(100% - 4vw); margin: 0 auto 1.5vh auto; bottom: auto; right: auto; left: auto; }
+            .legend-items-scroll-container { max-height: 20vh; }
+
+            #map { order: 7; position: relative; width: 100%; height: 50vh; min-height: 300px; z-index: 1; }
+            .geoboundaries-watermark { order: 8; position: relative; text-align: center; width: 100%; bottom: auto; right: auto; padding: 0.5vh 0; font-size: 1.2vh; background-color: transparent; z-index: 2; }
+        }
+
+        @media (max-width: 575px) {
+            body { font-size: 1.7vh; }
+            #filter-menu { padding: 1vh 2vw; gap: 1vh 1vw; }
+            .date-filter-container > div { flex-basis: 100%; margin-bottom: 0.8vh; }
+            #filter-menu input[type="date"] { width: calc(100% - 10vw); max-width: none; }
+            .filter-group { flex-basis: 100%; }
+            .custom-dropdown-trigger { min-width: calc(100% - 10vw); }
+
+            #map { height: 45vh; min-height: 250px; }
+            #left-column-stats-container,
+            #international-stats-container { font-size: 1.5vh; max-height: 35vh; }
+
+            #super-region-stats-table th, #super-region-stats-table td,
+            #international-stats-table th, #international-stats-table td {
+                font-size: 1.1vh;
+                padding: 0.3vh 0.3vw;
+            }
+            #super-region-stats-table, #international-stats-table { min-width: 300px; }
+            #chart-container { height: 30vh; min-height: 180px; }
+            .legend-items-scroll-container { font-size: 1.3vh; }
+            #indonesia-legend-floating h4 { font-size: 1.5vh; }
+        }
     </style>
 
     <div id="map-ui-container">
@@ -534,9 +555,11 @@
             <div class="filter-group">
                 <label>Brand:</label>
                 <div class="custom-dropdown-container">
-                    <button type="button" id="brand-dropdown-trigger" class="custom-dropdown-trigger" data-controls="brand-filter-list">All Brands</button>
-                    <div id="brand-filter-list" class="checkbox-list-container custom-dropdown-content">
-                        <!-- Populated by JS -->
+                    <button type="button" id="brand-dropdown-trigger" class="custom-dropdown-trigger" data-controls="brand-filter-list" aria-haspopup="true" aria-expanded="false">All Brands</button>
+                    <div id="brand-filter-list" class="custom-dropdown-content" role="listbox">
+                        <div class="checkbox-list-container">
+                           <!-- Populated by JS -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -544,9 +567,11 @@
             <div class="filter-group">
                 <label>Region/Code:</label>
                 <div class="custom-dropdown-container">
-                    <button type="button" id="code-cmmt-dropdown-trigger" class="custom-dropdown-trigger" data-controls="code-cmmt-filter-list">All Regions/Codes</button>
-                    <div id="code-cmmt-filter-list" class="checkbox-list-container custom-dropdown-content">
-                        <!-- Populated by JS -->
+                    <button type="button" id="code-cmmt-dropdown-trigger" class="custom-dropdown-trigger" data-controls="code-cmmt-filter-list" aria-haspopup="true" aria-expanded="false">All Regions/Codes</button>
+                    <div id="code-cmmt-filter-list" class="custom-dropdown-content" role="listbox">
+                         <div class="checkbox-list-container">
+                            <!-- Populated by JS -->
+                         </div>
                     </div>
                 </div>
             </div>
@@ -554,13 +579,15 @@
             <div class="filter-group">
                 <label>City:</label>
                 <div class="custom-dropdown-container">
-                    <button type="button" id="city-dropdown-trigger" class="custom-dropdown-trigger" data-controls="city-filter-list">All Cities</button>
-                    <div id="city-filter-list" class="checkbox-list-container custom-dropdown-content">
-                        <!-- Populated by JS -->
+                    <button type="button" id="city-dropdown-trigger" class="custom-dropdown-trigger" data-controls="city-filter-list" aria-haspopup="true" aria-expanded="false">All Cities</button>
+                    <div id="city-filter-list" class="custom-dropdown-content" role="listbox">
+                        <div class="checkbox-list-container">
+                           <!-- Populated by JS -->
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="filter-actions"> <!-- MODIFIED: Wrapper for reset button -->
+            <div class="filter-actions">
                 <button id="reset-all-filters">Reset Filters</button>
             </div>
         </div>
@@ -576,7 +603,7 @@
                         <th class="col-dispatch">Dispatch (Ton)</th>
                         <th class="col-achieve">Achieve %</th>
                         <th class="col-lastyear">Dispatch LY (Ton)</th>
-                        <th class="col-margin-percent">Margin %</th>
+                        <th class="col-margin-percent">Achieve Margin %</th>
                     </tr></thead>
                     <tbody></tbody>
                     <tfoot><tr>
@@ -627,6 +654,7 @@
     <script src="https://unpkg.com/tinycolor2"></script>
 
     <script>
+        // --- Variabel Global dan Konfigurasi Awal (Sama seperti sebelumnya) ---
         let currentMapView = 'world';
         let map, geoLayer, previousIndonesiaZoom = null;
         const INDIA_CENTER = [20.5937, 78.9629];
@@ -636,9 +664,9 @@
         const INDONESIA_CACHE_KEY = 'indonesia-adm2-topojson-v19-dynamic';
         const MAX_CACHE_SIZE_MB = 5;
         const CALCULATION_BATCH_SIZE = 50;
-        
-        const INDONESIA_DEFAULT_ZOOM_LEVEL = 5; 
-        const INDONESIA_MIN_ZOOM = 4.5;         
+
+        const INDONESIA_DEFAULT_ZOOM_LEVEL = 5;
+        const INDONESIA_MIN_ZOOM = 4.5;
         const INDONESIA_MAX_ZOOM = 7.75;
         const WORLD_DEFAULT_ZOOM_LEVEL = 3;
         const WORLD_MIN_ZOOM = 2.5;
@@ -691,6 +719,86 @@
 
         const dateRanges = @json($dateRanges);
         const initialFilterValues = @json($filterValues ?? ['brands' => [], 'cities' => [], 'code_cmmts' => []]);
+        // --- Akhir Variabel Global ---
+
+
+        // --- Fungsi untuk Dropdown Positioning ---
+        function positionDropdown(triggerElement, dropdownContent) {
+            const triggerRect = triggerElement.getBoundingClientRect();
+            const contentRect = dropdownContent.getBoundingClientRect(); // Dapatkan ukuran setelah display block
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            const scrollY = window.scrollY; // Untuk memperhitungkan scroll halaman jika dropdown fixed
+
+            let top = triggerRect.bottom + scrollY + 2; // 2px gap, tambahkan scrollY untuk fixed
+            let left = triggerRect.left;
+
+            // Cek apakah dropdown akan keluar layar bawah
+            if (top + contentRect.height > viewportHeight + scrollY) {
+                top = triggerRect.top + scrollY - contentRect.height - 2; // Pindahkan ke atas trigger
+            }
+            // Cek apakah akan keluar layar atas (jika dipindahkan ke atas trigger)
+            if (top < scrollY) {
+                top = scrollY + 5; // Beri sedikit jarak dari atas viewport jika masih keluar
+            }
+
+
+            // Cek apakah dropdown akan keluar layar kanan
+            if (left + contentRect.width > viewportWidth) {
+                left = viewportWidth - contentRect.width - 10; // Geser ke kiri, 10px padding
+            }
+            // Cek apakah akan keluar layar kiri (jika digeser)
+            if (left < 0) {
+                left = 10; // Beri sedikit jarak dari kiri viewport
+            }
+
+            dropdownContent.style.top = top + 'px';
+            dropdownContent.style.left = left + 'px';
+        }
+
+        function openDropdown(triggerElement, dropdownContent) {
+            // Tutup semua dropdown lain dulu
+            document.querySelectorAll('.custom-dropdown-content.active').forEach(openContent => {
+                if (openContent !== dropdownContent) {
+                    openContent.style.display = 'none';
+                    openContent.classList.remove('active');
+                    const otherTrigger = document.querySelector(`[data-controls="${openContent.id}"]`);
+                    if (otherTrigger) otherTrigger.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            const isOpening = dropdownContent.style.display !== 'block';
+            
+            if (isOpening) {
+                dropdownContent.style.display = 'block'; // Tampilkan dulu untuk mengukur
+                dropdownContent.classList.add('active');
+                triggerElement.setAttribute('aria-expanded', 'true');
+                positionDropdown(triggerElement, dropdownContent); // Posisikan
+
+                // Tambah listener untuk menutup jika klik di luar
+                // Gunakan named function agar bisa di-remove
+                const clickOutsideHandler = (event) => {
+                    if (!dropdownContent.contains(event.target) && !triggerElement.contains(event.target)) {
+                        dropdownContent.style.display = 'none';
+                        dropdownContent.classList.remove('active');
+                        triggerElement.setAttribute('aria-expanded', 'false');
+                        document.removeEventListener('click', clickOutsideHandler, true); // Hapus listener
+                    }
+                };
+                // setTimeout untuk memastikan event click saat ini tidak langsung menutupnya
+                setTimeout(() => {
+                    document.addEventListener('click', clickOutsideHandler, true);
+                }, 0);
+
+            } else {
+                dropdownContent.style.display = 'none';
+                dropdownContent.classList.remove('active');
+                triggerElement.setAttribute('aria-expanded', 'false');
+                // Listener clickOutside sudah seharusnya terhapus jika ada
+            }
+        }
+        // --- Akhir Fungsi Dropdown Positioning ---
+
 
         document.addEventListener('DOMContentLoaded', () => {
             internationalStatsContainer = document.getElementById('international-stats-container');
@@ -698,45 +806,75 @@
             if (indonesiaLegendContainer) legendItemsScrollContainer = indonesiaLegendContainer.querySelector('.legend-items-scroll-container');
 
             initMap();
-            initAppDarkMode(); 
+            initAppDarkMode();
             populateFilterDropdowns(initialFilterValues.brands, initialFilterValues.code_cmmts, initialFilterValues.cities, [], [], []);
-            initUIElements();
+            initUIElements(); // Termasuk setup event listener dropdown
             updateAllDropdownTriggers();
 
             updateUIVisibilityBasedOnView(currentMapView);
-            handleFilterChange(); 
+            handleFilterChange();
 
-            window.addEventListener('resize', () => {
+            window.addEventListener('resize', debounce(() => {
+                document.querySelectorAll('.custom-dropdown-content.active').forEach(content => {
+                    const triggerId = content.id.replace('-filter-list', '-dropdown-trigger');
+                    const trigger = document.getElementById(triggerId);
+                    if (trigger) {
+                        positionDropdown(trigger, content);
+                    }
+                });
                 adjustTableHeadersAndFooters('super-region-stats-table');
                 adjustTableHeadersAndFooters('international-stats-table');
-            });
+            }, 150));
+
+            // Tambahkan event listener untuk scroll jika diperlukan (misalnya jika #map-ui-container bisa scroll)
+            // window.addEventListener('scroll', debounce(() => {
+            //     document.querySelectorAll('.custom-dropdown-content.active').forEach(content => {
+            //         const triggerId = content.id.replace('-filter-list', '-dropdown-trigger');
+            //         const trigger = document.getElementById(triggerId);
+            //         if (trigger) {
+            //             positionDropdown(trigger, content);
+            //         }
+            //     });
+            // }, 150), true); // Gunakan true untuk capture phase jika scroll parent
         });
-        
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
         function applyCurrentThemeStyles() {
             const isDarkMode = document.body.classList.contains('dark-mode');
-            const newGlobalFontColor = isDarkMode 
-                                        ? '#ffffff' 
+            const newGlobalFontColor = isDarkMode
+                                        ? '#ffffff'
                                         : getComputedStyle(document.documentElement).getPropertyValue('--text-color-primary').trim();
 
             if (typeof Chart !== 'undefined' && Chart.defaults) {
-                Chart.defaults.color = newGlobalFontColor; 
+                Chart.defaults.color = newGlobalFontColor;
             }
 
             if (salesPieChart) {
-                updateSalesChart(); 
+                updateSalesChart();
             }
             if (geoLayer) {
-                geoLayer.setStyle(styleFeatureMap); 
+                geoLayer.setStyle(styleFeatureMap);
             }
-            updateLegend(); 
-            updateCityMarkers(); 
-            
+            updateLegend();
+            updateCityMarkers();
+
             adjustTableHeadersAndFooters('super-region-stats-table');
             adjustTableHeadersAndFooters('international-stats-table');
         }
 
         function initAppDarkMode() {
-            const darkModeCheckbox = document.getElementById('toggle_left_sidebar_skin'); 
+            const darkModeCheckbox = document.getElementById('toggle_left_sidebar_skin');
 
             const setInitialTheme = () => {
                 const prefersDark = localStorage.getItem('darkMode') === 'true';
@@ -747,7 +885,7 @@
                     document.body.classList.remove('dark-mode');
                     if (darkModeCheckbox) darkModeCheckbox.checked = false;
                 }
-                applyCurrentThemeStyles(); 
+                applyCurrentThemeStyles();
             };
 
             if (darkModeCheckbox) {
@@ -759,12 +897,12 @@
                         document.body.classList.remove('dark-mode');
                         localStorage.setItem('darkMode', 'false');
                     }
-                    applyCurrentThemeStyles(); 
+                    applyCurrentThemeStyles();
                 });
             } else {
                 console.warn("Dark mode toggle checkbox (e.g., ID 'toggle_left_sidebar_skin') not found. Dark mode may not sync.");
             }
-            
+
             setInitialTheme();
         }
 
@@ -782,10 +920,14 @@
 
         function updateDropdownTriggerText(triggerId, contentId, singularName, pluralName, defaultTextPrefix = "All") {
             const trigger = document.getElementById(triggerId);
-            const content = document.getElementById(contentId);
-            if (!trigger || !content) return;
+            const contentWrapper = document.getElementById(contentId);
+            if (!trigger || !contentWrapper) return;
 
-            const checkedBoxes = content.querySelectorAll('input[type="checkbox"]:checked');
+            const checkboxContainer = contentWrapper.querySelector('.checkbox-list-container');
+            if (!checkboxContainer) return;
+
+
+            const checkedBoxes = checkboxContainer.querySelectorAll('input[type="checkbox"]:checked');
             let newText = "";
             if (checkedBoxes.length === 0) {
                 newText = `${defaultTextPrefix} ${pluralName}`;
@@ -814,8 +956,18 @@
         }
 
         function createCheckboxFilterGroup(containerId, items, filterType, currentSelections = []) {
-            const container = document.getElementById(containerId);
+            const dropdownContentElement = document.getElementById(containerId);
+            if (!dropdownContentElement) {
+                console.error(`Dropdown content element with ID '${containerId}' not found.`);
+                return;
+            }
+            const container = dropdownContentElement.querySelector('.checkbox-list-container');
+            if (!container) {
+                console.error(`Checkbox list container not found within ID '${containerId}'. Check HTML structure.`);
+                return;
+            }
             container.innerHTML = '';
+
 
             items.forEach(item => {
                 let value, text;
@@ -840,7 +992,7 @@
                     checkbox.checked = true;
                 }
                 checkbox.addEventListener('change', () => {
-                    handleFilterChange();
+                    handleFilterChange(); // Data akan di-fetch ulang, dropdown akan tertutup otomatis jika tidak di-handle
                 });
 
                 const label = document.createElement('label');
@@ -860,8 +1012,11 @@
         }
 
         function getSelectedCheckboxValues(contentListId) {
-            const container = document.getElementById(contentListId);
+            const dropdownContentElement = document.getElementById(contentListId);
+            if (!dropdownContentElement) return [];
+            const container = dropdownContentElement.querySelector('.checkbox-list-container');
             if (!container) return [];
+
             const checkedBoxes = container.querySelectorAll('input[type="checkbox"]:checked');
             return Array.from(checkedBoxes).map(cb => cb.value);
         }
@@ -888,42 +1043,37 @@
                 startDateSelect.value = dateRanges.default_start_date_iso || todayISO;
                 endDateSelect.value = dateRanges.default_end_date_iso || todayISO;
                 ['brand-filter-list', 'code-cmmt-filter-list', 'city-filter-list'].forEach(contentId => {
-                    const container = document.getElementById(contentId);
-                    if (container) {
-                        container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-                             cb.checked = false;
-                        });
+                    const dropdownContentElement = document.getElementById(contentId);
+                    if (dropdownContentElement) {
+                        const container = dropdownContentElement.querySelector('.checkbox-list-container');
+                        if (container) {
+                            container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                                 cb.checked = false;
+                            });
+                        }
+                        // Pastikan dropdown tertutup setelah reset
+                        dropdownContentElement.style.display = 'none';
+                        dropdownContentElement.classList.remove('active');
+                        const trigger = document.querySelector(`[data-controls="${contentId}"]`);
+                        if (trigger) trigger.setAttribute('aria-expanded', 'false');
                     }
                 });
                 handleFilterChange();
             });
 
+            // --- Event Listener untuk Trigger Dropdown (Menggunakan Fungsi Baru) ---
             document.querySelectorAll('.custom-dropdown-trigger').forEach(trigger => {
                 trigger.addEventListener('click', function(event) {
                     event.stopPropagation();
                     const targetId = this.dataset.controls;
                     const content = document.getElementById(targetId);
-                    const isCurrentlyOpen = content.style.display === 'block';
-                    document.querySelectorAll('.custom-dropdown-content').forEach(otherContent => {
-                        if (otherContent !== content) {
-                           otherContent.style.display = 'none';
-                        }
-                    });
                     if (content) {
-                        content.style.display = isCurrentlyOpen ? 'none' : 'block';
+                        openDropdown(this, content);
                     }
                 });
             });
+            // --- Akhir Event Listener Trigger ---
 
-            document.addEventListener('click', function(event) {
-                document.querySelectorAll('.custom-dropdown-container').forEach(container => {
-                    const trigger = container.querySelector('.custom-dropdown-trigger');
-                    const content = container.querySelector('.custom-dropdown-content');
-                    if (trigger && content && !trigger.contains(event.target) && !content.contains(event.target)) {
-                        content.style.display = 'none';
-                    }
-                });
-            });
 
             backToWorldBtnDynamic = document.getElementById('back-to-world-btn-dynamic');
             if (backToWorldBtnDynamic) backToWorldBtnDynamic.addEventListener('click', (e) => { e.preventDefault(); switchToView('world'); });
@@ -935,7 +1085,7 @@
             if (backToWorldBtnDynamic) backToWorldBtnDynamic.style.display = (viewType === 'indonesia') ? 'block' : 'none';
             if (indonesiaLegendContainer) indonesiaLegendContainer.style.display = (viewType === 'indonesia') ? 'block' : 'none';
             const superRegionContainer = document.getElementById('super-region-stats-container');
-            if (superRegionContainer) superRegionContainer.style.display = 'block'; 
+            if (superRegionContainer) superRegionContainer.style.display = 'block';
             const leftColContainer = document.getElementById('left-column-stats-container');
             if (leftColContainer) leftColContainer.style.display = 'flex';
         }
@@ -943,13 +1093,13 @@
         function switchToView(viewType) {
             infoTooltipGlobalDiv.style.display = 'none'; salesTooltipIndonesiaDiv.style.display = 'none';
             showLoading(viewType === 'world' ? 'Memuat Peta Dunia...' : 'Memuat Peta Indonesia...');
-            
+
             currentMapView = viewType;
 
             if (cityMarkersLayerGroup) { cityMarkersLayerGroup.clearLayers(); if (map.hasLayer(cityMarkersLayerGroup)) map.removeLayer(cityMarkersLayerGroup); }
             superRegionPolygonLayers = {};
             updateUIVisibilityBasedOnView(currentMapView);
-            handleFilterChange(); 
+            handleFilterChange();
         }
 
         async function loadAndDisplayMapData(url, viewType, cacheKey = null) {
@@ -998,7 +1148,7 @@
             }
 
             if (geoLayer) map.removeLayer(geoLayer);
-            geoLayer = L.geoJSON(geojson, { style: styleFeatureMap, onEachFeature: onEachFeatureMap }).addTo(map); 
+            geoLayer = L.geoJSON(geojson, { style: styleFeatureMap, onEachFeature: onEachFeatureMap }).addTo(map);
 
             if (viewType === 'world') {
                 map.options.minZoom = WORLD_MIN_ZOOM;
@@ -1011,7 +1161,7 @@
                 const bounds = geoLayer.getBounds();
 
                 if (bounds.isValid()) {
-                    map.fitBounds(bounds.pad(0.05)); 
+                    map.fitBounds(bounds.pad(0.05));
                     map.setMaxBounds(bounds.pad(0.2));
 
                     if (previousIndonesiaZoom !== null &&
@@ -1040,11 +1190,11 @@
         }
 
         function calculateWorldMinMaxSales() { const salesValues = Object.values(salesDataGlobal).map(data => Number(data.sales) || 0).filter(s => s > 0); if(salesValues.length > 0){ worldMinSales = Math.min(...salesValues); worldMaxSales = Math.max(...salesValues); } else { worldMinSales = 0; worldMaxSales = 1; } const indonesiaData = salesDataGlobal["Indonesia"]; if (indonesiaData) { const indonesiaSales = Number(indonesiaData.sales) || 0; if(indonesiaSales > worldMaxSales) worldMaxSales = indonesiaSales; if(indonesiaSales > 0 && (worldMinSales === 0 || indonesiaSales < worldMinSales) ) { worldMinSales = indonesiaSales; } } if(worldMinSales === 0 && worldMaxSales > 0) worldMinSales = Math.min(1, worldMaxSales / 1000); else if(worldMinSales === 0 && worldMaxSales === 0) { worldMinSales = 0; worldMaxSales = 1; } if (worldMinSales >= worldMaxSales && worldMaxSales > 0) worldMinSales = worldMaxSales / 2; if (worldMaxSales === 0) worldMaxSales = 1;}
-        
+
         function getWorldFeatureColor(salesAmount) {
             const sales = Number(salesAmount) || 0;
             const isDarkMode = document.body.classList.contains('dark-mode');
-            
+
             const baseClr = getComputedStyle(document.documentElement).getPropertyValue('--world-feature-base-color').trim() || (isDarkMode ? '#2a3b58' : '#e0e0e0');
 
             if (sales <= 0) return baseClr;
@@ -1056,18 +1206,18 @@
             const logMinVal = worldMinSales > 0 ? worldMinSales : (worldMaxSales / 10000 > 0.0001 ? worldMaxSales / 10000 : 0.0001);
             const logMin = Math.log10(logMinVal);
             const logSales = Math.log10(sales > 0 ? sales : logMinVal);
-            
-            let intensity = 0.5; 
+
+            let intensity = 0.5;
             if (logMax > logMin) {
                 intensity = (logSales - logMin) / (logMax - logMin);
             }
             intensity = Math.max(0, Math.min(1, intensity));
 
-            const startColorLight = {r:255,g:255,b:204}; 
-            const endColorLight = {r:128,g:0,b:38};       
+            const startColorLight = {r:255,g:255,b:204};
+            const endColorLight = {r:128,g:0,b:38};
 
-            const startColorDark = {r:50,g:70,b:100};    
-            const endColorDark = {r:220,g:90,b:90};      
+            const startColorDark = {r:50,g:70,b:100};
+            const endColorDark = {r:220,g:90,b:90};
 
             const startColor = isDarkMode ? startColorDark : startColorLight;
             const endColor = isDarkMode ? endColorDark : endColorLight;
@@ -1075,35 +1225,35 @@
             const r = Math.round(startColor.r + (endColor.r - startColor.r) * intensity);
             const g = Math.round(startColor.g + (endColor.g - startColor.g) * intensity);
             const b = Math.round(startColor.b + (endColor.b - startColor.b) * intensity);
-            
+
             return `rgb(${r},${g},${b})`;
         }
 
 
         function styleFeatureMap(feature) {
             const isDarkMode = document.body.classList.contains('dark-mode');
-            const defaultBorderColor = isDarkMode ? 'var(--border-color-medium)' : 'white'; 
+            const defaultBorderColor = isDarkMode ? 'var(--border-color-medium)' : 'white';
             const highlightBorderColor = isDarkMode ? 'var(--text-color-primary)' : '#222';
             const hoverBorderColor = isDarkMode ? 'var(--text-color-secondary)' : '#444';
             const worldBorderColor = isDarkMode ? 'var(--border-color-light)' : '#bbb';
 
-            if (feature.properties.isHighlightedSuperRegion) { 
-                return { 
-                    weight: 1.5, 
-                    color: highlightBorderColor, 
-                    opacity: 1, 
-                    fillOpacity: 0.9, 
-                    fillColor: feature.properties.originalFillColor || (isDarkMode ? getComputedStyle(document.documentElement).getPropertyValue('--map-ui-bg').trim() : regionColors.OTHER_BASE) 
-                }; 
+            if (feature.properties.isHighlightedSuperRegion) {
+                return {
+                    weight: 1.5,
+                    color: highlightBorderColor,
+                    opacity: 1,
+                    fillOpacity: 0.9,
+                    fillColor: feature.properties.originalFillColor || (isDarkMode ? getComputedStyle(document.documentElement).getPropertyValue('--map-ui-bg').trim() : regionColors.OTHER_BASE)
+                };
             }
-            if (feature.properties.isInHoveredSuperRegion) { 
-                return { 
-                    weight: 0.8, 
-                    color: hoverBorderColor, 
-                    opacity: 0.9, 
-                    fillOpacity: 0.85, 
-                    fillColor: feature.properties.originalFillColor || (isDarkMode ? getComputedStyle(document.documentElement).getPropertyValue('--map-ui-bg').trim() : regionColors.OTHER_BASE) 
-                }; 
+            if (feature.properties.isInHoveredSuperRegion) {
+                return {
+                    weight: 0.8,
+                    color: hoverBorderColor,
+                    opacity: 0.9,
+                    fillOpacity: 0.85,
+                    fillColor: feature.properties.originalFillColor || (isDarkMode ? getComputedStyle(document.documentElement).getPropertyValue('--map-ui-bg').trim() : regionColors.OTHER_BASE)
+                };
             }
 
             if (currentMapView === 'world') {
@@ -1112,12 +1262,12 @@
                 const countryKey = Object.keys(salesDataGlobal).find(k => k.toLowerCase() === name.toLowerCase());
                 const countryData = countryKey ? salesDataGlobal[countryKey] : null;
                 const sales = countryData ? (countryData.sales || 0) : 0;
-                return { 
-                    fillColor: getWorldFeatureColor(sales), 
-                    weight: 0.5, 
-                    opacity: 1, 
-                    color: worldBorderColor, 
-                    fillOpacity: sales > 0 ? 0.85 : 0.7 
+                return {
+                    fillColor: getWorldFeatureColor(sales),
+                    weight: 0.5,
+                    opacity: 1,
+                    color: worldBorderColor,
+                    fillOpacity: sales > 0 ? 0.85 : 0.7
                 };
             }
             else if (currentMapView === 'indonesia') {
@@ -1128,7 +1278,7 @@
                 if (effectiveSRKey && regionColors[effectiveSRKey]) {
                     let baseRegionColor = tinycolor(regionColors[effectiveSRKey]);
                     if (isDarkMode) {
-                        fillColor = baseRegionColor.isLight() ? baseRegionColor.darken(20).desaturate(10).toString() 
+                        fillColor = baseRegionColor.isLight() ? baseRegionColor.darken(20).desaturate(10).toString()
                                                               : baseRegionColor.lighten(25).desaturate(15).toString();
                     } else {
                         fillColor = regionColors[effectiveSRKey];
@@ -1138,24 +1288,24 @@
                     if (regionData && regionData.sales > 0) {
                         fillOpacity = isDarkMode ? 0.80 : 0.75;
                     } else {
-                        fillOpacity = isDarkMode ? 0.65 : 0.60; 
+                        fillOpacity = isDarkMode ? 0.65 : 0.60;
                     }
                 }
-                feature.properties.originalFillColor = fillColor; 
-                return { 
-                    weight: 0.5, 
-                    opacity: 1, 
-                    color: defaultBorderColor, 
-                    fillOpacity: fillOpacity, 
-                    fillColor: fillColor 
+                feature.properties.originalFillColor = fillColor;
+                return {
+                    weight: 0.5,
+                    opacity: 1,
+                    color: defaultBorderColor,
+                    fillOpacity: fillOpacity,
+                    fillColor: fillColor
                 };
             }
-            return { 
-                fillColor: (isDarkMode ? getComputedStyle(document.documentElement).getPropertyValue('--map-ui-bg').trim() : '#ccc'), 
-                weight: 1, 
-                opacity: 1, 
-                color: defaultBorderColor, 
-                fillOpacity: 0.7 
+            return {
+                fillColor: (isDarkMode ? getComputedStyle(document.documentElement).getPropertyValue('--map-ui-bg').trim() : '#ccc'),
+                weight: 1,
+                opacity: 1,
+                color: defaultBorderColor,
+                fillOpacity: 0.7
             };
         }
 
@@ -1164,9 +1314,9 @@
             const isDarkMode = document.body.classList.contains('dark-mode');
             const styles = getComputedStyle(document.documentElement);
             const worldHighlightWeight = 1.5;
-            const worldHighlightColor = styles.getPropertyValue('--text-color-secondary').trim(); 
+            const worldHighlightColor = styles.getPropertyValue('--text-color-secondary').trim();
             const indonesiaHighlightWeight = 2;
-            const indonesiaHighlightColor = styles.getPropertyValue('--text-color-labels').trim(); 
+            const indonesiaHighlightColor = styles.getPropertyValue('--text-color-labels').trim();
 
 
             if (currentMapView === 'indonesia') { const srk = feature.properties.superRegionKey; if (srk) { if (!superRegionPolygonLayers[srk]) superRegionPolygonLayers[srk] = []; superRegionPolygonLayers[srk].push(layer); } }
@@ -1179,7 +1329,7 @@
         function updateDashboardPanels() {
             updateSuperRegionStatsTable();
             updateInternationalStatsTable();
-            updateSalesChart(); 
+            updateSalesChart();
             updateLegend();
         }
 
@@ -1188,7 +1338,7 @@
             if (!table) return;
             const tbody = table.querySelector('tbody');
             const thead = table.querySelector('thead');
-            const tfootTr = table.querySelector('tfoot tr'); 
+            const tfootTr = table.querySelector('tfoot tr');
 
             if (!tbody || !thead || !tfootTr) return;
 
@@ -1225,7 +1375,7 @@
                 const salesValue = regionData.sales_value || 0;
 
                 if (dispatch === 0 && budget === 0 && lastYearDispatch === 0 && marginValue === 0 && salesValue === 0) {
-                    continue; 
+                    continue;
                 }
 
                 const achievement = budget > 0 ? (dispatch / budget * 100) : (dispatch > 0 ? 100 : 0);
@@ -1246,13 +1396,13 @@
                 row.insertCell().textContent = marginPercent.toFixed(1) + '%'; row.cells[5].classList.add('number-cell', 'col-margin-percent');
             }
 
-            if (tableBody.rows.length === 0) { 
-                if (Object.keys(superRegionSales).length > 0) { 
+            if (tableBody.rows.length === 0) {
+                if (Object.keys(superRegionSales).length > 0) {
                     tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No sales data for selected Indonesia regions/filters.</td></tr>';
-                } else { 
+                } else {
                     tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No Indonesia region data for current filters.</td></tr>';
                 }
-            } else if (totalDispatch > 0 || totalBudget > 0 || totalLastYearDispatch > 0 || totalSalesValueForMarginCalc > 0) { 
+            } else if (totalDispatch > 0 || totalBudget > 0 || totalLastYearDispatch > 0 || totalSalesValueForMarginCalc > 0) {
                 const totalAchievement = totalBudget > 0 ? (totalDispatch / totalBudget * 100) : (totalDispatch > 0 ? 100 : 0);
                 const totalMarginPercent = totalSalesValueForMarginCalc > 0 ? (grandTotalMarginValue / totalSalesValueForMarginCalc * 100) : 0;
 
@@ -1287,7 +1437,7 @@
                 )
                 .sort(([,a],[,b]) => (b.sales || 0) - (a.sales || 0));
 
-            const maxCountriesInTable = 7; 
+            const maxCountriesInTable = 7;
             let otherSalesSum = 0, otherBudgetSum = 0, otherLYSalesSum = 0, otherMarginValueSum = 0, otherSalesValueForMarginCalcSum = 0;
 
             exportCountriesData.forEach(([country, data], index) => {
@@ -1356,7 +1506,7 @@
                 tfootRow.cells[4].textContent = totalLYSalesFooter.toLocaleString(undefined,{minimumFractionDigits:0,maximumFractionDigits:0}); tfootRow.cells[4].style.fontWeight="bold";
                 tfootRow.cells[5].textContent = totalMarginPercentExport.toFixed(1) + '%'; tfootRow.cells[5].style.fontWeight="bold";
             } else {
-                 tfootRow.cells[0].textContent = ""; 
+                 tfootRow.cells[0].textContent = "";
             }
             adjustTableHeadersAndFooters('international-stats-table');
         }
@@ -1366,16 +1516,16 @@
         function updateSalesChart() {
             const sCC = document.getElementById('salesChart');
             if (!sCC) return;
-            if (salesPieChart) salesPieChart.destroy(); 
+            if (salesPieChart) salesPieChart.destroy();
             const ctx = sCC.getContext('2d');
 
             const isDarkMode = document.body.classList.contains('dark-mode');
             const styles = getComputedStyle(document.documentElement);
-            const chartTextColor = isDarkMode 
-                                   ? '#ffffff' 
+            const chartTextColor = isDarkMode
+                                   ? '#ffffff'
                                    : styles.getPropertyValue('--text-color-primary').trim();
             const chartTooltipBgColor = styles.getPropertyValue('--panel-bg-solid').trim();
-            const chartBorderColor = styles.getPropertyValue('--map-ui-bg').trim(); 
+            const chartBorderColor = styles.getPropertyValue('--map-ui-bg').trim();
             const chartLegendBorderColor = styles.getPropertyValue('--border-color-light').trim();
 
 
@@ -1388,13 +1538,13 @@
                     if (country.toLowerCase() !== 'indonesia') tES += (data.sales || 0);
                 });
                 let L = [], D = [], B = [];
-                const indonesiaColor = isDarkMode ? '#B71C1C' : '#FF6384'; 
-                const exportColor = isDarkMode ? '#0D47A1' : '#36A2EB'; 
+                const indonesiaColor = isDarkMode ? '#B71C1C' : '#FF6384';
+                const exportColor = isDarkMode ? '#0D47A1' : '#36A2EB';
                 const noDataColor = isDarkMode ? styles.getPropertyValue('--border-color-medium').trim() : '#CCCCCC';
 
 
-                if (iS > 0) { L.push('Indonesia'); D.push(iS); B.push(indonesiaColor); } 
-                if (tES > 0) { L.push('Global Export'); D.push(tES); B.push(exportColor); } 
+                if (iS > 0) { L.push('Indonesia'); D.push(iS); B.push(indonesiaColor); }
+                if (tES > 0) { L.push('Global Export'); D.push(tES); B.push(exportColor); }
                 if (L.length === 0) { L.push('No Sales Data'); D.push(1); B.push(noDataColor); }
 
                 chartConfig = {
@@ -1403,27 +1553,27 @@
                     options: {
                         responsive: true, maintainAspectRatio: false,
                         plugins: {
-                            legend: { 
-                                position: 'bottom', 
-                                labels: { 
-                                    boxWidth: 12, 
-                                    font: { size: 10 }, 
-                                    padding: 3, 
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    boxWidth: 12,
+                                    font: { size: 10 },
+                                    padding: 3,
                                     color: chartTextColor
-                                } 
+                                }
                             },
-                            title: { 
-                                display: true, 
-                                text: 'Sales: Indonesia vs Global Export', 
-                                font: { size: 13 }, 
-                                padding: { bottom: 8 }, 
+                            title: {
+                                display: true,
+                                text: 'Sales: Indonesia vs Global Export',
+                                font: { size: 13 },
+                                padding: { bottom: 8 },
                                 color: chartTextColor
                             },
                             tooltip: {
                                 callbacks: { label: chartTooltipCallback },
                                 backgroundColor: chartTooltipBgColor,
                                 titleColor: chartTextColor,
-                                bodyColor: chartTextColor, 
+                                bodyColor: chartTextColor,
                                 borderColor: chartLegendBorderColor,
                                 borderWidth: 1
                             }
@@ -1438,16 +1588,16 @@
                     let color = regionColors[r] || (isDarkMode ? styles.getPropertyValue('--text-color-secondary').trim() : '#808080');
                     if (isDarkMode && regionColors[r]) {
                         let tinyRegionColor = tinycolor(regionColors[r]);
-                        color = tinyRegionColor.isLight() ? tinyRegionColor.darken(20).desaturate(15).toString() 
+                        color = tinyRegionColor.isLight() ? tinyRegionColor.darken(20).desaturate(15).toString()
                                                           : tinyRegionColor.lighten(25).desaturate(10).toString();
                     }
                     return color;
                 });
 
-                if (l_sr.length === 0) { 
-                    l_sr.push('No Super Region Sales'); 
-                    d_sr.push(1); 
-                    c_sr.push(isDarkMode ? styles.getPropertyValue('--border-color-medium').trim() : '#CCCCCC'); 
+                if (l_sr.length === 0) {
+                    l_sr.push('No Super Region Sales');
+                    d_sr.push(1);
+                    c_sr.push(isDarkMode ? styles.getPropertyValue('--border-color-medium').trim() : '#CCCCCC');
                 }
 
                 chartConfig = {
@@ -1456,19 +1606,19 @@
                     options: {
                         responsive: true, maintainAspectRatio: false,
                         plugins: {
-                            title: { 
-                                display: true, 
-                                text: 'Sales per Super-Region (ID)', 
-                                font: { size: 13 }, 
-                                padding: { bottom: 8 }, 
+                            title: {
+                                display: true,
+                                text: 'Sales per Super-Region (ID)',
+                                font: { size: 13 },
+                                padding: { bottom: 8 },
                                 color: chartTextColor
                             },
                             legend: {
-                                position: 'bottom', 
+                                position: 'bottom',
                                 labels: {
-                                    font: { size: 9 }, 
-                                    boxWidth: 10, 
-                                    padding: 5, 
+                                    font: { size: 9 },
+                                    boxWidth: 10,
+                                    padding: 5,
                                     color: chartTextColor,
                                     generateLabels: function (chart) {
                                         const data = chart.data;
@@ -1476,9 +1626,9 @@
                                             const dataset = data.datasets[0];
                                             const totalSum = dataset.data.reduce((a, b) => a + b, 0);
                                             const sortedLabels = data.labels.map((label, i) => ({ label, value: dataset.data[i], color: dataset.backgroundColor[i] })).sort((a, b) => b.value - a.value);
-                                            
+
                                             const currentChartTextColor = chart.options.plugins.legend.labels.color;
-                                            
+
                                             const legendItems = sortedLabels.slice(0, 5).map(item => ({ text: `${item.label} (${totalSum > 0 ? ((item.value / totalSum) * 100).toFixed(1) : '0.0'}%)`, fillStyle: item.color, hidden: false, index: data.labels.indexOf(item.label.split(' (')[0]), fontColor: currentChartTextColor }));
                                             if (sortedLabels.length > 5) { legendItems.push({ text: 'Others...', fillStyle: isDarkMode ? styles.getPropertyValue('--text-color-secondary').trim() : '#ccc', hidden: false, index: -1, fontColor: currentChartTextColor }); }
                                             return legendItems;
@@ -1509,7 +1659,7 @@
             legendItemsScrollContainer.innerHTML = '';
             let legendHTML = '';
             const isDarkMode = document.body.classList.contains('dark-mode');
-            const styles = getComputedStyle(document.documentElement); 
+            const styles = getComputedStyle(document.documentElement);
 
             const legendOrder = Object.keys(regionColors).filter(k => k !== "OTHER_BASE").sort();
             legendOrder.forEach(superRegKey => {
@@ -1519,25 +1669,25 @@
 
                     let salesInfo = (salesVal > 0) ? ` (${salesVal.toLocaleString(undefined, {maximumFractionDigits:0})} Ton)` : "";
                     let displayName = formatRegionKeyForDisplay(superRegKey);
-                    
+
                     let legendColorHex = regionColors[superRegKey];
                     if(isDarkMode) {
                         let tinyRegionColor = tinycolor(legendColorHex);
-                        legendColorHex = tinyRegionColor.isLight() ? tinyRegionColor.darken(20).desaturate(15).toString() 
+                        legendColorHex = tinyRegionColor.isLight() ? tinyRegionColor.darken(20).desaturate(15).toString()
                                                                  : tinyRegionColor.lighten(25).desaturate(10).toString();
                     }
                     legendHTML += `<div><i style="background:${legendColorHex}"></i> ${displayName}${salesInfo}</div>`;
                 }
             });
-            
-            const exampleBaseColor = regionColors.REGION1A || '#8dd3c7'; 
+
+            const exampleBaseColor = regionColors.REGION1A || '#8dd3c7';
             let exampleMappedNoSalesColor, otherExampleColor;
 
             if (isDarkMode) {
-                exampleMappedNoSalesColor = tinycolor(exampleBaseColor).darken(20).desaturate(15).setAlpha(0.65).toRgbString(); 
-                otherExampleColor = tinycolor(exampleBaseColor).darken(20).desaturate(15).setAlpha(0.60).toRgbString(); 
+                exampleMappedNoSalesColor = tinycolor(exampleBaseColor).darken(20).desaturate(15).setAlpha(0.65).toRgbString();
+                otherExampleColor = tinycolor(exampleBaseColor).darken(20).desaturate(15).setAlpha(0.60).toRgbString();
             } else {
-                exampleMappedNoSalesColor = tinycolor(exampleBaseColor).setAlpha(0.60).toRgbString(); 
+                exampleMappedNoSalesColor = tinycolor(exampleBaseColor).setAlpha(0.60).toRgbString();
                 otherExampleColor = tinycolor(exampleBaseColor).setAlpha(0.55).toRgbString();
             }
 
@@ -1553,8 +1703,8 @@
         function updateCityMarkers() {
             cityMarkersLayerGroup.clearLayers();
             const isDarkMode = document.body.classList.contains('dark-mode');
-            
-            const markerIconUrl = '{{ asset("maps/marker.svg") }}'; 
+
+            const markerIconUrl = '{{ asset("maps/marker.svg") }}';
 
             const commonMarkerIcon = L.icon({
                 iconUrl: markerIconUrl,
@@ -1593,6 +1743,14 @@
         }
 
         async function handleFilterChange() {
+            // Tutup semua dropdown aktif sebelum memuat data baru
+            document.querySelectorAll('.custom-dropdown-content.active').forEach(content => {
+                content.style.display = 'none';
+                content.classList.remove('active');
+                const trigger = document.querySelector(`[data-controls="${content.id}"]`);
+                if (trigger) trigger.setAttribute('aria-expanded', 'false');
+            });
+
             infoTooltipGlobalDiv.style.display = 'none';
             salesTooltipIndonesiaDiv.style.display = 'none';
 
@@ -1674,20 +1832,20 @@
                 const mapUrl = currentMapView === 'world' ? WORLD_TOPOJSON_URL : INDONESIA_TOPOJSON_URL;
                 const cacheKey = currentMapView === 'world' ? WORLD_CACHE_KEY : INDONESIA_CACHE_KEY;
                 await loadAndDisplayMapData(mapUrl, currentMapView, cacheKey);
-                
-                updateDashboardPanels(); 
+
+                updateDashboardPanels();
                 updateCityMarkers();
 
             } catch (error) {
                 console.error('Gagal memproses data:', error);
                 alert(`Gagal memuat data: ${error.message}`);
                 salesDataGlobal = {}; superRegionSales = {}; cityMarkersData = []; internationalCityMarkersData = [];
-                populateFilterDropdowns([], [], [], [], [], []); 
-                updateDashboardPanels(); 
+                populateFilterDropdowns([], [], [], [], [], []);
+                updateDashboardPanels();
                 updateCityMarkers();
             } finally {
                 hideLoading();
-                updateAllDropdownTriggers(); 
+                updateAllDropdownTriggers();
             }
         }
     </script>

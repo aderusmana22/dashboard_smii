@@ -16,5 +16,8 @@ class SalesTransaction extends Model
     protected $casts = [
         'tr_effdate' => 'date',
         'tr_ton' => 'float',
+        'value' => 'float',
+        'margin' => 'float',
     ];
+
 }

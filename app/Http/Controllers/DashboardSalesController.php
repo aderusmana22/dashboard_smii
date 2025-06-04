@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\SalesTransaction; // Make sure this model exists and is correct
+use App\Models\SalesTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -10,7 +10,6 @@ use Carbon\CarbonPeriod;
 
 class DashboardSalesController extends Controller
 {
-    // --- Existing properties ---
     protected $countryMapping = [
         "TAIWAN" => "Taiwan", "PHILLIPPINES" => "Philippines", "MALAYSIA" => "Malaysia",
         "MYANMAR" => "Myanmar", "EXPORT AUSTRALIA" => "Australia", "SRILANKA" => "Sri Lanka",
@@ -174,9 +173,7 @@ class DashboardSalesController extends Controller
     public function showMapDashboard()
     {
         $dateRanges = $this->getAvailableDateRanges();
-        // Initial population of filters - these will be the widest possible options across all data
         $dbBrands = SalesTransaction::distinct()->orderBy('pl_desc')->pluck('pl_desc')->filter()->sort()->values()->all();
-
         $dbCities = SalesTransaction::distinct()->pluck('ad_city')
             ->filter()
             ->map(fn($city) => strtoupper(trim($city)))
@@ -184,7 +181,6 @@ class DashboardSalesController extends Controller
             ->sort()
             ->values()
             ->all();
-
         $dbCodeCmmts = SalesTransaction::distinct()->pluck('code_cmmt')
             ->filter()
             ->map(fn($code) => strtoupper(trim($code)))
@@ -214,12 +210,11 @@ class DashboardSalesController extends Controller
         $startDate = Carbon::parse($request->input('startDate'));
         $endDate = Carbon::parse($request->input('endDate'));
 
-        $filterBrands = $request->input('brands', []);
-        // Ensure $filterCodeCmmts stores the raw, uppercase values from the request for consistent checks later
+        $filterBrands = $request->input('brands', []); // These are pl_desc from sales
         $filterCodeCmmts = array_map('strtoupper', array_map('trim', $request->input('code_cmmts', [])));
         $filterCitiesDbKeys = array_map('strtoupper', array_map('trim', $request->input('cities', [])));
 
-        // --- Base Query Builder considering ALL active filters ---
+        // --- Base Query Builder ---
         $baseQueryBuilder = function($start, $end) use ($filterBrands, $filterCodeCmmts, $filterCitiesDbKeys) {
             return SalesTransaction::query()
                 ->whereBetween('tr_effdate', [$start->format('Y-m-d'), $end->format('Y-m-d')])
@@ -227,19 +222,14 @@ class DashboardSalesController extends Controller
                 ->when(count($filterCodeCmmts) > 0, fn($q) => $q->whereIn(DB::raw('UPPER(TRIM(code_cmmt))'), $filterCodeCmmts))
                 ->when(count($filterCitiesDbKeys) > 0, fn($q) => $q->whereIn(DB::raw('UPPER(TRIM(ad_city))'), $filterCitiesDbKeys));
         };
-        // --- End Base Query Builder ---
 
-
-        // --- Calculate Available Filter Options based on current filters ---
-
-        // Available Brands: Depends on date range, selected code_cmmts, selected cities
+        // --- Calculate Available Filter Options ---
         $brandsQueryForOptions = SalesTransaction::query()
             ->whereBetween('tr_effdate', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->when(count($filterCodeCmmts) > 0, fn($q) => $q->whereIn(DB::raw('UPPER(TRIM(code_cmmt))'), $filterCodeCmmts))
             ->when(count($filterCitiesDbKeys) > 0, fn($q) => $q->whereIn(DB::raw('UPPER(TRIM(ad_city))'), $filterCitiesDbKeys));
         $availableBrands = $brandsQueryForOptions->distinct()->orderBy('pl_desc')->pluck('pl_desc')->filter()->sort()->values()->all();
 
-        // Available CodeCmmts: Depends on date range, selected brands, selected cities
         $codeCmmtsQueryForOptions = SalesTransaction::query()
             ->whereBetween('tr_effdate', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->when(count($filterBrands) > 0, fn($q) => $q->whereIn('pl_desc', $filterBrands))
@@ -248,7 +238,6 @@ class DashboardSalesController extends Controller
             ->select(DB::raw('UPPER(TRIM(code_cmmt)) as code_cmmt_val'))
             ->pluck('code_cmmt_val')->filter()->sort()->values()->all();
 
-        // Available Cities: Depends on date range, selected brands, selected code_cmmts
         $citiesQueryForOptions = SalesTransaction::query()
             ->whereBetween('tr_effdate', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->when(count($filterBrands) > 0, fn($q) => $q->whereIn('pl_desc', $filterBrands))
@@ -262,10 +251,8 @@ class DashboardSalesController extends Controller
             'code_cmmts' => $availableCodeCmmts,
             'cities' => $availableCities,
         ];
-        // --- End Calculate Available Filter Options ---
 
-
-        // --- Fetch Aggregated Sales Data using the base query builder ---
+        // --- Fetch Aggregated Sales Data ---
         $aggregatedSales = $baseQueryBuilder($startDate, $endDate)
             ->select(
                 DB::raw('UPPER(TRIM(code_cmmt)) as code_cmmt_upper'),
@@ -285,32 +272,52 @@ class DashboardSalesController extends Controller
             ->groupBy('code_cmmt_upper')
             ->get()
             ->keyBy('code_cmmt_upper');
-        // --- End Fetch Aggregated Sales Data ---
 
+        // --- Budget Data (MODIFIED SECTION) ---
+        $budgetsByRegionKey = []; // Stores [processed_region_key => total_budget_for_period_and_brands]
 
-        // --- Budget Data ---
-        $period = CarbonPeriod::create($startDate, $endDate);
-        $uniqueYears = array_unique(array_map(fn($date) => $date->year, iterator_to_array($period)));
-        $rawBudgetsQuery = DB::table('standard_budgets')->whereIn('year', $uniqueYears)->select('name_region', 'amount')->get();
-        $budgets = [];
-        foreach ($rawBudgetsQuery as $be) {
-            $rk = strtoupper(str_replace(' ', '', trim($be->name_region)));
-            $budgets[$rk] = ($budgets[$rk] ?? 0) + (float)$be->amount;
+        // Create a period for each month between startDate and endDate
+        $monthPeriod = CarbonPeriod::create($startDate->copy()->startOfMonth(), '1 month', $endDate->copy()->endOfMonth());
+
+        $budgetQueryBase = DB::table('standard_budgets');
+
+        // If specific brands are filtered on the dashboard, apply to budget query
+        // Assumes $filterBrands contains brand names that match 'brand_name' in 'standard_budgets' table.
+        if (count($filterBrands) > 0) {
+            $budgetQueryBase->whereIn('brand_name', $filterBrands);
         }
-        // --- End Budget Data ---
+
+        // Fetch all relevant budget data in one go
+        $relevantBudgets = $budgetQueryBase
+            ->where(function ($query) use ($monthPeriod) {
+                foreach ($monthPeriod as $date) {
+                    $query->orWhere(function ($q) use ($date) {
+                        $q->where('year', $date->year)
+                          ->where('month', $date->month);
+                    });
+                }
+            })
+            ->select('name_region', 'amount') // We only need these for summing up
+            ->get();
+
+        // Aggregate budgets in PHP
+        foreach ($relevantBudgets as $budgetEntry) {
+            $processedRegionKey = strtoupper(str_replace(' ', '', trim($budgetEntry->name_region)));
+            $budgetsByRegionKey[$processedRegionKey] = ($budgetsByRegionKey[$processedRegionKey] ?? 0) + (float)$budgetEntry->amount;
+        }
+        // --- End Budget Data (MODIFIED SECTION) ---
 
 
         $worldSales = [];
         $indonesiaSuperRegionSales = [];
         $baseEntry = ['sales' => 0, 'budget' => 0, 'lastYearSales' => 0, 'sales_value' => 0, 'margin_value' => 0];
 
-        // Initialize Indonesia Super Regions
         foreach ($this->indonesiaSuperRegionKeys as $srk) {
             $indonesiaSuperRegionSales[$srk] = $baseEntry;
-            $indonesiaSuperRegionSales[$srk]['budget'] = $budgets[$srk] ?? 0;
+            // Use the new $budgetsByRegionKey
+            $indonesiaSuperRegionSales[$srk]['budget'] = $budgetsByRegionKey[$srk] ?? 0;
         }
 
-        // Determine all relevant country keys from mapping and sales data (current and LY)
         $allCountryDbKeys = array_unique(array_merge(
             array_keys($this->countryMapping),
             $aggregatedSales->pluck('code_cmmt_upper')->filter(fn($cc) =>
@@ -325,23 +332,25 @@ class DashboardSalesController extends Controller
             )->all()
         ));
 
-        // Initialize World Sales (excluding Indonesia for now)
         foreach ($allCountryDbKeys as $rawDbK) {
-            $tName = $this->countryMapping[$rawDbK] ?? $rawDbK;
-            $budgetKey = strtoupper(str_replace(' ', '', $rawDbK));
-            if($budgetKey === "UNITEDSTATESOFAMERICA") $budgetKey = "UNITEDSTATES"; // Specific budget key mapping
+            $tName = $this->countryMapping[$rawDbK] ?? $rawDbK; // Display name
+            $budgetKey = strtoupper(str_replace(' ', '', $rawDbK)); // Key for budget lookup
+            if($budgetKey === "UNITEDSTATESOFAMERICA") $budgetKey = "UNITEDSTATES";
 
             $worldSales[$tName] = $baseEntry;
-            $worldSales[$tName]['budget'] = $budgets[$budgetKey] ?? ($budgets[strtoupper($tName)] ?? 0);
+            // Use the new $budgetsByRegionKey
+            $worldSales[$tName]['budget'] = $budgetsByRegionKey[$budgetKey] ?? ($budgetsByRegionKey[strtoupper($tName)] ?? 0);
         }
-        // Ensure Indonesia entry exists in worldSales
+
         if (!isset($worldSales["Indonesia"])) {
              $worldSales["Indonesia"] = $baseEntry;
-             $worldSales["Indonesia"]['budget'] = $budgets[strtoupper("INDONESIA")] ?? 0;
+             // Use the new $budgetsByRegionKey
+             $worldSales["Indonesia"]['budget'] = $budgetsByRegionKey[strtoupper("INDONESIA")] ?? 0;
         }
 
+        // --- Aggregation of Sales (Current and LY) and City Sales ---
+        // This part remains largely the same, as it's about sales data.
 
-        // Aggregate Sales into Super Regions and World Sales
         $citySalesAggregationCurrent = $aggregatedSales->groupBy('ad_city_upper')
             ->map(function($group) {
                 return [
@@ -350,7 +359,6 @@ class DashboardSalesController extends Controller
                     'margin_value' => $group->sum('total_margin_value'),
                 ];
             });
-
 
         foreach ($aggregatedSales as $aggSale) {
             $codeCmmtUp = $aggSale->code_cmmt_upper;
@@ -372,13 +380,11 @@ class DashboardSalesController extends Controller
                     $worldSales[$sName]['margin_value'] += $totalMarginVal;
                 }
             } elseif ($codeCmmtUp !== 'INDONESIA' && !isset($this->rawCodeCmmtToSuperRegionKeyMap[$codeCmmtUp]) && !in_array($codeCmmtUp, $this->indonesiaSuperRegionKeys)) {
-                 // Handles code_cmmt values that are not mapped Indonesian Super Regions, not explicitly "INDONESIA", and not in countryMapping.
                 $displayName = $codeCmmtUp;
                 if(!isset($worldSales[$displayName])) {
                     $worldSales[$displayName] = $baseEntry;
-                    // Initialize budget if it's a new country not in countryMapping or allCountryDbKeys
                     $budgetKeyForNewCountry = strtoupper(str_replace(' ', '', $displayName));
-                    $worldSales[$displayName]['budget'] = $budgets[$budgetKeyForNewCountry] ?? 0;
+                    $worldSales[$displayName]['budget'] = $budgetsByRegionKey[$budgetKeyForNewCountry] ?? 0;
                 }
                 $worldSales[$displayName]['sales'] += $totalTon;
                 $worldSales[$displayName]['sales_value'] += $totalSalesVal;
@@ -386,7 +392,6 @@ class DashboardSalesController extends Controller
             }
         }
 
-        // Sum up Indonesia Super Region sales for the total "Indonesia" entry in worldSales
         if(isset($worldSales["Indonesia"])){
             $totalIdnSales = 0; $totalIdnSalesValue = 0; $totalIdnMarginValue = 0;
             foreach($indonesiaSuperRegionSales as $data) {
@@ -394,20 +399,17 @@ class DashboardSalesController extends Controller
                 $totalIdnSalesValue += $data['sales_value'];
                 $totalIdnMarginValue += $data['margin_value'];
             }
-             // Include sales directly coded as 'INDONESIA' if they exist and were not part of a super-region aggregation
             $directIndonesiaSales = $aggregatedSales->where('code_cmmt_upper', 'INDONESIA')->first();
             if($directIndonesiaSales){
                 $totalIdnSales += (float)$directIndonesiaSales->total_sales;
                 $totalIdnSalesValue += (float)$directIndonesiaSales->total_sales_value;
                 $totalIdnMarginValue += (float)$directIndonesiaSales->total_margin_value;
             }
-
             $worldSales["Indonesia"]['sales'] = $totalIdnSales;
             $worldSales["Indonesia"]['sales_value'] = $totalIdnSalesValue;
             $worldSales["Indonesia"]['margin_value'] = $totalIdnMarginValue;
         }
 
-        // Aggregate Last Year Sales into Super Regions and World Sales
         foreach ($aggregatedSalesLy as $codeCmmtUp => $aggSaleLyData) {
             $totalTonLy = (float)$aggSaleLyData->total_sales_ly;
             $srk = $this->rawCodeCmmtToSuperRegionKeyMap[$codeCmmtUp] ?? (in_array($codeCmmtUp, $this->indonesiaSuperRegionKeys) ? $codeCmmtUp : null);
@@ -422,31 +424,27 @@ class DashboardSalesController extends Controller
                 if(isset($worldSales[$displayName])) {
                     $worldSales[$displayName]['lastYearSales'] += $totalTonLy;
                 } else {
-                    $worldSales[$displayName] = $baseEntry; // Should be initialized by current sales loop already
+                    $worldSales[$displayName] = $baseEntry;
+                    $budgetKeyForNewCountry = strtoupper(str_replace(' ', '', $displayName));
+                    $worldSales[$displayName]['budget'] = $budgetsByRegionKey[$budgetKeyForNewCountry] ?? 0;
                     $worldSales[$displayName]['lastYearSales'] = $totalTonLy;
                 }
             }
         }
 
-        // Sum up Indonesia Super Region LY sales for the total "Indonesia" entry in worldSales
         if(isset($worldSales["Indonesia"])) {
             $totalIdnLySales = 0;
             foreach($indonesiaSuperRegionSales as $data) $totalIdnLySales += $data['lastYearSales'];
-
             $directIndonesiaSalesLy = $aggregatedSalesLy->get('INDONESIA');
             if($directIndonesiaSalesLy){
                  $totalIdnLySales += (float)$directIndonesiaSalesLy->total_sales_ly;
             }
             $worldSales["Indonesia"]['lastYearSales'] = $totalIdnLySales;
         }
-        // --- End Aggregations ---
 
 
-        // --- Prepare City Markers ---
         $cityMarkers = [];
         $internationalCityMarkers = [];
-
-        // Determine if any Indonesian-related code_cmmt filter is active
         $isAnyIndoRelatedFilterActive = false;
         if (count($filterCodeCmmts) > 0) {
              if (in_array('INDONESIA', $filterCodeCmmts)) {
@@ -462,71 +460,39 @@ class DashboardSalesController extends Controller
                 }
              }
         } else {
-            // If filterCodeCmmts is empty, it means NO code_cmmt filter is applied, so all data is considered.
-            // In this case, Indonesian cities should be shown IF they have sales.
-            $isAnyIndoRelatedFilterActive = true; // No filter implies all regions/countries are active
+            $isAnyIndoRelatedFilterActive = true;
         }
 
-
-        // Indonesian City Markers
         foreach ($this->indonesiaCityData as $displayName => $cityInfo) {
             $dbKey = strtoupper(trim($cityInfo['db_key']));
-            $cityAggData = $citySalesAggregationCurrent->get($dbKey); // $citySalesAggregationCurrent is ALREADY filtered by date, brand, code_cmmt, city
-
-            // Marker should only appear if the city has sales AFTER all filters are applied in baseQueryBuilder
-            if (!$cityAggData || (float)$cityAggData['sales'] <= 0) {
-                continue;
-            }
-            $sales = (float)$cityAggData['sales']; // Sales are confirmed > 0
-
-            // If code_cmmt filters are active AND none of them are Indonesian-related, skip Indonesian cities.
-            // Otherwise, if an Indonesian-related filter is active OR no code_cmmt filter is active, proceed.
-            if (count($filterCodeCmmts) > 0 && !$isAnyIndoRelatedFilterActive) {
-                 continue;
-            }
-
-            // If the city has sales (passed baseQueryBuilder) and the code_cmmt context allows Indonesian cities, add the marker.
+            $cityAggData = $citySalesAggregationCurrent->get($dbKey);
+            if (!$cityAggData || (float)$cityAggData['sales'] <= 0) continue;
+            $sales = (float)$cityAggData['sales'];
+            if (count($filterCodeCmmts) > 0 && !$isAnyIndoRelatedFilterActive) continue;
             $cityMarkers[] = ['name' => $displayName, 'db_key' => $dbKey, 'lat' => $cityInfo['lat'], 'lng' => $cityInfo['lng'], 'sales' => $sales];
         }
 
-
-        // International City Markers
         if (!empty($this->internationalCityData)) {
             foreach ($this->internationalCityData as $cityDbKeyForMarker => $cityInfo) {
                 $cityAggData = $citySalesAggregationCurrent->get($cityDbKeyForMarker);
-
-                if (!$cityAggData || (float)$cityAggData['sales'] <= 0) {
-                    continue;
-                }
+                if (!$cityAggData || (float)$cityAggData['sales'] <= 0) continue;
                 $sales = (float)$cityAggData['sales'];
                 $countryCodeForThisCity = strtoupper(trim($cityInfo['country_code_cmmt_key']));
-
-                // If code_cmmt filters are active, this city's country must be among them
-                if (count($filterCodeCmmts) > 0) {
-                    if (!in_array($countryCodeForThisCity, $filterCodeCmmts)) {
-                         continue;
-                    }
-                }
-                // If the city has sales (passed baseQueryBuilder) and its country is in the selected code_cmmts (or no code_cmmt filter is active), add the marker.
+                if (count($filterCodeCmmts) > 0 && !in_array($countryCodeForThisCity, $filterCodeCmmts)) continue;
                 $internationalCityMarkers[] = [
-                    'name' => $cityInfo['display_name'],
-                    'db_key' => $cityDbKeyForMarker,
-                    'lat' => $cityInfo['lat'],
-                    'lng' => $cityInfo['lng'],
-                    'sales' => $sales,
+                    'name' => $cityInfo['display_name'], 'db_key' => $cityDbKeyForMarker,
+                    'lat' => $cityInfo['lat'], 'lng' => $cityInfo['lng'], 'sales' => $sales,
                     'country' => $this->countryMapping[$countryCodeForThisCity] ?? $countryCodeForThisCity
                 ];
             }
         }
-        // --- End Prepare City Markers ---
-
 
         return response()->json([
             'worldSales' => $worldSales,
             'indonesiaSuperRegionSales' => $indonesiaSuperRegionSales,
             'cityMarkers' => $cityMarkers,
             'internationalCityMarkers' => $internationalCityMarkers,
-            'availableFilterOptions' => $availableFilterOptions // Includes dynamic filter options
+            'availableFilterOptions' => $availableFilterOptions,
         ]);
     }
 }

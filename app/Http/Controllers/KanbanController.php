@@ -22,17 +22,10 @@ class KanbanController extends Controller
 {
     private function getRecipientEmailsForDepartment(Department $department): array
     {
-        // if (config('app.env') === 'local' || config('app.debug')) {
-        //     $testEmail = config('mail.test_recipient', 'yogaardiansyah04@gmail.com');
-        //     if (filter_var($testEmail, FILTER_VALIDATE_EMAIL)) {
-        //         Log::info("TEST MODE: Using test email {$testEmail} for department {$department->department_name}");
-        //         return [$testEmail];
-        //     }
-        // }
 
         $approvers = DepartmentApprover::where('department_id', $department->id)
             ->where('status', 'active')
-            ->with('user:id,nik,email,name') // Eager load user with specific columns
+            ->with('user:id,nik,email,name')
             ->get();
 
         $emails = [];
@@ -137,10 +130,9 @@ class KanbanController extends Controller
             $task = Task::create($data);
             $task->load(['pengaju:id,name,nik', 'department:id,department_name']);
 
-            // Fetch DepartmentApprover models with their related User models (eager loading)
             $departmentApprovers = DepartmentApprover::where('department_id', $task->department_id)
                 ->where('status', 'active')
-                ->with('user:id,nik,email,name') // Eager load user with specific columns
+                ->with('user:id,nik,email,name')
                 ->get();
 
             if ($departmentApprovers->isEmpty()) {
@@ -150,9 +142,8 @@ class KanbanController extends Controller
             }
 
             $approvalEmailsSentTo = [];
-            // Loop over DepartmentApprover objects
             foreach ($departmentApprovers as $departmentApproverInstance) {
-                $approverUser = $departmentApproverInstance->user; // Access the eager-loaded user
+                $approverUser = $departmentApproverInstance->user;
 
                 if (!$approverUser || !filter_var($approverUser->email, FILTER_VALIDATE_EMAIL)) {
                     Log::warning("KanbanController@store: Approver NIK {$departmentApproverInstance->user_nik} (via DeptApprover ID {$departmentApproverInstance->id}) not found or has invalid email. Skipping.");
@@ -161,7 +152,7 @@ class KanbanController extends Controller
 
                 $token = Task::generateUniqueToken();
                 $approvalDetail = $task->approvalDetails()->create([
-                    'approver_nik' => $approverUser->nik, // NIK from the user model
+                    'approver_nik' => $approverUser->nik,
                     'status' => JobApprovalDetail::STATUS_PENDING,
                     'token' => $token,
                 ]);
@@ -373,10 +364,9 @@ class KanbanController extends Controller
                     $task->status = Task::STATUS_PENDING_APPROVAL;
                     $task->approvalDetails()->whereIn('status', [JobApprovalDetail::STATUS_REJECTED, 'superseded', JobApprovalDetail::STATUS_PENDING])->delete();
 
-                    // Fetch DepartmentApprover models with their related User models (eager loading)
                     $departmentApprovers = DepartmentApprover::where('department_id', $task->department_id)
                         ->where('status', 'active')
-                        ->with('user:id,nik,email,name') // Eager load user
+                        ->with('user:id,nik,email,name')
                         ->get();
 
                     if ($departmentApprovers->isEmpty()) {
@@ -423,7 +413,7 @@ class KanbanController extends Controller
                 $recipientEmails = $this->getRecipientEmailsForDepartment($task->department);
                 if (!empty($recipientEmails)) {
                     foreach($recipientEmails as $email) {
-                        $recipientUser = User::where('email', $email)->first(); // Assuming email is unique for User
+                        $recipientUser = User::where('email', $email)->first();
                         Mail::to($email)->send(new TaskStatusUpdateMailHtml(
                             $task, 'Tugas Dibatalkan: ' . $task->id_job,
                             "Tugas (JOB ID: {$task->id_job}) untuk departemen {$task->department->department_name} telah dibatalkan oleh pengaju: {$task->pengaju->name}.\nAlasan: {$task->cancel_reason}",

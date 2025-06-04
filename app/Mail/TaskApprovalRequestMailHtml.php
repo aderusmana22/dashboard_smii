@@ -21,7 +21,7 @@ class TaskApprovalRequestMailHtml extends Mailable implements ShouldQueue
     public function __construct(Task $task, JobApprovalDetail $approvalDetail)
     {
         $this->task = $task->loadMissing(['pengaju:id,name,nik', 'department:id,department_name']);
-        $this->approvalDetail = $approvalDetail->loadMissing('approver:id,name,nik'); // Load approver
+        $this->approvalDetail = $approvalDetail->loadMissing('approver:id,name,nik');
     }
 
     public function envelope(): Envelope
@@ -33,9 +33,8 @@ class TaskApprovalRequestMailHtml extends Mailable implements ShouldQueue
 
     public function content(): Content
     {
-        // Jika tidak menggunakan markdown, ganti 'markdown' dengan 'view'
         return new Content(
-            view: 'emails.tasks.approval_request_html', // Atau markdown: 'emails.tasks.approval_request_html',
+            view: 'emails.tasks.approval_request_html',
             with: [
                 'task_id_job' => $this->task->id_job,
                 'requester_name' => $this->task->pengaju->name ?? 'N/A',

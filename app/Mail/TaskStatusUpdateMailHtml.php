@@ -4,14 +4,14 @@ namespace App\Mail;
 
 use App\Models\Task;
 use App\Models\User;
-use App\Models\JobApprovalDetail; // Import JobApprovalDetail
+use App\Models\JobApprovalDetail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Str; // Import Str
+use Illuminate\Support\Str;
 
 class TaskStatusUpdateMailHtml extends Mailable implements ShouldQueue
 {
@@ -56,25 +56,23 @@ class TaskStatusUpdateMailHtml extends Mailable implements ShouldQueue
         $subHeaderText = 'Pembaruan Status Tugas';
 
         switch ($this->actionStatus) {
-            case JobApprovalDetail::STATUS_APPROVED: // Menggunakan konstanta dari JobApprovalDetail
+            case JobApprovalDetail::STATUS_APPROVED:
             case Task::STATUS_OPEN:
-                $subHeaderText = 'Marsho JobBoard - Tugas Disetujui';
+                $subHeaderText = 'Marsho JobBoard';
                 break;
-            case JobApprovalDetail::STATUS_REJECTED: // Menggunakan konstanta dari JobApprovalDetail
-                // case Task::STATUS_REJECTED: // Ini sama dengan JobApprovalDetail::STATUS_REJECTED, bisa disatukan
-                $subHeaderText = 'Marsho JobBoard - Tugas Ditolak';
+            case JobApprovalDetail::STATUS_REJECTED:
+                $subHeaderText = 'Marsho JobBoard';
                 break;
             case Task::STATUS_COMPLETED:
-                $subHeaderText = 'Marsho JobBoard - Tugas Selesai';
+                $subHeaderText = 'Marsho JobBoard';
                 break;
             case Task::STATUS_CANCELLED:
-                $subHeaderText = 'Marsho JobBoard - Tugas Dibatalkan';
+                $subHeaderText = 'Marsho JobBoard';
                 break;
         }
 
-        // Jika tidak menggunakan markdown, ganti 'markdown' dengan 'view'
         return new Content(
-            view: $viewName, // Atau markdown: $viewName,
+            view: $viewName,
             with: [
                 'recipient_name' => $this->recipientUser->name ?? 'Pengguna',
                 'message_body' => $this->messageBody,

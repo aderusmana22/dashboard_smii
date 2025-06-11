@@ -94,4 +94,41 @@ class User extends Authenticatable
     {
         return strtolower($value);
     }
+
+
+    // Kanban
+    public function tasksDiajukan()
+    {
+        return $this->hasMany(Task::class, 'pengaju_id');
+    }
+
+    public function tasksDitutup()
+    {
+        return $this->hasMany(Task::class, 'penutup_id');
+    }
+
+    public function tasksApproved() // New
+    {
+        return $this->hasMany(Task::class, 'approver_id');
+    }
+
+    public function isAdminProject()
+    {
+        return $this->level >= 4;
+    }
+
+    public function isSuperAdmin()
+    {
+        return $this->position_id == 1 && $this->username === 'super';
+    }
+
+    // New: Check if user can approve tasks for a specific department
+    // This is a simple check, you might have more complex role/permission system
+    public function canApproveForDepartment(Department $department)
+    {
+        // Example: User must belong to the department and have a certain level/role
+        // For simplicity, let's say any user in that department can approve.
+        // Or, perhaps only department heads (e.g., user->is_department_head && user->department_id == $department->id)
+        return $this->department_id === $department->id;
+    }
 }

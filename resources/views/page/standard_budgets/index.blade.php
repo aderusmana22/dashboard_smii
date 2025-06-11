@@ -9,7 +9,7 @@
         <div class="flex justify-end mb-3">
             <button type="button" class="btn btn-info" id="btnOpenImportModal">Import Excel</button>
             <button type="button" class="ml-2 btn btn-primary" id="btnOpenCreateModal">
-                Tambah Data
+                Add Data
             </button>
         </div>
 
@@ -60,7 +60,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center gap-2 mb-3">
                     <select id="year_filter" class="form-select w-auto d-inline-block">
-                        <option value="">Semua Tahun</option>
+                        <option value="">All Years</option>
                         @if(isset($years) && count($years) > 0)
                         @foreach($years as $year)
                         <option value="{{ $year }}">{{ $year }}</option>
@@ -76,9 +76,11 @@
                     <thead>
                         <tr>
                             <th style="width:5%;">No</th>
+                            <th>Brand Name</th>
                             <th>Name Region</th>
-                            <th style="width:20%;">Amount</th>
-                            <th style="width:10%;">Tahun</th>
+                            <th style="width:15%;">Amount</th>
+                            <th style="width:5%;">Month</th>
+                            <th style="width:10%;">Year</th>
                             <th style="width:10%;">Action</th>
                         </tr>
                     </thead>
@@ -91,26 +93,43 @@
     {{-- Create/Edit Modal --}}
     <div id="budgetModal" class="fixed inset-0 z-50 hidden overflow-y-auto bg-black/50 backdrop-blur-sm">
         <div class="flex items-center justify-center min-h-screen px-4">
-            <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl relative"> {{-- Adjusted max-width --}}
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-3xl relative"> {{-- Adjusted max-width --}}
                 <div class="flex items-center justify-between px-6 py-3 border-b"> {{-- Adjusted padding --}}
                     <h5 class="text-xl font-semibold" id="budgetModalLabel">Form Standard Budget</h5>
                     <button id="btnCloseModal" type="button" class="text-gray-400 hover:text-red-600 text-2xl leading-none">×</button>
                 </div>
                 <form id="budgetForm" class="p-6">
                     <input type="hidden" name="id" id="budgetId">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label for="brand_name_modal" class="block text-sm font-medium text-gray-700 mb-1">Brand Name <span class="text-red-500">*</span></label>
+                            <input type="text" id="brand_name_modal" name="brand_name" class="form-input mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" placeholder="Brand Name" required>
+                            <div class="text-red-500 text-xs mt-1" id="brand_name_error"></div>
+                        </div>
                         <div>
                             <label for="name_region_modal" class="block text-sm font-medium text-gray-700 mb-1">Name Region <span class="text-red-500">*</span></label>
-                            <input type="text" id="name_region_modal" name="name_region" class="form-input mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" placeholder="Kode Region, Negara" required>
+                            <input type="text" id="name_region_modal" name="name_region" class="form-input mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" placeholder="Region Code, Country" required>
                             <div class="text-red-500 text-xs mt-1" id="name_region_error"></div>
                         </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                         <div>
                             <label for="amount_modal" class="block text-sm font-medium text-gray-700 mb-1">Amount <span class="text-red-500">*</span></label>
                             <input type="number" step="0.01" id="amount_modal" name="amount" class="form-input mt-1 block w-full border-gray-300 rounded-md shadow-sm text-right focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" placeholder="0.00" required>
                             <div class="text-red-500 text-xs mt-1" id="amount_error"></div>
                         </div>
                         <div>
-                            <label for="year_modal" class="block text-sm font-medium text-gray-700 mb-1">Tahun <span class="text-red-500">*</span></label>
+                            <label for="month_modal" class="block text-sm font-medium text-gray-700 mb-1">Month <span class="text-red-500">*</span></label>
+                            <select id="month_modal" name="month" class="form-select mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" required>
+                                <option value="">Choose Mont</option>
+                                @for ($m = 1; $m <= 12; $m++)
+                                <option value="{{ $m }}">{{ \Carbon\Carbon::create()->month($m)->translatedFormat('F') }}</option>
+                                @endfor
+                            </select>
+                            <div class="text-red-500 text-xs mt-1" id="month_error"></div>
+                        </div>
+                        <div>
+                            <label for="year_modal" class="block text-sm font-medium text-gray-700 mb-1">Year <span class="text-red-500">*</span></label>
                             <input type="number" id="year_modal" name="year" class="form-input mt-1 block w-full border-gray-300 rounded-md shadow-sm text-center focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" placeholder="YYYY" min="1990" max="{{ date('Y') + 10 }}" required>
                             <div class="text-red-500 text-xs mt-1" id="year_error"></div>
                         </div>
@@ -133,7 +152,6 @@
                     <button id="btnCloseImportModal" type="button" class="text-gray-400 hover:text-red-600 text-2xl leading-none">×</button>
                 </div>
 
-                {{-- This container is available but failures are primarily shown via session flash on page reload --}}
                 <div id="importErrorContainer" class="hidden p-4"></div>
 
                 <form id="importExcelForm" action="{{ route('standard-budgets.import.excel') }}" method="POST" enctype="multipart/form-data" class="p-6">
@@ -141,11 +159,13 @@
                     <div class="mb-4">
                         <p class="text-sm text-gray-600">
                             Pastikan file Excel Anda memiliki header pada <strong>baris ke-2</strong> dan data dimulai dari <strong>baris ke-3</strong>.
-                            Kolom yang diperlukan:
+                            Kolom yang diperlukan (nama header harus persis):
                         </p>
                         <ul class="list-disc list-inside text-sm text-gray-600 pl-2 my-2">
+                            <li><code>brand_name</code> (Teks: Nama Brand)</li>
                             <li><code>name_region</code> (Teks: Kode Region, Negara)</li>
-                            <li><code>amount</code> (Angka: Jumlah budget)</li>
+                            <li><code>amount</code> (Angka: Jumlah budget, gunakan format angka standar, misal 1500.75 atau 1500,75)</li>
+                            <li><code>month</code> (Angka: Bulan budget, 1-12)</li>
                             <li><code>year</code> (Angka: Tahun budget, 4 digit, min 1990)</li>
                         </ul>
                         <p class="text-sm mt-2">Contoh (Header di baris 2):</p>
@@ -153,23 +173,29 @@
                             <table class="w-full text-xs table-auto border border-gray-300 my-1">
                                 <thead class="bg-gray-100">
                                     <tr>
-                                        <td colspan="3" class="border px-2 py-1 text-center font-semibold italic">Judul File Anda (Baris 1)</td>
+                                        <td colspan="5" class="border px-2 py-1 text-center font-semibold italic">Judul File Anda (Baris 1, Opsional)</td>
                                     </tr>
                                     <tr>
+                                        <th class="border px-2 py-1">brand_name</th>
                                         <th class="border px-2 py-1">name_region</th>
                                         <th class="border px-2 py-1">amount</th>
+                                        <th class="border px-2 py-1">month</th>
                                         <th class="border px-2 py-1">year</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td class="border px-2 py-1">Region 1A / China</td>
+                                        <td class="border px-2 py-1">Brand ABC</td>
+                                        <td class="border px-2 py-1">Region 1A</td>
                                         <td class="border px-2 py-1 text-right">1500000.75</td>
+                                        <td class="border px-2 py-1 text-center">1</td>
                                         <td class="border px-2 py-1 text-center">2023</td>
                                     </tr>
                                     <tr>
-                                        <td class="border px-2 py-1">Region 2B / USA</td>
+                                        <td class="border px-2 py-1">Brand XYZ</td>
+                                        <td class="border px-2 py-1">China</td>
                                         <td class="border px-2 py-1 text-right">250000</td>
+                                        <td class="border px-2 py-1 text-center">3</td>
                                         <td class="border px-2 py-1 text-center">2024</td>
                                     </tr>
                                 </tbody>
@@ -188,7 +214,6 @@
                     <div class="flex justify-end mt-6 space-x-2 border-t pt-4">
                         <button type="button" class="btn btn-light" id="btnCancelImportModal">Batal</button>
                         <button type="submit" class="btn btn-success" id="btnSubmitImport">
-
                             Import Data
                         </button>
                     </div>
@@ -228,18 +253,17 @@
 
             function clearValidationErrors(formId = 'budgetForm') {
                 $('#' + formId + ' .form-input').removeClass('border-red-500 is-invalid');
+                $('#' + formId + ' .form-select').removeClass('border-red-500 is-invalid');
                 $('#' + formId + ' .text-red-500').text('');
-                $('#' + formId + ' .invalid-feedback').remove(); // For Bootstrap style errors if any
+                $('#' + formId + ' .invalid-feedback').remove();
             }
 
             function displayValidationErrors(errors, formId = 'budgetForm') {
                 $.each(errors, (key, value) => {
-                    const inputField = $('#' + key + '_modal, #' + key); // Handles _modal suffix and direct ID
+                    const inputField = $('#' + key + '_modal, #' + key);
                     inputField.addClass('border-red-500 is-invalid');
-                    // Ensure the error div exists or create it
                     let errorDiv = $('#' + key + '_error');
                     if (errorDiv.length === 0) {
-                        // Create a generic error display if a specific one isn't found
                         inputField.after('<div class="text-red-500 text-xs mt-1 invalid-feedback" id="' + key + '_error">' + value[0] + '</div>');
                     } else {
                         errorDiv.text(value[0]);
@@ -247,10 +271,9 @@
                 });
             }
 
-
             function showAjaxNotification(message, type = 'success') {
                 const alertPlaceholder = $('#alert-placeholder');
-                alertPlaceholder.find('.ajax-notification').remove(); // Remove previous ajax notifications
+                alertPlaceholder.find('.ajax-notification').remove();
 
                 const alertDiv = $(
                     `<div class="alert alert-${type} alert-dismissible fade show mt-3 ajax-notification" role="alert">
@@ -258,10 +281,10 @@
                         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>`
                 );
-                alertPlaceholder.prepend(alertDiv); // Prepend to show at top
+                alertPlaceholder.prepend(alertDiv);
                 $('html, body').animate({
                     scrollTop: alertPlaceholder.offset().top - 20
-                }, 'smooth'); // Scroll to message
+                }, 'smooth');
                 setTimeout(() => {
                     alertDiv.fadeOut(500, function() {
                         $(this).remove();
@@ -269,15 +292,12 @@
                 }, 7000);
             }
 
-            // Auto-hide session alerts after a delay
             $('#alert-placeholder .alert').not('.ajax-notification').not('.alert-danger').delay(7000).slideUp(300, function() {
                 $(this).alert('close');
             });
-            // Keep danger alerts (like import failures) visible longer or until manually closed
             $('#alert-placeholder .alert-danger').not('.ajax-notification').delay(20000).slideUp(300, function() {
                 $(this).alert('close');
             });
-
 
             const table = $('#standardBudgetsTable').DataTable({
                 processing: true,
@@ -288,7 +308,6 @@
                     type: "GET",
                     data: function(d) {
                         d.year = $('#year_filter').val();
-                        // d.search_term = $('#customSearchInput').val(); // Example if you add custom search
                     },
                     error: function(xhr, error, code) {
                         console.error("DataTables AJAX error: ", xhr.responseText);
@@ -301,13 +320,13 @@
                     searchPlaceholder: "Cari...",
                     lengthMenu: "Tampil _MENU_ data",
                     info: "Menampilkan _START_ sampai _END_ dari _TOTAL_ data",
-                    infoEmpty: "Tidak ada data",
+                    infoEmpty: "No data",
                     infoFiltered: "(disaring dari _MAX_ total data)",
                     paginate: {
-                        first: "Pertama",
-                        last: "Terakhir",
-                        next: "Berikutnya",
-                        previous: "Sebelumnya"
+                        first: "First",
+                        last: "Last",
+                        next: "Next",
+                        previous: "Previous"
                     },
                     processing: '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Memuat...</span></div> <span class="ms-2">Memuat data...</span>'
                 },
@@ -318,27 +337,18 @@
                         searchable: false,
                         className: 'text-center'
                     },
-                    {
-                        data: 'name_region',
-                        name: 'name_region'
-                    },
+                    { data: 'brand_name', name: 'brand_name' },
+                    { data: 'name_region', name: 'name_region' },
                     {
                         data: 'amount',
                         name: 'amount',
                         className: 'text-right',
                         render: function(data, type, row) {
-                            // Data from server is already formatted as string "1.234,56"
-                            // For sorting, DataTables might need raw number.
-                            // If 'data' is a raw number from controller, use:
-                            // return parseFloat(data).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                            return data; // Assuming 'amount' is already formatted from controller editColumn
+                            return data; // Already formatted from controller
                         }
                     },
-                    {
-                        data: 'year',
-                        name: 'year',
-                        className: 'text-center'
-                    },
+                    { data: 'month', name: 'month', className: 'text-center' }, // Display formatted month
+                    { data: 'year', name: 'year', className: 'text-center' },
                     {
                         data: 'action',
                         name: 'action',
@@ -348,16 +358,19 @@
                     }
                 ],
                 order: [
-                    [3, 'desc'],
-                    [1, 'asc']
-                ] // Default sort by year desc, then name_region asc
+                    [5, 'desc'], // year
+                    [4, 'asc'],  // month (will sort by formatted month name if server sends it, or by number if not)
+                    [1, 'asc'],  // brand_name
+                    [2, 'asc']   // name_region
+                ]
             });
 
             $('#btnOpenCreateModal').on('click', () => {
                 $('#budgetForm')[0].reset();
                 clearValidationErrors();
-                $('#budgetModalLabel').text('Tambah Standard Budget');
+                $('#budgetModalLabel').text('Add Standard Budget');
                 $('#budgetId').val('');
+                $('#month_modal').val(new Date().getMonth() + 1);
                 $('#year_modal').val(new Date().getFullYear());
                 showBudgetModal();
             });
@@ -383,14 +396,20 @@
                     },
                     success: function(response) {
                         hideBudgetModal();
-                        table.ajax.reload(null, false); // false to keep current page
+                        table.ajax.reload(null, false);
                         showAjaxNotification(response.success, 'success');
                     },
                     error: function(xhr) {
-                        if (xhr.status === 422) { // Validation error
+                        if (xhr.status === 422) {
                             const errors = xhr.responseJSON.errors;
-                            displayValidationErrors(errors);
-                            showAjaxNotification('Terdapat kesalahan input. Mohon periksa kembali form.', 'danger');
+                            if (errors) {
+                                displayValidationErrors(errors);
+                                showAjaxNotification('Terdapat kesalahan input. Mohon periksa kembali form.', 'danger');
+                            } else if (xhr.responseJSON.error) { // Custom error for uniqueness
+                                showAjaxNotification(xhr.responseJSON.error, 'danger');
+                            } else {
+                                showAjaxNotification('Terdapat kesalahan validasi yang tidak diketahui.', 'danger');
+                            }
                         } else {
                             const errorMsg = xhr.responseJSON?.error || xhr.responseJSON?.message || xhr.statusText || 'Terjadi kesalahan. Silakan coba lagi.';
                             showAjaxNotification('Gagal menyimpan data: ' + errorMsg, 'danger');
@@ -406,10 +425,10 @@
                 clearValidationErrors();
                 $.get("{{ url('standard-budgets') }}/" + id + "/edit", function(data) {
                     $('#budgetId').val(data.id);
+                    $('#brand_name_modal').val(data.brand_name);
                     $('#name_region_modal').val(data.name_region);
-                    // Amount from server might be float, ensure it's formatted for display if needed,
-                    // but input type number handles it.
-                    $('#amount_modal').val(parseFloat(data.amount).toFixed(2));
+                    $('#amount_modal').val(parseFloat(data.amount).toFixed(2)); // Amount is decimal from model
+                    $('#month_modal').val(data.month);
                     $('#year_modal').val(data.year);
                     $('#budgetModalLabel').text('Edit Standard Budget');
                     showBudgetModal();
@@ -435,7 +454,7 @@
                     if (result.isConfirmed) {
                         $.ajax({
                             url: "{{ url('standard-budgets') }}/" + id,
-                            type: 'POST', // Method override
+                            type: 'POST',
                             data: {
                                 _method: 'DELETE',
                                 _token: csrfToken
@@ -457,30 +476,28 @@
             $('#btnOpenImportModal').on('click', () => {
                 $('#importExcelForm')[0].reset();
                 clearValidationErrors('importExcelForm');
-                $('#excel_file_error').text(''); // Clear specific file error
+                $('#excel_file_error').text('');
+                $('#importErrorContainer').addClass('hidden').html('');
                 showImportExcelModal();
             });
             $('#btnCloseImportModal, #btnCancelImportModal').on('click', hideImportExcelModal);
 
-            // Handle Import Form Submission (Standard form submission, page will reload)
             $('#importExcelForm').on('submit', function(e) {
                 const fileInput = $('#excel_file');
-                $('#excel_file_error').text(''); // Clear previous error
+                $('#excel_file_error').text('');
 
                 if (!fileInput.val()) {
-                    e.preventDefault(); // Prevent submission
+                    e.preventDefault();
                     $('#excel_file_error').text('Silakan pilih file Excel untuk diimport.');
                     fileInput.addClass('border-red-500');
                     return false;
                 }
-                // Add a loading indicator to the submit button
                 $('#btnSubmitImport').html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Mengimport...').prop('disabled', true);
+                // Form will submit normally, page will reload
             });
-
 
             $('#year_filter').on('change', () => table.ajax.reload());
 
-            // Close modals on Escape key
             $(document).on('keydown', function(event) {
                 if (event.key === "Escape") {
                     if (!budgetModal.hasClass('hidden')) {

@@ -10,10 +10,14 @@ return new class extends Migration
     {
         Schema::create('standard_budgets', function (Blueprint $table) {
             $table->id();
+            $table->string('brand_name');
             $table->string('name_region');
-            $table->decimal('amount', 15, 2);
+            $table->decimal('amount', 15, 4);
+            $table->integer('month');
             $table->integer('year');
             $table->timestamps();
+
+            $table->unique(['brand_name', 'name_region', 'month', 'year'], 'standard_budgets_unique_entry');
         });
     }
 

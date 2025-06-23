@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardSalesController;
 use App\Http\Controllers\StandardBudgetController;
 use App\Http\Controllers\KanbanController;
+use App\Http\Controllers\Admin\DepartmentApproverController;
 
 /*
 |--------------------------------------------------------------------------
@@ -146,6 +147,15 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
     Route::delete('/tasks/{task}', [KanbanController::class, 'destroy'])->name('tasks.destroy');
     Route::get('/tasks/approval/{token}', [KanbanController::class, 'handleApproval'])->name('tasks.handle_approval');
     Route::post('/tasks/approval/{token}', [KanbanController::class, 'handleApproval'])->name('tasks.submit_rejection');
+
+    //export kanban
+        Route::prefix('reports')->name('reports.')->group(function() {
+        // Halaman untuk menampilkan daftar task dengan filter
+        Route::get('/tasks', [KanbanController::class, 'taskListReport'])->name('tasks.list');
+        // Proses ekspor task ke Excel
+        Route::get('/tasks/export', [KanbanController::class, 'exportTasks'])->name('tasks.export');
+    });
+
 });
 
 
@@ -194,6 +204,9 @@ Route::group(['middleware' => ['role:super-admin|admin']], function () {
     Route::put('levels/{level:level_slug}/update', [LevelController::class, 'update'])->name('level.update');
     Route::post('levels', [LevelController::class, 'store'])->name('level.store');
     Route::delete('levels/{level:level_slug}/delete', [LevelController::class, 'destroy'])->name('level.destroy');
+
+    // kanban approver
+    Route::resource('department-approvers', DepartmentApproverController::class);
 });
 
 require __DIR__ . '/auth.php';

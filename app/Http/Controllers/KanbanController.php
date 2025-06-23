@@ -17,15 +17,16 @@ use App\Mail\TaskApprovalRequestMailHtml;
 use App\Mail\TaskStatusUpdateMailHtml;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use App\Exports\TasksExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class KanbanController extends Controller
 {
     private function getRecipientEmailsForDepartment(Department $department): array
     {
-
         $approvers = DepartmentApprover::where('department_id', $department->id)
-            ->where('status', 'active')
-            ->with('user:id,nik,email,name')
+            ->where('status', 'active') // Assuming 'active' is the status for active approvers
+            ->with('user:id,nik,email,name') // Eager load user details
             ->get();
 
         $emails = [];
@@ -33,76 +34,117 @@ class KanbanController extends Controller
             if ($approver->user && filter_var($approver->user->email, FILTER_VALIDATE_EMAIL)) {
                 $emails[] = $approver->user->email;
             } else {
-                Log::warning("DepartmentApprover ID {$approver->id} for NIK {$approver->user_nik} has no valid user or email.");
+                // Corrected Log message
+                Log::warning("DepartmentApprover ID {$approver->id} for User NIK {$approver->user_nik} has no valid user or email.");
             }
         }
 
         if (empty($emails)) {
-            Log::warning("No active approvers with valid emails found for department '{$department->department_name}'.");
+            Log::warning("No active approvers with valid emails found for department '{$department->department_name}' (ID: {$department->id}).");
         }
         return array_unique($emails);
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user()->load(['department', 'position']);
-        Log::info('KanbanController@index: Fetching tasks for user ID ' . $user->id . ' (NIK: ' . $user->nik . ')');
+        Log::info('KanbanController@index (Report View): Fetching tasks for user ID ' . $user->id . ' (NIK: ' . $user->nik . ')', $request->all());
 
         $tasksQuery = Task::with([
             'pengaju:id,name,nik',
-            'department:id,department_name',
+            'department:id,department_name', // Corrected: ensure department is loaded with specific columns
             'penutup:id,name,nik',
             'approvalDetails' => function ($query) {
                 $query->with('approver:id,name,nik')->orderBy('processed_at', 'desc');
             }
         ])
-        ->orderBy('created_at', 'desc');
+        ->latest('tasks.created_at'); // Default sort: newest tasks first
 
-        $tasksQuery->where(function ($query) {
-            $query->whereNotIn('status', [Task::STATUS_CLOSED])
-                  ->orWhere(function($q){
-                      $q->where('status', Task::STATUS_CLOSED)
-                        ->where('closed_at', '>', Carbon::now()->subDays(30));
+        // Apply Filters from request
+        if ($request->filled('status_filter')) {
+            $tasksQuery->where('tasks.status', $request->input('status_filter'));
+        }
+        if ($request->filled('pengaju_filter')) {
+            $tasksQuery->where('tasks.pengaju_id', $request->input('pengaju_filter'));
+        }
+        if ($request->filled('date_from_filter')) {
+            $tasksQuery->whereDate('tasks.created_at', '>=', Carbon::parse($request->input('date_from_filter'))->startOfDay());
+        }
+        if ($request->filled('date_to_filter')) {
+            $tasksQuery->whereDate('tasks.created_at', '<=', Carbon::parse($request->input('date_to_filter'))->endOfDay());
+        }
+        if ($request->filled('search_filter')) {
+            $searchTerm = '%' . $request->input('search_filter') . '%';
+            $tasksQuery->where(function ($q) use ($searchTerm) {
+                $q->where('tasks.id_job', 'like', $searchTerm)
+                  ->orWhere('tasks.area', 'like', $searchTerm)
+                  ->orWhere('tasks.list_job', 'like', $searchTerm)
+                  ->orWhereHas('pengaju', function($sq) use ($searchTerm){
+                      $sq->where('name', 'like', $searchTerm)->orWhere('nik', 'like', $searchTerm);
+                  })
+                  ->orWhereHas('department', function($sq) use ($searchTerm){
+                      $sq->where('department_name', 'like', $searchTerm);
                   });
-        });
-
-        if (!($user->isSuperAdmin() || $user->isAdminProject())) {
-            $tasksQuery->where(function ($query) use ($user) {
-                $query->where('pengaju_id', $user->id)
-                    ->orWhere(function ($q) use ($user) {
-                        $q->where('department_id', $user->department_id)
-                          ->whereIn('status', [Task::STATUS_OPEN, Task::STATUS_COMPLETED]);
-                    })
-                    ->orWhereHas('approvalDetails', function ($q_approval) use ($user) {
-                        $q_approval->where('approver_nik', $user->nik)
-                                   ->where('status', JobApprovalDetail::STATUS_PENDING);
-                    });
             });
         }
 
-        $tasks = $tasksQuery->get();
-        $departments = Department::orderBy('department_name')->get();
+        // Role-based access control and Department Filter
+        if ($user->isSuperAdmin() || $user->isAdminProject()) {
+            // Admins can filter by any department
+            if ($request->filled('department_filter')) {
+                $tasksQuery->where('tasks.department_id', $request->input('department_filter'));
+            }
+        } else {
+            // Regular User access logic
+            $departmentFilter = $request->input('department_filter');
+            if ($departmentFilter) {
+                // If filtering by their own department
+                if ($departmentFilter == $user->department_id) {
+                    $tasksQuery->where('tasks.department_id', $departmentFilter);
+                } else {
+                    // If filtering by another department, show only tasks they submitted to that department
+                    $tasksQuery->where('tasks.pengaju_id', $user->id)
+                               ->where('tasks.department_id', $departmentFilter);
+                }
+            } else {
+                // No specific department filter by regular user:
+                // Show tasks they submitted OR tasks for their own department (if any)
+                $tasksQuery->where(function ($q) use ($user) {
+                    $q->where('tasks.pengaju_id', $user->id);
+                    if ($user->department_id) {
+                        $q->orWhere('tasks.department_id', $user->department_id);
+                    }
+                });
+            }
+        }
 
-        $groupedTasks = $tasks->groupBy('status');
-        $pendingApprovalTasks = $groupedTasks->get(Task::STATUS_PENDING_APPROVAL, collect());
-        $openTasks = $groupedTasks->get(Task::STATUS_OPEN, collect());
-        $completedTasks = $groupedTasks->get(Task::STATUS_COMPLETED, collect());
-        $closedTasks = $groupedTasks->get(Task::STATUS_CLOSED, collect());
-        $rejectedTasks = $groupedTasks->get(Task::STATUS_REJECTED, collect());
-        $cancelledTasks = $groupedTasks->get(Task::STATUS_CANCELLED, collect());
+        $tasks = $tasksQuery->paginate(10)->withQueryString();
+
+        // Data for filter dropdowns
+        $departmentsForFilter = Department::orderBy('department_name')->pluck('department_name', 'id');
+        // Assuming 'status' i'active' the column name in your users table for active status
+        $usersForFilter = User::orderBy('name')->where('status', 'active')->get()->mapWithKeys(function ($u) {
+            return [$u->id => $u->name . ' (NIK: ' . $u->nik . ')'];
+        });
+        $taskStatusesForFilter = Task::getAvailableStatuses();
+
+        // Data for "Create Task" Modal
+        $departmentsForTaskForm = Department::orderBy('department_name')->pluck('department_name', 'id');
 
         return view('page.kanban.index', compact(
-            'pendingApprovalTasks',
-            'openTasks',
-            'completedTasks',
-            'closedTasks',
-            'rejectedTasks',
-            'cancelledTasks',
-            'departments',
-            'user'
+            'tasks',
+            'user',
+            'departmentsForFilter',
+            'usersForFilter',
+            'taskStatusesForFilter',
+            'departmentsForTaskForm',
+            'request' // To repopulate filter form fields
         ));
     }
 
+    /**
+     * Store a newly created task in storage.
+     */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -110,7 +152,7 @@ class KanbanController extends Controller
             'department_id' => 'required|exists:departments,id',
             'area' => 'required|string|max:255',
             'list_job' => 'required|string',
-            'tanggal_job_mulai' => 'nullable|date_format:Y-m-d',
+            'tanggal_job_mulai' => 'nullable|date_format:Y-m-d|after_or_equal:today',
         ]);
 
         if ($validator->fails()) {
@@ -121,17 +163,19 @@ class KanbanController extends Controller
         $data = $request->all();
         $data['pengaju_id'] = Auth::id();
         $data['status'] = Task::STATUS_PENDING_APPROVAL;
-        $data['tanggal_job_mulai'] = empty($data['tanggal_job_mulai'])
-            ? Carbon::today()->format('Y-m-d')
-            : Carbon::parse($data['tanggal_job_mulai'])->format('Y-m-d');
+        // Ensure tanggal_job_mulai is set, default to today if not provided or empty
+        $data['tanggal_job_mulai'] = !empty($data['tanggal_job_mulai'])
+            ? Carbon::parse($data['tanggal_job_mulai'])->format('Y-m-d')
+            : Carbon::today()->format('Y-m-d');
+        // requester_confirmation_cancel defaults to false or 0 in DB schema or model
 
         DB::beginTransaction();
         try {
             $task = Task::create($data);
-            $task->load(['pengaju:id,name,nik', 'department:id,department_name']);
+            $task->load(['pengaju:id,name,nik', 'department:id,department_name']); // Load for email and response
 
             $departmentApprovers = DepartmentApprover::where('department_id', $task->department_id)
-                ->where('status', 'active')
+                ->where('status', 'active') // This 'status' is for DepartmentApprover model
                 ->with('user:id,nik,email,name')
                 ->get();
 
@@ -144,38 +188,34 @@ class KanbanController extends Controller
             $approvalEmailsSentTo = [];
             foreach ($departmentApprovers as $departmentApproverInstance) {
                 $approverUser = $departmentApproverInstance->user;
-
                 if (!$approverUser || !filter_var($approverUser->email, FILTER_VALIDATE_EMAIL)) {
-                    Log::warning("KanbanController@store: Approver NIK {$departmentApproverInstance->user_nik} (via DeptApprover ID {$departmentApproverInstance->id}) not found or has invalid email. Skipping.");
+                    Log::warning("KanbanController@store: Approver NIK {$departmentApproverInstance->user_nik} for DeptApprover ID {$departmentApproverInstance->id} not found or has invalid email. Skipping.");
                     continue;
                 }
 
-                $token = Task::generateUniqueToken();
+                $token = Task::generateUniqueToken(); // Assumes static method in Task model
                 $approvalDetail = $task->approvalDetails()->create([
                     'approver_nik' => $approverUser->nik,
                     'status' => JobApprovalDetail::STATUS_PENDING,
                     'token' => $token,
                 ]);
 
-                $recipientEmail = $approverUser->email;
-
-                if ($recipientEmail) {
-                    Mail::to($recipientEmail)->send(new TaskApprovalRequestMailHtml($task, $approvalDetail));
-                    $approvalEmailsSentTo[] = $recipientEmail;
-                    Log::info("KanbanController@store: Sending approval email for Task ID {$task->id} to {$recipientEmail} (Approver NIK: {$approverUser->nik})");
+                if ($approverUser->email) { // Check again before sending
+                    Mail::to($approverUser->email)->send(new TaskApprovalRequestMailHtml($task, $approvalDetail));
+                    $approvalEmailsSentTo[] = $approverUser->email;
+                    Log::info("KanbanController@store: Sending approval email for Task ID {$task->id} to {$approverUser->email} (Approver NIK: {$approverUser->nik})");
                 }
             }
 
-
             if (empty($approvalEmailsSentTo)) {
                 DB::rollBack();
-                Log::error('KanbanController@store: No approval emails could be sent for task ID ' . $task->id . '. This might happen if all found approvers had invalid emails or were skipped.');
+                Log::error('KanbanController@store: No approval emails could be sent for task ID ' . $task->id . '. All configured approvers might have invalid email addresses.');
                 return response()->json(['message' => 'Gagal mengirim email permintaan persetujuan karena tidak ada approver valid yang bisa dihubungi. Task tidak dapat dibuat.'], 500);
             }
 
             DB::commit();
-            $task->load(['pengaju:id,name,nik', 'department:id,department_name', 'approvalDetails.approver:id,name,nik']);
-            Log::info('KanbanController@store: Task created, pending approval.', $task->toArray());
+            $task->load(['approvalDetails.approver:id,name,nik']); // Load for the JSON response
+            Log::info('KanbanController@store: Task created successfully, pending approval.', $task->toArray());
             return response()->json($task, 201);
 
         } catch (\Exception $e) {
@@ -185,10 +225,13 @@ class KanbanController extends Controller
         }
     }
 
+    /**
+     * Handle task approval or rejection via email link.
+     */
     public function handleApproval(Request $request, $token)
     {
         $approvalDetail = JobApprovalDetail::where('token', $token)
-            ->where('status', JobApprovalDetail::STATUS_PENDING)
+            ->where('status', JobApprovalDetail::STATUS_PENDING) // Only process pending approvals
             ->first();
 
         if (!$approvalDetail) {
@@ -196,83 +239,110 @@ class KanbanController extends Controller
         }
 
         $task = $approvalDetail->task->load(['pengaju:id,name,email,nik', 'department:id,department_name']);
-        $action = $request->query('action');
-        $loggedInUser = Auth::user();
+        $action = $request->query('action'); // 'approve' or 'reject'
+        $loggedInUser = Auth::user(); // User processing via web session
+        // User identified by the NIK in approvalDetail if no web session (e.g. direct link access)
         $processingUser = $loggedInUser ?? User::where('nik', $approvalDetail->approver_nik)->first();
 
         if (!$processingUser) {
-             Log::error("KanbanController@handleApproval: Approver user for NIK {$approvalDetail->approver_nik} not found.");
+             Log::error("KanbanController@handleApproval: Approver user for NIK {$approvalDetail->approver_nik} not found for token {$token}.");
              return view('page.kanban.approval_feedback', ['message' => 'User approver tidak ditemukan.']);
         }
+        // Ensure the processing user is indeed the designated approver for this detail if logged in
+        if ($loggedInUser && $loggedInUser->nik !== $approvalDetail->approver_nik) {
+            Log::warning("KanbanController@handleApproval: User {$loggedInUser->nik} attempted to process approval for {$approvalDetail->approver_nik} with token {$token}.");
+            return view('page.kanban.approval_feedback', ['message' => 'Anda tidak diizinkan untuk memproses persetujuan ini.']);
+        }
+
 
         DB::beginTransaction();
         try {
             $message = '';
             $logEvent = '';
             $emailSubject = '';
-            $emailBody = '';
-            $emailRecipient = $task->pengaju;
+            $emailBodyToRequester = '';
             $rejectionNotes = null;
 
             if ($action === 'approve') {
                 $approvalDetail->status = JobApprovalDetail::STATUS_APPROVED;
-                $task->status = Task::STATUS_OPEN;
-                $message = 'Tugas berhasil disetujui dan sekarang berstatus OPEN.';
-                $logEvent = 'approved';
+                $task->status = Task::STATUS_OPEN; // Task becomes open upon approval
+                $message = "Tugas '{$task->id_job}' berhasil Anda SETUJUI dan sekarang berstatus OPEN.";
+                $logEvent = 'task_approved';
                 $emailSubject = 'Tugas Disetujui: ' . $task->id_job;
-                $emailBody = "Tugas yang Anda ajukan (JOB ID: {$task->id_job}) telah disetujui oleh {$processingUser->name} dari departemen {$task->department->department_name} dan sekarang berstatus OPEN.";
+                $emailBodyToRequester = "Tugas yang Anda ajukan (JOB ID: {$task->id_job}) telah disetujui oleh {$processingUser->name} ({$processingUser->nik}) dan sekarang berstatus OPEN.";
 
             } elseif ($action === 'reject') {
-                if ($request->isMethod('post')) {
+                if ($request->isMethod('post')) { // Rejection form submitted
                     $request->validate(['notes' => 'required|string|max:1000']);
                     $approvalDetail->notes = $request->input('notes');
                     $rejectionNotes = $approvalDetail->notes;
-                    $approvalDetail->status = JobApprovalDetail::STATUS_REJECTED;
-                    $task->status = Task::STATUS_REJECTED;
-                    $message = 'Tugas berhasil ditolak.';
-                    $logEvent = 'rejected';
-                    $emailSubject = 'Tugas Ditolak: ' . $task->id_job;
-                    $emailBody = "Tugas yang Anda ajukan (JOB ID: {$task->id_job}) telah ditolak oleh {$processingUser->name} dari departemen {$task->department->department_name}.";
-                } else {
+                } elseif (!$request->isMethod('post') && $request->has('notes')) { // Notes from query param (less secure, for simple cases)
+                     $approvalDetail->notes = $request->query('notes');
+                     $rejectionNotes = $approvalDetail->notes;
+                }
+
+
+                $approvalDetail->status = JobApprovalDetail::STATUS_REJECTED;
+                $task->status = Task::STATUS_REJECTED; // Task becomes rejected
+                $message = "Tugas '{$task->id_job}' berhasil Anda TOLAK.";
+                if ($rejectionNotes) $message .= " Dengan catatan: " . $rejectionNotes;
+                $logEvent = 'task_rejected';
+                $emailSubject = 'Tugas Ditolak: ' . $task->id_job;
+                $emailBodyToRequester = "Tugas yang Anda ajukan (JOB ID: {$task->id_job}) telah ditolak oleh {$processingUser->name} ({$processingUser->nik}).";
+                if ($rejectionNotes) $emailBodyToRequester .= "\nCatatan Penolakan: " . $rejectionNotes;
+
+                // If rejection form is needed and not yet submitted
+                if ($request->isMethod('get') && !$request->has('notes')) { // Show rejection form if GET and no notes
+                    DB::rollBack(); // No changes made yet
                     return view('page.kanban.reject_task_form', compact('task', 'token', 'approvalDetail'));
                 }
+
             } else {
                 DB::rollBack();
                 return view('page.kanban.approval_feedback', ['message' => 'Aksi tidak valid.']);
             }
 
             $approvalDetail->processed_at = Carbon::now();
-            $approvalDetail->token = null;
+            $approvalDetail->token = null; // Invalidate token after use
             $approvalDetail->save();
             $task->save();
 
+            // Mark other pending approval details for this task as 'superseded'
             JobApprovalDetail::where('task_id', $task->id)
                 ->where('status', JobApprovalDetail::STATUS_PENDING)
                 ->where('id', '!=', $approvalDetail->id)
-                ->update(['status' => 'superseded', 'token' => null, 'notes' => 'Processed by another approver.']);
+                ->update([
+                    'status' => JobApprovalDetail::STATUS_SUPERSEDED,
+                    'token' => null,
+                    'notes' => 'Diproses oleh approver lain (' . $processingUser->name . ').'
+                ]);
 
-            if ($emailRecipient && $emailRecipient->email) {
-                 Mail::to($emailRecipient->email)->send(new TaskStatusUpdateMailHtml(
+            // Notify task requester
+            if ($task->pengaju && $task->pengaju->email) {
+                 Mail::to($task->pengaju->email)->send(new TaskStatusUpdateMailHtml(
                     $task,
                     $emailSubject,
-                    $emailBody,
-                    $emailRecipient,
+                    $emailBodyToRequester,
+                    $task->pengaju, // Recipient User object
                     $rejectionNotes,
-                    null,
-                    $approvalDetail->status
+                    null, // No cancellation reason here
+                    $task->status // The new status of the task
                 ));
             }
 
-            activity()
-                ->causedBy($processingUser)
-                ->performedOn($task)
-                ->withProperties([
-                    'id_job' => $task->id_job,
-                    'approver_nik' => $processingUser->nik,
-                    'approval_detail_id' => $approvalDetail->id,
-                    'notes' => $rejectionNotes
-                ])
-                ->log($logEvent);
+            // Log activity
+            if (function_exists('activity')) {
+                activity()
+                    ->causedBy($processingUser)
+                    ->performedOn($task)
+                    ->withProperties([
+                        'id_job' => $task->id_job,
+                        'approver_nik' => $processingUser->nik,
+                        'approval_detail_id' => $approvalDetail->id,
+                        'notes' => $rejectionNotes
+                    ])
+                    ->log($logEvent);
+            }
 
             DB::commit();
             return view('page.kanban.approval_feedback', ['message' => $message]);
@@ -280,28 +350,32 @@ class KanbanController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error("KanbanController@handleApproval: Error processing token {$token}.", ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
-            return view('page.kanban.approval_feedback', ['message' => 'Terjadi kesalahan saat memproses permintaan Anda. Error: ' . $e->getMessage()]);
+            return view('page.kanban.approval_feedback', ['message' => 'Terjadi kesalahan internal saat memproses permintaan Anda. Error: ' . $e->getMessage()]);
         }
     }
 
+    /**
+     * Update the status of a specific task.
+     */
     public function updateStatus(Request $request, Task $task)
     {
         $user = Auth::user();
         Log::info('KanbanController@updateStatus: User ID ' . $user->id . ' updating status for task ID ' . $task->id, $request->all());
 
-        $allowedStatuses = [
-            Task::STATUS_OPEN, Task::STATUS_COMPLETED, Task::STATUS_CLOSED, Task::STATUS_CANCELLED
-        ];
+        $allowedStatuses = Task::getAvailableStatuses(); // Get all defined statuses
         $validatorRules = [
-            'status' => 'required|string|in:' . implode(',', $allowedStatuses),
+            'status' => 'required|string|in:' . implode(',', array_keys($allowedStatuses)),
         ];
 
         if ($request->input('status') === Task::STATUS_CANCELLED) {
             $validatorRules['cancel_reason'] = 'required|string|max:1000';
             $validatorRules['requester_confirmation_cancel'] = 'required|accepted';
         }
-        $validator = Validator::make($request->all(), $validatorRules);
+        if ($request->input('status') === Task::STATUS_REJECTED && $request->has('notes')) {
+            $validatorRules['notes'] = 'nullable|string|max:1000'; // For admin direct rejection with notes
+        }
 
+        $validator = Validator::make($request->all(), $validatorRules);
         if ($validator->fails()) {
             Log::error('KanbanController@updateStatus: Validation failed for task ID ' . $task->id, $validator->errors()->toArray());
             return response()->json(['errors' => $validator->errors()], 422);
@@ -310,169 +384,323 @@ class KanbanController extends Controller
         $newStatus = $request->input('status');
         $oldStatus = $task->status;
 
+        // Authorization checks
+        $canUpdate = false;
         if ($newStatus === Task::STATUS_COMPLETED) {
-            if (!($user->id === $task->pengaju_id || $user->isSuperAdmin() || $user->isAdminProject() || $user->department_id === $task->department_id)) {
-                return response()->json(['message' => 'Anda tidak memiliki izin untuk menyelesaikan task ini.'], 403);
-            }
+            $canUpdate = ($user->id === $task->pengaju_id || $user->isSuperAdmin() || $user->isAdminProject() || ($user->department_id && $user->department_id === $task->department_id));
         } elseif ($newStatus === Task::STATUS_CLOSED) {
-            if (!($user->id === $task->pengaju_id || $user->isSuperAdmin() || $user->isAdminProject())) {
-                return response()->json(['message' => 'Hanya pengaju, Super Admin, atau Admin Project yang dapat mengarsipkan task ini.'], 403);
-            }
-            if (!in_array($oldStatus, [Task::STATUS_COMPLETED, Task::STATUS_CANCELLED, Task::STATUS_REJECTED])) {
-                return response()->json(['message' => 'Task hanya bisa diarsipkan jika sudah COMPLETED, CANCELLED, atau REJECTED.'], 403);
-            }
+            $canUpdate = ($user->id === $task->pengaju_id || $user->isSuperAdmin() || $user->isAdminProject()) &&
+                         in_array($oldStatus, [Task::STATUS_COMPLETED, Task::STATUS_CANCELLED, Task::STATUS_REJECTED]);
         } elseif ($newStatus === Task::STATUS_CANCELLED) {
-            if (!($user->id === $task->pengaju_id)) {
-                return response()->json(['message' => 'Hanya pengaju yang dapat membatalkan task ini.'], 403);
-            }
-            if (!in_array($oldStatus, [Task::STATUS_PENDING_APPROVAL, Task::STATUS_OPEN])) {
-                return response()->json(['message' => 'Task hanya bisa dibatalkan jika berstatus PENDING APPROVAL atau OPEN.'], 403);
-            }
-            $task->cancel_reason = $request->input('cancel_reason');
-            $task->requester_confirmation_cancel = $request->boolean('requester_confirmation_cancel');
-        } elseif ($newStatus === Task::STATUS_OPEN && in_array($oldStatus, [Task::STATUS_COMPLETED, Task::STATUS_CLOSED, Task::STATUS_CANCELLED, Task::STATUS_REJECTED])) {
-            if (!($user->isAdminProject() || $user->isSuperAdmin())) {
-                return response()->json(['message' => 'Hanya Admin Project atau Super Admin yang bisa membuka kembali task.'], 403);
-            }
+            $canUpdate = ($user->id === $task->pengaju_id) &&
+                         in_array($oldStatus, [Task::STATUS_PENDING_APPROVAL, Task::STATUS_OPEN]);
+        } elseif (($newStatus === Task::STATUS_OPEN || $newStatus === Task::STATUS_PENDING_APPROVAL) &&
+                   in_array($oldStatus, [Task::STATUS_COMPLETED, Task::STATUS_CLOSED, Task::STATUS_CANCELLED, Task::STATUS_REJECTED])) { // Reopening
+            $canUpdate = ($user->isAdminProject() || $user->isSuperAdmin());
+        } elseif ($newStatus === Task::STATUS_REJECTED) { // Direct rejection by admin
+            $canUpdate = ($user->isAdminProject() || $user->isSuperAdmin());
+        } else if ($newStatus === $oldStatus) { // No actual change
+            $canUpdate = true; // Allow if no change, or handle as no-op
+        }
+
+
+        if (!$canUpdate) {
+            return response()->json(['message' => 'Anda tidak memiliki izin untuk mengubah status task ini ke ' . $newStatus . ' atau kondisi tidak terpenuhi.'], 403);
         }
 
         DB::beginTransaction();
         try {
             $task->status = $newStatus;
             $logProperties = ['id_job' => $task->id_job, 'old_status' => $oldStatus, 'new_status' => $newStatus];
-            $logEvent = 'updated_status';
+            $logEvent = 'task_status_updated';
+            $emailSubject = '';
+            $emailBodyToRequester = '';
+            $rejectionNotesForEmail = null;
+            $cancellationReasonForEmail = null;
 
             if ($newStatus === Task::STATUS_COMPLETED && $oldStatus !== Task::STATUS_COMPLETED) {
                 $task->tanggal_job_selesai = Carbon::today()->format('Y-m-d');
-                $logEvent = 'completed';
-                if ($task->pengaju_id !== $user->id && $task->pengaju && $task->pengaju->email) {
-                    Mail::to($task->pengaju->email)->send(new TaskStatusUpdateMailHtml(
-                        $task, 'Tugas Selesai: ' . $task->id_job,
-                        "Tugas (JOB ID: {$task->id_job}) yang Anda ajukan telah ditandai SELESAI.",
-                        $task->pengaju, null, null, Task::STATUS_COMPLETED
-                    ));
+                $logEvent = 'task_completed';
+                $emailSubject = 'Tugas Selesai: ' . $task->id_job;
+                $emailBodyToRequester = "Tugas (JOB ID: {$task->id_job}) yang Anda ajukan telah ditandai SELESAI.";
+            } elseif ($newStatus === Task::STATUS_CANCELLED && $oldStatus !== Task::STATUS_CANCELLED) {
+                $task->cancel_reason = $request->input('cancel_reason');
+                $task->requester_confirmation_cancel = $request->boolean('requester_confirmation_cancel');
+                $logProperties['cancel_reason'] = $task->cancel_reason;
+                $logEvent = 'task_cancelled';
+                $cancellationReasonForEmail = $task->cancel_reason;
+                $task->pendingApprovalDetails()->update(['status' => JobApprovalDetail::STATUS_SUPERSEDED, 'token' => null, 'notes' => 'Task dibatalkan oleh pengaju.']);
+
+                // Notify relevant approvers/department heads about cancellation
+                $task->load(['department', 'pengaju:id,name']);
+                $recipientEmails = $this->getRecipientEmailsForDepartment($task->department);
+                $emailSubjectToApprovers = 'Informasi Pembatalan Tugas: ' . $task->id_job;
+                $emailBodyToApprovers = "Tugas (JOB ID: {$task->id_job}) untuk departemen {$task->department->department_name} telah dibatalkan oleh pengaju: {$task->pengaju->name}.\nAlasan: {$task->cancel_reason}";
+                if (!empty($recipientEmails)) {
+                    foreach($recipientEmails as $emailAddr) {
+                        $recipientUserForMail = User::where('email', $emailAddr)->first();
+                        Mail::to($emailAddr)->send(new TaskStatusUpdateMailHtml(
+                            $task, $emailSubjectToApprovers, $emailBodyToApprovers, $recipientUserForMail, null, $cancellationReasonForEmail, Task::STATUS_CANCELLED
+                        ));
+                    }
                 }
-            } elseif ($newStatus === Task::STATUS_OPEN) {
+            } elseif (($newStatus === Task::STATUS_OPEN || $newStatus === Task::STATUS_PENDING_APPROVAL) && in_array($oldStatus, [Task::STATUS_COMPLETED, Task::STATUS_CLOSED, Task::STATUS_CANCELLED, Task::STATUS_REJECTED])) {
+                // Reopening logic
                 $task->tanggal_job_selesai = null;
                 $task->penutup_id = null;
                 $task->closed_at = null;
                 $task->cancel_reason = null;
                 $task->requester_confirmation_cancel = false;
-                $logEvent = 'reopened';
+                $logEvent = ($newStatus === Task::STATUS_PENDING_APPROVAL) ? 'task_reopened_for_approval' : 'task_reopened';
+                $emailSubject = 'Tugas Dibuka Kembali: ' . $task->id_job;
+                $emailBodyToRequester = "Tugas (JOB ID: {$task->id_job}) telah dibuka kembali. Status saat ini: " . ucfirst(str_replace('_', ' ', $newStatus)) . ".";
 
-                if (in_array($oldStatus, [Task::STATUS_REJECTED, Task::STATUS_CANCELLED])) {
-                    $task->status = Task::STATUS_PENDING_APPROVAL;
-                    $task->approvalDetails()->whereIn('status', [JobApprovalDetail::STATUS_REJECTED, 'superseded', JobApprovalDetail::STATUS_PENDING])->delete();
+                if ($newStatus === Task::STATUS_PENDING_APPROVAL) {
+                    // Reset or supersede previous approval details and create new pending ones
+                    $task->approvalDetails()->whereNotIn('status', [JobApprovalDetail::STATUS_APPROVED]) // Keep approved ones for history
+                         ->update(['status' => JobApprovalDetail::STATUS_SUPERSEDED, 'token' => null, 'notes' => 'Task dibuka kembali untuk persetujuan ulang.']);
 
                     $departmentApprovers = DepartmentApprover::where('department_id', $task->department_id)
-                        ->where('status', 'active')
-                        ->with('user:id,nik,email,name')
-                        ->get();
-
+                        ->where('status', 'active')->with('user:id,nik,email,name')->get();
                     if ($departmentApprovers->isEmpty()) {
                         DB::rollBack();
-                        return response()->json(['message' => 'Tidak ada approver aktif untuk re-approval.'], 422);
+                        return response()->json(['message' => 'Tidak ada approver aktif untuk departemen tujuan. Task tidak dapat dibuka kembali untuk persetujuan.'], 422);
                     }
                     $emailsSentInReopen = 0;
-                    foreach ($departmentApprovers as $departmentApproverInstance) {
-                        $approverUser = $departmentApproverInstance->user;
-                        if ($approverUser && filter_var($approverUser->email, FILTER_VALIDATE_EMAIL)) {
+                    foreach ($departmentApprovers as $da) {
+                        if ($da->user && filter_var($da->user->email, FILTER_VALIDATE_EMAIL)) {
                             $token = Task::generateUniqueToken();
-                            $approvalDetail = $task->approvalDetails()->create([
-                                'approver_nik' => $approverUser->nik,
-                                'status' => JobApprovalDetail::STATUS_PENDING,
-                                'token' => $token,
-                            ]);
-                            $recipientEmail = $approverUser->email;
-                            Mail::to($recipientEmail)->send(new TaskApprovalRequestMailHtml($task, $approvalDetail));
-                            Log::info("KanbanController@updateStatus (reopened_for_approval): Sending approval email for Task ID {$task->id} to {$recipientEmail} (Approver NIK: {$approverUser->nik})");
+                            $newApprovalDetail = $task->approvalDetails()->create(['approver_nik' => $da->user_nik, 'status' => JobApprovalDetail::STATUS_PENDING, 'token' => $token]);
+                            Mail::to($da->user->email)->send(new TaskApprovalRequestMailHtml($task, $newApprovalDetail));
                             $emailsSentInReopen++;
-                        } else {
-                            Log::warning("KanbanController@updateStatus (reopened_for_approval): Approver NIK {$departmentApproverInstance->user_nik} (via DeptApprover ID {$departmentApproverInstance->id}) not found or has invalid email. Skipping.");
                         }
                     }
                     if ($emailsSentInReopen === 0) {
                         DB::rollBack();
-                        Log::error('KanbanController@updateStatus (reopened_for_approval): No approval emails could be sent for task ID ' . $task->id);
-                        return response()->json(['message' => 'Gagal mengirim email permintaan persetujuan ulang karena tidak ada approver valid yang bisa dihubungi.'], 500);
+                        return response()->json(['message' => 'Gagal mengirim email permintaan persetujuan ulang (tidak ada approver valid).'], 500);
                     }
-                    $logEvent = 'reopened_for_approval';
+                    $emailBodyToRequester = "Tugas (JOB ID: {$task->id_job}) telah diajukan ulang untuk persetujuan.";
                 }
             } elseif ($newStatus === Task::STATUS_CLOSED && $oldStatus !== Task::STATUS_CLOSED) {
                 $task->penutup_id = $user->id;
                 $task->closed_at = Carbon::now();
                 if (!$task->tanggal_job_selesai && $oldStatus === Task::STATUS_COMPLETED) {
-                    $task->tanggal_job_selesai = Carbon::today()->format('Y-m-d');
+                    $task->tanggal_job_selesai = Carbon::today()->format('Y-m-d'); // Set if closed from completed
                 }
-                $logEvent = 'archived';
-            } elseif ($newStatus === Task::STATUS_CANCELLED && $oldStatus !== Task::STATUS_CANCELLED) {
-                $logProperties['cancel_reason'] = $task->cancel_reason;
-                $logEvent = 'cancelled';
-                $task->pendingApprovalDetails()->update(['status' => 'superseded', 'token' => null, 'notes' => 'Task cancelled by requester.']);
-                $task->load(['department', 'pengaju:id,name']);
-                $recipientEmails = $this->getRecipientEmailsForDepartment($task->department);
-                if (!empty($recipientEmails)) {
-                    foreach($recipientEmails as $email) {
-                        $recipientUser = User::where('email', $email)->first();
-                        Mail::to($email)->send(new TaskStatusUpdateMailHtml(
-                            $task, 'Tugas Dibatalkan: ' . $task->id_job,
-                            "Tugas (JOB ID: {$task->id_job}) untuk departemen {$task->department->department_name} telah dibatalkan oleh pengaju: {$task->pengaju->name}.\nAlasan: {$task->cancel_reason}",
-                            $recipientUser, null, $task->cancel_reason, Task::STATUS_CANCELLED
-                        ));
-                    }
-                    Log::info("KanbanController@updateStatus: Cancellation email for Task ID {$task->id} sent to: " . implode(', ', $recipientEmails));
+                $logEvent = 'task_archived';
+                $emailSubject = 'Tugas Diarsipkan: ' . $task->id_job;
+                $emailBodyToRequester = "Tugas (JOB ID: {$task->id_job}) telah diarsipkan.";
+            } elseif ($newStatus === Task::STATUS_REJECTED && $oldStatus !== Task::STATUS_REJECTED) {
+                // Admin directly rejecting (not via approval link)
+                $logEvent = 'task_rejected_directly';
+                if ($request->has('notes')) {
+                    $logProperties['rejection_notes'] = $request->input('notes');
+                    $rejectionNotesForEmail = $request->input('notes');
+                    // Optionally, create a JobApprovalDetail for this direct rejection
+                    $task->approvalDetails()->create([
+                        'approver_nik' => $user->nik, // Admin who rejected
+                        'status' => JobApprovalDetail::STATUS_REJECTED,
+                        'notes' => $rejectionNotesForEmail,
+                        'processed_at' => Carbon::now()
+                    ]);
                 }
+                $emailSubject = 'Tugas Ditolak: ' . $task->id_job;
+                $emailBodyToRequester = "Tugas (JOB ID: {$task->id_job}) telah ditolak oleh administrator.";
+                if ($rejectionNotesForEmail) $emailBodyToRequester .= "\nCatatan: " . $rejectionNotesForEmail;
             }
 
             $task->save();
             DB::commit();
 
-            activity()
-                ->causedBy($user)
-                ->performedOn($task)
-                ->withProperties($logProperties)
-                ->log($logEvent);
+            // Send email to requester for status changes (unless they initiated it, e.g. cancellation by self)
+            if ($task->pengaju && $task->pengaju->email && $emailSubject &&
+                !($newStatus === Task::STATUS_CANCELLED && $user->id === $task->pengaju_id)
+            ) {
+                Mail::to($task->pengaju->email)->send(new TaskStatusUpdateMailHtml(
+                    $task, $emailSubject, $emailBodyToRequester, $task->pengaju,
+                    $rejectionNotesForEmail, $cancellationReasonForEmail, $newStatus
+                ));
+            }
+
+            if (function_exists('activity')) {
+                activity()->causedBy($user)->performedOn($task)->withProperties($logProperties)->log($logEvent);
+            }
 
             $task->load(['pengaju:id,name,nik', 'department:id,department_name', 'penutup:id,name,nik', 'approvalDetails.approver:id,name,nik']);
-            Log::info('KanbanController@updateStatus: Task ID ' . $task->id . ' status updated to ' . $newStatus);
+            Log::info("KanbanController@updateStatus: Task ID {$task->id} status successfully updated to {$newStatus}.");
             return response()->json($task);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('KanbanController@updateStatus: Error updating task status for task ID ' . $task->id, ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            Log::error("KanbanController@updateStatus: Error updating task status for task ID {$task->id}.", ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json(['message' => 'Gagal memperbarui status task: ' . $e->getMessage()], 500);
         }
     }
 
+    /**
+     * Remove the specified task from storage (permanent delete).
+     */
     public function destroy(Request $request, Task $task)
     {
         $user = Auth::user();
         Log::info('KanbanController@destroy: User ID ' . $user->id . ' attempting to delete task ID ' . $task->id);
 
         if (!($user->isAdminProject() || $user->isSuperAdmin())) {
-            Log::warning('KanbanController@destroy: Unauthorized attempt to delete task ID ' . $task->id . ' by user ID ' . $user->id);
+            Log::warning("KanbanController@destroy: Unauthorized attempt to delete task ID {$task->id} by user ID {$user->id}.");
             return response()->json(['message' => 'Anda tidak memiliki izin untuk menghapus permanen task ini.'], 403);
         }
-        if (!in_array($task->status, [Task::STATUS_REJECTED, Task::STATUS_CANCELLED, Task::STATUS_CLOSED])) {
-            Log::warning('KanbanController@destroy: Attempt to delete task ID ' . $task->id . ' with status ' . $task->status);
-            return response()->json(['message' => 'Task hanya bisa dihapus permanen jika berstatus REJECTED, CANCELLED, atau CLOSED (ARCHIVED).'], 403);
+        $allowedDeleteStatuses = [Task::STATUS_REJECTED, Task::STATUS_CANCELLED, Task::STATUS_CLOSED, Task::STATUS_PENDING_APPROVAL];
+        if (!in_array($task->status, $allowedDeleteStatuses)) {
+            Log::warning("KanbanController@destroy: Attempt to delete task ID {$task->id} with status '{$task->status}'. Not allowed.");
+            return response()->json(['message' => 'Task hanya bisa dihapus permanen jika berstatus: Ditolak, Dibatalkan, Diarsipkan, atau Pending Approval.'], 403);
         }
 
         DB::beginTransaction();
         try {
             $idJob = $task->id_job;
-            $taskId = $task->id;
-            $task->approvalDetails()->delete();
-            $task->delete();
+            $originalTaskId = $task->id;
+            $statusAtDeletion = $task->status;
+
+            $task->approvalDetails()->delete(); // Delete related approval details
+            $task->delete(); // Delete the task itself
+
             DB::commit();
 
+            if (function_exists('activity')) {
+                // Note: $task object is now "deleted" from DB perspective for `performedOn`
+                // For some activity loggers, you might log before delete or pass attributes.
+                activity()
+                    ->causedBy($user)
+                    ->log("Task '{$idJob}' (ID: {$originalTaskId}, Status: {$statusAtDeletion}) deleted permanently.");
+            }
 
-            Log::info("KanbanController@destroy: Task {$idJob} (Original ID: {$taskId}) deleted permanently.");
-            return response()->json(['message' => 'Task berhasil dihapus permanen.']);
+            Log::info("KanbanController@destroy: Task {$idJob} (Original ID: {$originalTaskId}) and its approval details deleted permanently by User ID {$user->id}.");
+            return response()->json(['message' => "Task '{$idJob}' berhasil dihapus permanen."]);
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('KanbanController@destroy: Error deleting task ID ' . $task->id, ['exception' => $e->getMessage()]);
+            Log::error("KanbanController@destroy: Error deleting task ID {$task->id}.", ['exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             return response()->json(['message' => 'Gagal menghapus task: ' . $e->getMessage()], 500);
         }
+    }
+
+    /**
+     * Display the Department Approver Management page.
+     * This method provides data for managing department approvers.
+     */
+ public function taskListReport(Request $request)
+    {
+        // Menggunakan logika yang sangat mirip dengan method index() untuk mengambil data Task
+        $user = Auth::user()->load(['department', 'position']); // Ganti $loggedInUser menjadi $user agar konsisten
+        Log::info('KanbanController@taskListReport (Task List View): Fetching tasks for user ID ' . $user->id . ' (NIK: ' . $user->nik . ')', $request->all());
+
+        $tasksQuery = Task::with([
+            'pengaju:id,name,nik',
+            'department:id,department_name',
+            'penutup:id,name,nik',
+            'approvalDetails' => function ($query) {
+                $query->with('approver:id,name,nik')->orderBy('processed_at', 'desc');
+            }
+        ])
+        ->latest('tasks.created_at'); // Default sort: newest tasks first
+
+        // Apply Filters from request (sama seperti di method index)
+        if ($request->filled('status_filter')) {
+            $tasksQuery->where('tasks.status', $request->input('status_filter'));
+        }
+        if ($request->filled('pengaju_filter')) {
+            $tasksQuery->where('tasks.pengaju_id', $request->input('pengaju_filter'));
+        }
+        if ($request->filled('date_from_filter')) {
+            $tasksQuery->whereDate('tasks.created_at', '>=', Carbon::parse($request->input('date_from_filter'))->startOfDay());
+        }
+        if ($request->filled('date_to_filter')) {
+            $tasksQuery->whereDate('tasks.created_at', '<=', Carbon::parse($request->input('date_to_filter'))->endOfDay());
+        }
+        if ($request->filled('search_filter')) {
+            $searchTerm = '%' . $request->input('search_filter') . '%';
+            $tasksQuery->where(function ($q) use ($searchTerm) {
+                $q->where('tasks.id_job', 'like', $searchTerm)
+                  ->orWhere('tasks.area', 'like', $searchTerm)
+                  ->orWhere('tasks.list_job', 'like', $searchTerm)
+                  ->orWhereHas('pengaju', function($sq) use ($searchTerm){
+                      $sq->where('name', 'like', $searchTerm)->orWhere('nik', 'like', $searchTerm);
+                  })
+                  ->orWhereHas('department', function($sq) use ($searchTerm){
+                      $sq->where('department_name', 'like', $searchTerm);
+                  });
+            });
+        }
+
+        // Role-based access control and Department Filter (sama seperti di method index)
+        if ($user->isSuperAdmin() || $user->isAdminProject()) {
+            // Admins can filter by any department
+            if ($request->filled('department_filter')) {
+                $tasksQuery->where('tasks.department_id', $request->input('department_filter'));
+            }
+        } else {
+            // Regular User access logic
+            $departmentFilter = $request->input('department_filter');
+            if ($departmentFilter) {
+                // If filtering by their own department
+                if ($departmentFilter == $user->department_id) {
+                    $tasksQuery->where('tasks.department_id', $departmentFilter);
+                } else {
+                    // If filtering by another department, show only tasks they submitted to that department
+                    $tasksQuery->where('tasks.pengaju_id', $user->id)
+                               ->where('tasks.department_id', $departmentFilter);
+                }
+            } else {
+                // No specific department filter by regular user:
+                // Show tasks they submitted OR tasks for their own department (if any)
+                $tasksQuery->where(function ($q) use ($user) {
+                    $q->where('tasks.pengaju_id', $user->id);
+                    if ($user->department_id) {
+                        $q->orWhere('tasks.department_id', $user->department_id);
+                    }
+                });
+            }
+        }
+
+        $tasks = $tasksQuery->paginate(10)->withQueryString(); // Variabel $tasks yang dibutuhkan view
+
+        // Data for filter dropdowns (sama seperti di method index)
+        $departmentsForFilter = Department::orderBy('department_name')->pluck('department_name', 'id');
+        $usersForFilter = User::orderBy('name')->where('status', 'active')->get()->mapWithKeys(function ($u) {
+            return [$u->id => $u->name . ' (NIK: ' . $u->nik . ')'];
+        });
+        $taskStatusesForFilter = Task::getAvailableStatuses();
+
+        // Data yang sebelumnya ada di taskListReport untuk approver management tidak lagi relevan
+        // jika halaman ini HANYA untuk menampilkan list job.
+        // Hapus: $approvers_data, $departments_for_form, $users_for_form, $statuses_for_form
+        // dari compact() jika tidak digunakan.
+
+        return view('reports.tasks.list', compact(
+            'tasks',
+            'user', // Menggunakan $user, bukan $loggedInUser
+            'departmentsForFilter',
+            'usersForFilter',
+            'taskStatusesForFilter',
+            'request' // Untuk repopulate filter form fields
+        ));
+    }
+
+    /**
+     * Handle export of tasks to Excel.
+     */
+    public function exportTasks(Request $request)
+    {
+        $user = Auth::user();
+        $filters = [
+            'status'        => $request->query('status_filter'),
+            'department_id' => $request->query('department_filter'),
+            'pengaju_id'    => $request->query('pengaju_filter'),
+            'date_from'     => $request->query('date_from_filter'),
+            'date_to'       => $request->query('date_to_filter'),
+            'search'        => $request->query('search_filter'),
+        ];
+        $fileName = 'Laporan_Tugas_' . Carbon::now()->format('Ymd_His') . '.xlsx';
+        Log::info('KanbanController@exportTasks: Exporting tasks with filters', ['user_id' => $user->id, 'filters' => $filters]);
+        return Excel::download(new TasksExport($filters), $fileName);
     }
 }

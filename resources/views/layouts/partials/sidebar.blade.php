@@ -96,9 +96,22 @@
                         </li>
                     @endcan
                     @can('view department')
-                        <li><a href="{{ route('department.index') }}"
-                                class="{{ request()->is('department*') ? 'current' : '' }}"><i class="icon-Commit"><span
-                                        class="path1"></span><span class="path2"></span></i>Departments</a></li>
+                                                <li>
+                            <a href="{{ route('department.index') }}"
+                            class="{{ request()->routeIs('department.index') ? 'current' : '' }}">
+                                <i class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>
+                                Departments
+                            </a>
+                        </li>
+                    @endcan
+                    @can('view department')
+                                <li>
+                        <a href="{{ route('department-approvers.index') }}"
+                        class="{{ request()->routeIs('department-approvers.index') ? 'current' : '' }}">
+                            <i class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>
+                            Departments Approver
+                        </a>
+                    </li>
                     @endcan
                     @can('view position')
                         <li><a href="{{ route('position.index') }}" class="{{ request()->is('position*') ? 'current' : '' }}"><i
@@ -129,5 +142,43 @@
             </li>
             @endcan
             </li>
+
+
+{{-- Kanban --}}
+{{-- Ganti 'view kanban management' dengan permission yang sesuai jika ada --}}
+{{-- @can('view kanban management') --}}
+<li class="{{ request()->is('kanban*') ? 'current' : '' }}">
+    <a href="#" style="font-size: 18px;" class="has-submenu" id="sm-kanban-management-menu" aria-haspopup="true" aria-controls="sm-kanban-management-submenu">
+        {{-- Ikon untuk Manajemen Kanban, misalnya 'briefcase' atau 'layers' --}}
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-layers" style="width: 18px; height: 18px;"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+        Kanban {{-- <--- GANTI NAMA INI JIKA PERLU --}}
+        <i class="sub-arrow fa fa-angle-right"></i> {{-- Panah submenu --}}
+    </a>
+    <ul id="sm-kanban-management-submenu" role="group" aria-hidden="true" aria-labelledby="sm-kanban-management-menu" class="sm-nowrap" style="z-index: 10000; width: auto; min-width: 10em; display: none; max-width: 20em; top: auto; left: 0px; margin-left: 1px; margin-top: 0px;">
+
+        {{-- Sub-item untuk Papan Kanban --}}
+        {{-- @can('view kanban board') --}}
+        <li class="{{ request()->is('kanban') ? 'current' : '' }}"> {{-- Kelas 'current' di sini juga untuk sub-item --}}
+            <a href="{{ route('page.kanban.index') }}"> {{-- Hapus style font-size dari sub-item jika tidak perlu --}}
+                <i class="icon-Layout-4-blocks"><span class="path1"></span><span class="path2"></span></i> {{-- Contoh ikon, sesuaikan --}}
+                Papan Kanban
+            </a>
+        </li>
+        {{-- @endcan --}}
+
+        {{-- Sub-item untuk Laporan Kanban (yang juga punya sub-sub-menu jika diperlukan, atau link langsung) --}}
+        {{-- Untuk kasus ini, Laporan Kanban akan menjadi sub-item yang membawa ke halaman laporan, bukan membuka sub-sub-menu --}}
+        {{-- @can('view kanban reports') --}}
+        <li class="{{ Str::startsWith(request()->path(), 'reports/tasks') ? 'current' : '' }}">
+            <a href="{{ route('reports.tasks.list') }}">
+                <i class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>
+                Laporan Daftar Tugas
+            </a>
+        </li>
+        {{-- @endcan --}}
+
+    </ul>
+</li>
+{{-- @endcan --}}
     </ul>
 </nav>

@@ -97,29 +97,31 @@ class TasksExport implements FromQuery, WithHeadings, WithMapping, ShouldAutoSiz
         return $query;
     }
 
-    public function map($task): array
-    {
-        $processedApproval = $task->processedApprovalDetail(); // Menggunakan helper method dari model Task
+public function map($task): array
+{
+    $processedApproval = $task->processedApprovalDetail();
+    $approverUser = $processedApproval ? $processedApproval->approver : null; // Ambil user approver
+    $approvalDetailStatus = $processedApproval ? $processedApproval->status_text : 'N/A'; // Gunakan accessor jika ada di JobApprovalDetail
 
-        return [
-            $task->id_job,
-            $task->pengaju->name ?? 'N/A',
-            $task->department->department_name ?? 'N/A',
-            $task->area,
-            $task->list_job,
-            $task->tanggal_job_mulai ? $task->tanggal_job_mulai->format('Y-m-d') : '',
-            $task->tanggal_job_selesai ? $task->tanggal_job_selesai->format('Y-m-d') : '',
-            ucfirst(str_replace('_', ' ', $task->status)),
-            $processedApproval && $processedApproval->approver ? $processedApproval->approver->name : 'N/A',
-            $processedApproval ? ucfirst($processedApproval->status) : 'N/A',
-            $processedApproval && $processedApproval->processed_at ? $processedApproval->processed_at->format('Y-m-d H:i:s') : '',
-            $processedApproval ? $processedApproval->notes : '',
-            $task->cancel_reason ?? '',
-            $task->penutup->name ?? '',
-            $task->closed_at ? $task->closed_at->format('Y-m-d H:i:s') : '',
-            $task->created_at->format('Y-m-d H:i:s'),
-        ];
-    }
+    return [
+        $task->id_job,
+        $task->pengaju->name ?? 'N/A',
+        $task->department->department_name ?? 'N/A',
+        $task->area,
+        $task->list_job,
+        $task->tanggal_job_mulai ? $task->tanggal_job_mulai->format('Y-m-d') : '',
+        $task->tanggal_job_selesai ? $task->tanggal_job_selesai->format('Y-m-d') : '',
+        $task->status_text, // Menggunakan accessor dari model Task
+        $approverUser ? $approverUser->name : 'N/A',
+        $approvalDetailStatus, // Menggunakan accessor dari model JobApprovalDetail jika ada
+        $processedApproval && $processedApproval->processed_at ? $processedApproval->processed_at->format('Y-m-d H:i:s') : '',
+        $processedApproval ? $processedApproval->notes : '',
+        $task->cancel_reason ?? '',
+        $task->penutup->name ?? '',
+        $task->closed_at ? $task->closed_at->format('Y-m-d H:i:s') : '',
+        $task->created_at->format('Y-m-d H:i:s'),
+    ];
+}
 
     public function headings(): array
     {

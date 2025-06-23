@@ -18,6 +18,7 @@ use App\Http\Controllers\DashboardSalesController;
 use App\Http\Controllers\StandardBudgetController;
 use App\Http\Controllers\KanbanController;
 use App\Http\Controllers\Admin\DepartmentApproverController;
+use App\Http\Controllers\ActivityLogController;
 
 /*
 |--------------------------------------------------------------------------
@@ -207,6 +208,12 @@ Route::group(['middleware' => ['role:super-admin|admin']], function () {
 
     // kanban approver
     Route::resource('department-approvers', DepartmentApproverController::class);
+
+        // kanban log
+    Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
+// Contoh route untuk melihat log spesifik per task
+Route::get('/tasks/{task}/activity-logs', [ActivityLogController::class, 'showForTask'])->name('tasks.activity-logs.show');
+
 });
 
 require __DIR__ . '/auth.php';

@@ -10,93 +10,96 @@
                 </div>
                 <div class="card-body">
                     {{-- Filter Section --}}
-                    <form method="GET" action="{{ route('reports.tasks.list') }}" class="mb-4">
-                        <div class="row g-3 align-items-end">
-                            <div class="col-md-3">
-                                <label for="search_filter" class="form-label">Pencarian</label>
-                                <input type="text" class="form-control" id="search_filter" name="search_filter" value="{{ $request->input('search_filter') }}" placeholder="ID Job, Area, List Job, Pengaju...">
-                            </div>
+         {{-- Filter Section --}}
+<form method="GET" action="{{ route('reports.tasks.list') }}" class="mb-4">
+    {{-- Baris untuk input filter utama --}}
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-3 mb-3 align-items-end">
+        <div class="col">
+            <label for="search_filter" class="form-label">Pencarian</label>
+            <input type="text" class="form-control" id="search_filter" name="search_filter" value="{{ $request->input('search_filter') }}" placeholder="ID Job, Area...">
+        </div>
 
-                            <div class="col-md-2">
-                                <label for="status_filter" class="form-label">Status Task</label>
-                                <select class="form-select" id="status_filter" name="status_filter">
-                                    <option value="">Semua Status</option>
-                                    @if(isset($taskStatusesForFilter))
-                                        @foreach($taskStatusesForFilter as $key => $value)
-                                            <option value="{{ $key }}" {{ $request->input('status_filter') == $key ? 'selected' : '' }}>{{ $value }}</option>
-                                        @endforeach
-                                    @else
-                                        <option value="" disabled>Data status tidak tersedia</option>
-                                    @endif
-                                </select>
-                            </div>
+        <div class="col">
+            <label for="status_filter" class="form-label">Status Task</label>
+            <select class="form-select" id="status_filter" name="status_filter">
+                <option value="">Semua Status</option>
+                @if(isset($taskStatusesForFilter))
+                    @foreach($taskStatusesForFilter as $key => $value)
+                        <option value="{{ $key }}" {{ $request->input('status_filter') == $key ? 'selected' : '' }}>{{ $value }}</option>
+                    @endforeach
+                @else
+                    <option value="" disabled>Data status tidak tersedia</option>
+                @endif
+            </select>
+        </div>
 
-                            @if(Auth::user()->isSuperAdmin() || Auth::user()->isAdminProject())
-                                <div class="col-md-3">
-                                    <label for="department_filter" class="form-label">Departemen Tujuan</label>
-                                    <select class="form-select" id="department_filter" name="department_filter">
-                                        <option value="">Semua Departemen</option>
-                                        @if(isset($departmentsForFilter))
-                                            @foreach($departmentsForFilter as $id => $name)
-                                                <option value="{{ $id }}" {{ $request->input('department_filter') == $id ? 'selected' : '' }}>{{ $name }}</option>
-                                            @endforeach
-                                        @else
-                                            <option value="" disabled>Data departemen tidak tersedia</option>
-                                        @endif
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="pengaju_filter" class="form-label">Pengaju</label>
-                                    <select class="form-select" id="pengaju_filter" name="pengaju_filter">
-                                        <option value="">Semua Pengaju</option>
-                                        @if(isset($usersForFilter))
-                                            @foreach($usersForFilter as $id => $name)
-                                                <option value="{{ $id }}" {{ $request->input('pengaju_filter') == $id ? 'selected' : '' }}>{{ $name }}</option>
-                                            @endforeach
-                                        @else
-                                            <option value="" disabled>Data user tidak tersedia</option>
-                                        @endif
-                                    </select>
-                                </div>
-                            @else
-                                {{-- User biasa hanya bisa filter departemennya sendiri jika ada, atau tasks yg diajukan --}}
-                                @if(Auth::user()->department_id && isset($departmentsForFilter))
-                                <div class="col-md-3">
-                                    <label for="department_filter" class="form-label">Departemen Tujuan</label>
-                                    <select class="form-select" id="department_filter" name="department_filter">
-                                        <option value="">Semua (Yang Diajukan Saya)</option>
-                                        <option value="{{ Auth::user()->department_id }}" {{ $request->input('department_filter') == Auth::user()->department_id ? 'selected' : '' }}>
-                                            {{ Auth::user()->department->department_name ?? 'Departemen Saya' }}
-                                        </option>
-                                        @foreach($departmentsForFilter as $id => $name)
-                                            @if($id != Auth::user()->department_id)
-                                            <option value="{{ $id }}" {{ $request->input('department_filter') == $id ? 'selected' : '' }}>
-                                                {{ $name }} (Hanya yang saya ajukan)
-                                            </option>
-                                            @endif
-                                        @endforeach
-                                    </select>
-                                </div>
-                                @endif
-                            @endif
+        @if(Auth::user()->isSuperAdmin() || Auth::user()->isAdminProject())
+            <div class="col">
+                <label for="department_filter" class="form-label">Departemen Tujuan</label>
+                <select class="form-select" id="department_filter" name="department_filter">
+                    <option value="">Semua Departemen</option>
+                    @if(isset($departmentsForFilter))
+                        @foreach($departmentsForFilter as $id => $name)
+                            <option value="{{ $id }}" {{ $request->input('department_filter') == $id ? 'selected' : '' }}>{{ $name }}</option>
+                        @endforeach
+                    @else
+                        <option value="" disabled>Data departemen tidak tersedia</option>
+                    @endif
+                </select>
+            </div>
+            <div class="col">
+                <label for="pengaju_filter" class="form-label">Pengaju</label>
+                <select class="form-select" id="pengaju_filter" name="pengaju_filter">
+                    <option value="">Semua Pengaju</option>
+                    @if(isset($usersForFilter))
+                        @foreach($usersForFilter as $id => $name)
+                            <option value="{{ $id }}" {{ $request->input('pengaju_filter') == $id ? 'selected' : '' }}>{{ $name }}</option>
+                        @endforeach
+                    @else
+                        <option value="" disabled>Data user tidak tersedia</option>
+                    @endif
+                </select>
+            </div>
+        @else
+            @if(Auth::user()->department_id && isset($departmentsForFilter))
+            <div class="col">
+                <label for="department_filter" class="form-label">Departemen Tujuan</label>
+                <select class="form-select" id="department_filter" name="department_filter">
+                    <option value="">Semua (Yang Diajukan Saya)</option>
+                    <option value="{{ Auth::user()->department_id }}" {{ $request->input('department_filter') == Auth::user()->department_id ? 'selected' : '' }}>
+                        {{ Auth::user()->department->department_name ?? 'Departemen Saya' }}
+                    </option>
+                    @foreach($departmentsForFilter as $id => $name)
+                        @if($id != Auth::user()->department_id)
+                        <option value="{{ $id }}" {{ $request->input('department_filter') == $id ? 'selected' : '' }}>
+                            {{ $name }} (Hanya yang saya ajukan)
+                        </option>
+                        @endif
+                    @endforeach
+                </select>
+            </div>
+            @endif
+        @endif
 
+        <div class="col">
+            <label for="date_from_filter" class="form-label">Dari Tanggal Dibuat</label>
+            <input type="date" class="form-control" id="date_from_filter" name="date_from_filter" value="{{ $request->input('date_from_filter') }}">
+        </div>
 
-                            <div class="col-md-2">
-                                <label for="date_from_filter" class="form-label">Dari Tanggal Dibuat</label>
-                                <input type="date" class="form-control" id="date_from_filter" name="date_from_filter" value="{{ $request->input('date_from_filter') }}">
-                            </div>
+        <div class="col">
+            <label for="date_to_filter" class="form-label">Sampai Tanggal Dibuat</label>
+            <input type="date" class="form-control" id="date_to_filter" name="date_to_filter" value="{{ $request->input('date_to_filter') }}">
+        </div>
+    </div>
 
-                            <div class="col-md-2">
-                                <label for="date_to_filter" class="form-label">Sampai Tanggal Dibuat</label>
-                                <input type="date" class="form-control" id="date_to_filter" name="date_to_filter" value="{{ $request->input('date_to_filter') }}">
-                            </div>
-
-                            <div class="col-md-auto">
-                                <button type="submit" class="btn btn-primary">Filter</button>
-                                <a href="{{ route('reports.tasks.list') }}" class="btn btn-secondary">Reset</a>
-                            </div>
-                        </div>
-                    </form>
+    {{-- Baris untuk tombol --}}
+    <div class="row">
+        <div class="col-12 d-flex justify-content-start"> {{-- Atau justify-content-end jika ingin tombol di kanan --}}
+            <button type="submit" class="btn btn-primary me-2">Filter</button>
+            <a href="{{ route('reports.tasks.list') }}" class="btn btn-secondary">Reset</a>
+        </div>
+    </div>
+</form>
 
                     {{-- Export Button --}}
                     @php

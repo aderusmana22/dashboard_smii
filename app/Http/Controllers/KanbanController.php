@@ -45,37 +45,42 @@ class KanbanController extends Controller
         return array_unique($emails);
     }
 
-    public function index(Request $request)
+ public function index(Request $request)
     {
         $user = Auth::user()->load(['department', 'position']);
-        Log::info('KanbanController@index (Report View): Fetching tasks for user ID ' . $user->id . ' (NIK: ' . $user->nik . ')', $request->all());
+        Log::info('KanbanController@index (Kanban View): Fetching tasks for user ID ' . $user->id . ' (NIK: ' . $user->nik . ')', $request->all());
 
-        $tasksQuery = Task::with([
+        // Base query yang akan digunakan untuk semua kolom, sudah termasuk filter dasar dan hak akses
+        $baseTasksQuery = Task::with([
             'pengaju:id,name,nik',
-            'department:id,department_name', // Corrected: ensure department is loaded with specific columns
+            'department:id,department_name',
             'penutup:id,name,nik',
             'approvalDetails' => function ($query) {
                 $query->with('approver:id,name,nik')->orderBy('processed_at', 'desc');
             }
         ])
-        ->latest('tasks.created_at'); // Default sort: newest tasks first
+        ->latest('tasks.created_at'); // Atau urutan lain yang Anda inginkan per kolom
 
-        // Apply Filters from request
+        // --- Apply Filters and Role-Based Access to Base Query ---
+        // Catatan: Filter status global ($request->input('status_filter'))
+        // biasanya tidak diterapkan untuk papan Kanban murni, karena setiap kolom sudah mewakili status.
+        // Jika Anda tetap ingin filter status global, biarkan kode di bawah. Jika tidak, hapus bagian
+        // 'if ($request->filled('status_filter'))'
         if ($request->filled('status_filter')) {
-            $tasksQuery->where('tasks.status', $request->input('status_filter'));
+            $baseTasksQuery->where('tasks.status', $request->input('status_filter'));
         }
         if ($request->filled('pengaju_filter')) {
-            $tasksQuery->where('tasks.pengaju_id', $request->input('pengaju_filter'));
+            $baseTasksQuery->where('tasks.pengaju_id', $request->input('pengaju_filter'));
         }
         if ($request->filled('date_from_filter')) {
-            $tasksQuery->whereDate('tasks.created_at', '>=', Carbon::parse($request->input('date_from_filter'))->startOfDay());
+            $baseTasksQuery->whereDate('tasks.created_at', '>=', Carbon::parse($request->input('date_from_filter'))->startOfDay());
         }
         if ($request->filled('date_to_filter')) {
-            $tasksQuery->whereDate('tasks.created_at', '<=', Carbon::parse($request->input('date_to_filter'))->endOfDay());
+            $baseTasksQuery->whereDate('tasks.created_at', '<=', Carbon::parse($request->input('date_to_filter'))->endOfDay());
         }
         if ($request->filled('search_filter')) {
             $searchTerm = '%' . $request->input('search_filter') . '%';
-            $tasksQuery->where(function ($q) use ($searchTerm) {
+            $baseTasksQuery->where(function ($q) use ($searchTerm) {
                 $q->where('tasks.id_job', 'like', $searchTerm)
                   ->orWhere('tasks.area', 'like', $searchTerm)
                   ->orWhere('tasks.list_job', 'like', $searchTerm)
@@ -88,28 +93,22 @@ class KanbanController extends Controller
             });
         }
 
-        // Role-based access control and Department Filter
+        // Role-based access control and Department Filter ke base query
         if ($user->isSuperAdmin() || $user->isAdminProject()) {
-            // Admins can filter by any department
             if ($request->filled('department_filter')) {
-                $tasksQuery->where('tasks.department_id', $request->input('department_filter'));
+                $baseTasksQuery->where('tasks.department_id', $request->input('department_filter'));
             }
         } else {
-            // Regular User access logic
             $departmentFilter = $request->input('department_filter');
             if ($departmentFilter) {
-                // If filtering by their own department
                 if ($departmentFilter == $user->department_id) {
-                    $tasksQuery->where('tasks.department_id', $departmentFilter);
+                    $baseTasksQuery->where('tasks.department_id', $departmentFilter);
                 } else {
-                    // If filtering by another department, show only tasks they submitted to that department
-                    $tasksQuery->where('tasks.pengaju_id', $user->id)
+                    $baseTasksQuery->where('tasks.pengaju_id', $user->id)
                                ->where('tasks.department_id', $departmentFilter);
                 }
             } else {
-                // No specific department filter by regular user:
-                // Show tasks they submitted OR tasks for their own department (if any)
-                $tasksQuery->where(function ($q) use ($user) {
+                $baseTasksQuery->where(function ($q) use ($user) {
                     $q->where('tasks.pengaju_id', $user->id);
                     if ($user->department_id) {
                         $q->orWhere('tasks.department_id', $user->department_id);
@@ -117,28 +116,45 @@ class KanbanController extends Controller
                 });
             }
         }
+        // --- End of Filters and Role-Based Access ---
 
-        $tasks = $tasksQuery->paginate(10)->withQueryString();
 
-        // Data for filter dropdowns
+        // Ambil tasks untuk setiap kolom Kanban
+        // Anda mungkin ingin menambahkan ->orderBy() spesifik per kolom jika 'latest' tidak sesuai untuk semua
+        $pendingApprovalTasks = (clone $baseTasksQuery)->where('status', Task::STATUS_PENDING_APPROVAL)->get();
+        $rejectedTasks = (clone $baseTasksQuery)->where('status', Task::STATUS_REJECTED)->get();
+        $openTasks = (clone $baseTasksQuery)->where('status', Task::STATUS_OPEN)->get();
+        // $onProgressTasks = (clone $baseTasksQuery)->where('status', Task::STATUS_ON_PROGRESS)->get(); // Jika Anda memiliki status 'on_progress'
+        $completedTasks = (clone $baseTasksQuery)->where('status', Task::STATUS_COMPLETED)->get();
+        $closedTasks = (clone $baseTasksQuery)->where('status', Task::STATUS_CLOSED)->get();
+        $cancelledTasks = (clone $baseTasksQuery)->where('status', Task::STATUS_CANCELLED)->get();
+
+        // Data for filter dropdowns (masih relevan jika filter ada di atas papan Kanban)
         $departmentsForFilter = Department::orderBy('department_name')->pluck('department_name', 'id');
-        // Assuming 'status' i'active' the column name in your users table for active status
         $usersForFilter = User::orderBy('name')->where('status', 'active')->get()->mapWithKeys(function ($u) {
             return [$u->id => $u->name . ' (NIK: ' . $u->nik . ')'];
         });
         $taskStatusesForFilter = Task::getAvailableStatuses();
-
-        // Data for "Create Task" Modal
-        $departmentsForTaskForm = Department::orderBy('department_name')->pluck('department_name', 'id');
+        $departmentsForTaskForm = Department::orderBy('department_name')->pluck('department_name', 'id'); // Untuk modal create task
 
         return view('page.kanban.index', compact(
-            'tasks',
+            // Variabel untuk setiap kolom Kanban
+            'pendingApprovalTasks',
+            'rejectedTasks',
+            'openTasks',
+            // 'onProgressTasks', // Jika ada
+            'completedTasks',
+            'closedTasks',
+            'cancelledTasks',
+
+            // Variabel lain yang dibutuhkan
             'user',
             'departmentsForFilter',
             'usersForFilter',
             'taskStatusesForFilter',
             'departmentsForTaskForm',
-            'request' // To repopulate filter form fields
+            'request'
+            // 'tasks' // Hapus ini jika tidak digunakan lagi untuk daftar semua task terpaginasi di halaman ini
         ));
     }
 

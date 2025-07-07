@@ -52,15 +52,22 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
     Route::post('dashboard/sales/get', [SalesController::class, 'getSalesDashboard'])->name('dashboard.sales.wsa');
     Route::get('sales', [SalesController::class, 'index'])->name('data.sales');
 
-    Route::prefix('standard-budgets')->name('standard-budgets.')->group(function () {
-        Route::get('/', [StandardBudgetController::class, 'index'])->name('index');
-        Route::post('/', [StandardBudgetController::class, 'store'])->name('store');
-        Route::get('/{standardBudget}/edit', [StandardBudgetController::class, 'edit'])->name('edit');
-        Route::put('/{standardBudget}', [StandardBudgetController::class, 'update'])->name('update');
-        Route::delete('/{standardBudget}', [StandardBudgetController::class, 'destroy'])->name('destroy');
+Route::prefix('standard-budgets')->name('standard-budgets.')->middleware('auth')->group(function () { // Added middleware('auth') as an example, adjust as needed
+    Route::get('/', [StandardBudgetController::class, 'index'])->name('index');
+    Route::post('/', [StandardBudgetController::class, 'store'])->name('store');
 
-        Route::post('/import', [StandardBudgetController::class, 'importExcel'])->name('import.excel');
-    });
+    Route::get('/download-sample', [StandardBudgetController::class, 'downloadSample'])->name('download-sample');
+    Route::post('/import', [StandardBudgetController::class, 'importExcel'])->name('import.excel');
+
+    // **IMPORTANT: Define specific routes like bulk-delete BEFORE parameterized routes**
+    Route::delete('/bulk-delete', [StandardBudgetController::class, 'bulkDestroy'])->name('bulk-delete'); // MOVED UP
+
+    // CRUD for individual items (parameterized routes)
+    Route::get('/{standardBudget}/edit', [StandardBudgetController::class, 'edit'])->name('edit');
+    Route::put('/{standardBudget}', [StandardBudgetController::class, 'update'])->name('update');
+    Route::delete('/{standardBudget}', [StandardBudgetController::class, 'destroy'])->name('destroy'); // Stays after bulk-delete
+});
+
     Route::get('/standard-budgets/sample/download', function () {
         $filePath = storage_path('app/files/sample_budgets.xlsx');
 

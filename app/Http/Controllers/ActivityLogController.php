@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\KanbanActivityLog; // Gunakan model kustom Anda
+use App\Models\KanbanActivityLog;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Spatie\Activitylog\Models\Activity; // Atau gunakan ini jika tidak membuat model kustom
+use Spatie\Activitylog\Models\Activity;
 
 class ActivityLogController extends Controller
 {
@@ -18,7 +18,8 @@ class ActivityLogController extends Controller
      */
     public function index(Request $request)
     {
-        $query = KanbanActivityLog::latest(); // Atau Activity::latest();
+        // Mengurutkan dari yang terlama (ID terkecil) ke terbaru
+        $query = KanbanActivityLog::oldest();
 
         // Filter berdasarkan event
         if ($request->filled('event_filter')) {
@@ -28,21 +29,21 @@ class ActivityLogController extends Controller
         // Filter berdasarkan causer (user yang melakukan aksi)
         if ($request->filled('causer_filter')) {
             $query->where('causer_id', $request->input('causer_filter'))
-                  ->where('causer_type', User::class); // Asumsi causer selalu User
+                  ->where('causer_type', User::class);
         }
 
-        // Filter berdasarkan subject (Task ID atau ID Job)
+        // Filter berdasarkan subject (Task Job ID) yang sudah dioptimalkan
         if ($request->filled('subject_filter')) {
             $subjectId = $request->input('subject_filter');
-            // Coba cari Task berdasarkan id_job atau id
-            $task = Task::where('id_job', $subjectId)->orWhere('id', $subjectId)->first();
-            if ($task) {
-                $query->where('subject_id', $task->id)->where('subject_type', Task::class);
-            } else {
-                // Jika tidak ditemukan, mungkin user memasukkan ID numerik langsung
-                // Ini kurang ideal karena bisa ambigu, tapi bisa ditambahkan jika perlu
-                // $query->where('subject_id', $subjectId);
-            }
+            
+            $query->whereHasMorph(
+                'subject', // Nama relasi polymorphic
+                [Task::class], // Hanya cari di model Task
+                function ($q) use ($subjectId) {
+                    // Tambahkan kondisi pada model Task
+                    $q->where('id_job', $subjectId)->orWhere('id', $subjectId);
+                }
+            );
         }
 
         // Filter berdasarkan rentang tanggal
@@ -54,13 +55,19 @@ class ActivityLogController extends Controller
         }
 
         // Hanya log yang terkait dengan Task
-        $query->forTasks(); // Menggunakan scope dari model KanbanActivityLog
+        $query->forTasks();
 
-        $activities = $query->with(['causer', 'subject'])->paginate(25)->withQueryString();
+        // OPTIMASI PERFORMA: Mengatasi N+1 problem dengan eager loading bersarang
+        // Menggunakan nama relasi yang benar: 'pengaju' dan 'department'
+        $activities = $query->with([
+            'causer', 
+            'subject.pengaju', 
+            'subject.department'
+        ])->paginate(25)->withQueryString();
 
         // Data untuk filter dropdown
         $eventNames = KanbanActivityLog::forTasks()->distinct()->pluck('event')->filter()->sort();
-        $users = User::orderBy('name')->pluck('name', 'id'); // Untuk filter causer
+        $users = User::orderBy('name')->pluck('name', 'id');
 
         return view('activity_logs.index', compact('activities', 'eventNames', 'users', 'request'));
     }
@@ -73,9 +80,8 @@ class ActivityLogController extends Controller
      */
     public function showForTask(Task $task)
     {
-        // Ambil log aktivitas hanya untuk task ini
-        // Model Task sudah memiliki method activities() dari trait LogsActivity
-        $activities = $task->activities()->latest()->with(['causer'])->paginate(15);
+        // Mengubah ke oldest() agar konsisten dengan halaman index
+        $activities = $task->activities()->oldest()->with(['causer'])->paginate(15);
 
         return view('activity_logs.for_task', compact('task', 'activities'));
     }

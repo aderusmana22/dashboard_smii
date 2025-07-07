@@ -114,12 +114,12 @@ class Task extends Model
     {
         return [
             self::STATUS_PENDING_APPROVAL => 'Pending Approval',
-            self::STATUS_REJECTED => 'Ditolak', // Sesuaikan terjemahan jika perlu
+            self::STATUS_REJECTED => 'Rejected', // Sesuaikan terjemahan jika perlu
             self::STATUS_OPEN => 'Open',
             // self::STATUS_ON_PROGRESS => 'Sedang Dikerjakan', // Contoh jika ada
-            self::STATUS_COMPLETED => 'Selesai',
-            self::STATUS_CLOSED => 'Ditutup / Diarsipkan',
-            self::STATUS_CANCELLED => 'Dibatalkan',
+            self::STATUS_COMPLETED => 'Completed',
+            self::STATUS_CLOSED => 'Closed',
+            self::STATUS_CANCELLED => 'Cancelled',
         ];
     }
 

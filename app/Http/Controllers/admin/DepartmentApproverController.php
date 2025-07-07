@@ -8,7 +8,7 @@ use App\Models\Department;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-use RealRashid\SweetAlert\Facades\Alert; // Jika Anda menggunakan SweetAlert
+use RealRashid\SweetAlert\Facades\Alert; // If you are using SweetAlert
 
 class DepartmentApproverController extends Controller
 {
@@ -55,21 +55,21 @@ class DepartmentApproverController extends Controller
             ],
             'status' => 'required|in:active,inactive',
         ], [
-            'user_nik.unique' => 'Kombinasi departemen dan user approver ini sudah ada.',
+            'user_nik.unique' => 'This combination of department and user approver already exists.',
         ]);
 
         try {
             DepartmentApprover::create($validatedData);
             if ($request->ajax()) {
-                return response()->json(['success' => 'Department approver berhasil ditambahkan.']);
+                return response()->json(['success' => 'Department approver added successfully.']);
             }
-            Alert::success('Sukses', 'Department approver berhasil ditambahkan.');
+            Alert::success('Success', 'Department approver added successfully.');
             return redirect()->route('department-approvers.index');
         } catch (\Exception $e) {
             if ($request->ajax()) {
-                return response()->json(['error' => 'Gagal menambahkan department approver: ' . $e->getMessage()], 500);
+                return response()->json(['error' => 'Failed to add department approver: ' . $e->getMessage()], 500);
             }
-            Alert::error('Error', 'Gagal menambahkan department approver: ' . $e->getMessage());
+            Alert::error('Error', 'Failed to add department approver: ' . $e->getMessage());
             return redirect()->back()->withInput();
         }
     }
@@ -130,21 +130,21 @@ class DepartmentApproverController extends Controller
             ],
             'status' => 'required|in:active,inactive',
         ], [
-            'user_nik.unique' => 'Kombinasi departemen dan user approver ini sudah ada.',
+            'user_nik.unique' => 'This combination of department and user approver already exists.',
         ]);
 
         try {
             $departmentApprover->update($validatedData);
             if ($request->ajax()) {
-                return response()->json(['success' => 'Department approver berhasil diperbarui.']);
+                return response()->json(['success' => 'Department approver updated successfully.']);
             }
-            Alert::success('Sukses', 'Department approver berhasil diperbarui.');
+            Alert::success('Success', 'Department approver updated successfully.');
             return redirect()->route('department-approvers.index');
         } catch (\Exception $e) {
             if ($request->ajax()) {
-                return response()->json(['error' => 'Gagal memperbarui department approver: ' . $e->getMessage()], 500);
+                return response()->json(['error' => 'Failed to update department approver: ' . $e->getMessage()], 500);
             }
-            Alert::error('Error', 'Gagal memperbarui department approver: ' . $e->getMessage());
+            Alert::error('Error', 'Failed to update department approver: ' . $e->getMessage());
             return redirect()->back()->withInput();
         }
     }
@@ -154,16 +154,16 @@ class DepartmentApproverController extends Controller
         try {
             $departmentApprover->delete();
             if ($request->ajax()) {
-                return response()->json(['success' => 'Department approver berhasil dihapus.']);
+                return response()->json(['success' => 'Department approver deleted successfully.']);
             }
-            Alert::success('Sukses', 'Department approver berhasil dihapus.');
+            Alert::success('Success', 'Department approver deleted successfully.');
             return redirect()->route('department-approvers.index');
         } catch (\Exception $e) {
             if ($request->ajax()) {
-                return response()->json(['error' => 'Gagal menghapus department approver.'], 500);
+                return response()->json(['error' => 'Failed to delete department approver.'], 500);
             }
-            Alert::error('Error', 'Gagal menghapus department approver.');
+            Alert::error('Error', 'Failed to delete department approver.');
             return redirect()->route('department-approvers.index');
         }
     }
-}
+}   

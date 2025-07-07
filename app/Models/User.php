@@ -95,7 +95,7 @@ class User extends Authenticatable
     public function isSuperAdmin()
     {
 
-        return $this->username === 'superadmin';
+        return $this->name === 'Super Admin';
 
     }
 

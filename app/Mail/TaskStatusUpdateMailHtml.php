@@ -56,17 +56,10 @@ class TaskStatusUpdateMailHtml extends Mailable implements ShouldQueue
         $subHeaderText = 'Pembaruan Status Tugas';
 
         switch ($this->actionStatus) {
-            case JobApprovalDetail::STATUS_APPROVED:
             case Task::STATUS_OPEN:
-                $subHeaderText = 'Marsho JobBoard';
-                break;
-            case JobApprovalDetail::STATUS_REJECTED:
-                $subHeaderText = 'Marsho JobBoard';
-                break;
             case Task::STATUS_COMPLETED:
-                $subHeaderText = 'Marsho JobBoard';
-                break;
             case Task::STATUS_CANCELLED:
+            case Task::STATUS_REJECTED:
                 $subHeaderText = 'Marsho JobBoard';
                 break;
         }

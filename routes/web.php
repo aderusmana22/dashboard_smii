@@ -212,7 +212,7 @@ Route::group(['middleware' => ['role:super-admin|admin']], function () {
         // kanban log
     Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
 // Contoh route untuk melihat log spesifik per task
-Route::get('/tasks/{task}/activity-logs', [ActivityLogController::class, 'showForTask'])->name('tasks.activity-logs.show');
+    Route::get('/tasks/{task}/activity-logs', [ActivityLogController::class, 'showForTask'])->name('tasks.activity-logs.show');
 
 });
 

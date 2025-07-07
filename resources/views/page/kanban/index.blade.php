@@ -1,221 +1,280 @@
 <x-app-layout>
-    @section('title', 'Kanban Board')
+    @section('title', 'Task Kanban Board')
+
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ __('Kanban Board Tugas') }}
-        </h2>
+        <div class="flex flex-col md:flex-row justify-between items-center">
+            <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight mb-4 md:mb-0">
+                {{ __('Task Kanban Board') }}
+            </h2>
+             @if(isset($user))
+                <div class="text-sm text-gray-600 dark:text-gray-400">
+                    <span class="font-medium">{{ $user->name }}</span> ({{ $user->nik }}) - {{ optional($user->position)->name ?? 'N/A Position' }} | {{ optional($user->department)->department_name ?? 'N/A Department' }}
+                </div>
+            @endif
+        </div>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-full mx-auto sm:px-6 lg:px-8"> {{-- Changed to max-w-full for more space --}}
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-
+    <div class="py-8 md:py-12">
+        <div class="max-w-full mx-auto sm:px-6 lg:px-8">
+            <div class="overflow-hidden">
                     <div class="flex justify-end items-center mb-8">
                         <button id="openTaskModalBtn"
-                                class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
-                            + Tambah Tugas Baru
+                                class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition duration-150 ease-in-out">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline-block mr-2 -mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                            </svg>
+                            Add New Task
                         </button>
                     </div>
-                    @include('page.kanban.partials.task_modal', ['departments' => $departments])
 
-                    {{-- Kanban Columns Container - using flex for horizontal scrolling on smaller screens --}}
-                    <div class="flex overflow-x-auto space-x-6 pb-4">
+                    @include('page.kanban.partials.task_modal', ['departments' => $departments ?? collect(), 'task' => null])
+                    @include('page.kanban.reject_task_form', ['task' => null, 'token' => null, 'approvalDetail' => null])
 
-                        {{-- PENDING APPROVAL Column --}}
-                        <div class="flex-shrink-0 w-full md:w-1/3 lg:w-1/4 xl:w-1/5"> {{-- Responsive width --}}
-                            <div class="flex flex-col rounded-lg overflow-hidden shadow-lg h-full">
-                                <div class="bg-yellow-500 p-3">
-                                    <h2 class="text-xl font-semibold text-white text-center">PENDING APPROVAL</h2>
+                    @php
+                        $show_pending_approval = false;
+                        $show_open = false;
+                        $show_completed = false;
+                        $show_cancelled = false;
+                        $show_rejected = false;
+                        $show_closed = false;
+
+                        if (isset($user)) {
+                            $isAdmin = $user->isSuperAdmin() || $user->isAdminProject();
+                            $isApprover = method_exists($user, 'isApprover') && $user->isApprover();
+                            $isTvUser = method_exists($user, 'isTvUser') && $user->isTvUser();
+
+                            if ($isAdmin) {
+                                $show_pending_approval = true;
+                                $show_open = true;
+                                $show_completed = true;
+                                $show_cancelled = true;
+                                $show_rejected = true;
+                                $show_closed = true;
+                            } elseif ($isApprover) {
+                                $show_pending_approval = true;
+                                $show_cancelled = true;
+                                $show_rejected = true;
+                            } elseif ($isTvUser) {
+                                $show_open = true;
+                                $show_completed = true;
+                                $show_closed = true;
+                            } else {
+                                $show_open = true;
+                                $show_completed = true;
+                                $show_rejected = true;
+                                $show_cancelled = true;
+                                $show_closed = true;
+                            }
+                        }
+                    @endphp
+
+                    <div class="flex overflow-x-auto gap-3 kanban-container">
+
+                        @if($show_pending_approval)
+                        <div class="flex-shrink-0 w-[85vw] sm:w-[45vw] md:w-[30vw] lg:w-kanban-column kanban-column">
+                            <div class="flex flex-col rounded-lg overflow-hidden shadow-lg h-full bg-yellow-100 dark:bg-gray-750">
+                                <div class="bg-yellow-500 dark:bg-yellow-600 p-3">
+                                    <h3 class="text-lg font-semibold text-white text-center tracking-wide">PENDING APPROVAL</h3>
                                 </div>
-                                <div id="pending-approval-column" class="border-2 border-yellow-500 rounded-b-lg p-4 kanban-column-body flex-1 bg-yellow-50 dark:bg-gray-700">
+                                <div id="pending-approval-column" class="p-4 kanban-column-body flex-1">
                                     <div id="pending-approval-tasks" class="space-y-4 kanban-tasks-container">
-                                        @foreach($pendingApprovalTasks as $task)
-                                            @include('page.kanban.partials.task_card', ['task' => $task, 'currentUser' => $user])
-                                        @endforeach
+                                        @forelse($pendingApprovalTasks as $task)
+                                            @include('page.kanban.partials.task_card', ['task' => $task])
+                                        @empty
+                                            <p class="text-center text-gray-500 dark:text-gray-400 py-4">No tasks available.</p>
+                                        @endforelse
                                     </div>
                                 </div>
                             </div>
                         </div>
+                        @endif
 
-                        {{-- OPEN Column --}}
-                        <div class="flex-shrink-0 w-full md:w-1/3 lg:w-1/4 xl:w-1/5">
-                            <div class="flex flex-col rounded-lg overflow-hidden shadow-lg h-full">
-                                <div class="bg-blue-500 p-3">
-                                    <h2 class="text-xl font-semibold text-white text-center">OPEN</h2>
+                        @if($show_open)
+                        <div class="flex-shrink-0 w-[85vw] sm:w-[45vw] md:w-[30vw] lg:w-kanban-column kanban-column">
+                           <div class="flex flex-col rounded-lg overflow-hidden shadow-lg h-full bg-cyan-100 dark:bg-gray-750">
+                                <div class="bg-cyan-500 dark:bg-cyan-600 p-3">
+                                    <h3 class="text-lg font-semibold text-white text-center tracking-wide">OPEN</h3>
                                 </div>
-                                <div id="open-column" class="border-2 border-blue-500 rounded-b-lg p-4 kanban-column-body flex-1 bg-blue-50 dark:bg-gray-700">
+                                <div id="open-column" class="p-4 kanban-column-body flex-1">
                                     <div id="open-tasks" class="space-y-4 kanban-tasks-container">
-                                        @foreach($openTasks as $task)
-                                            @include('page.kanban.partials.task_card', ['task' => $task, 'currentUser' => $user])
-                                        @endforeach
+                                        @forelse($openTasks as $task)
+                                            @include('page.kanban.partials.task_card', ['task' => $task])
+                                        @empty
+                                            <p class="text-center text-gray-500 dark:text-gray-400 py-4">No tasks available.</p>
+                                        @endforelse
                                     </div>
                                 </div>
                             </div>
                         </div>
+                        @endif
 
-                        {{-- COMPLETED Column --}}
-                        <div class="flex-shrink-0 w-full md:w-1/3 lg:w-1/4 xl:w-1/5">
-                            <div class="flex flex-col rounded-lg overflow-hidden shadow-lg h-full">
-                                <div class="bg-green-500 p-3">
-                                    <h2 class="text-xl font-semibold text-white text-center">COMPLETED</h2>
+                        @if($show_completed)
+                        <div class="flex-shrink-0 w-[85vw] sm:w-[45vw] md:w-[30vw] lg:w-kanban-column kanban-column">
+                            <div class="flex flex-col rounded-lg overflow-hidden shadow-lg h-full bg-green-100 dark:bg-gray-750">
+                                <div class="bg-green-600 dark:bg-green-700 p-3">
+                                    <h3 class="text-lg font-semibold text-white text-center tracking-wide">COMPLETED</h3>
                                 </div>
-                                <div id="completed-column" class="border-2 border-green-500 rounded-b-lg p-4 kanban-column-body flex-1 bg-green-50 dark:bg-gray-700">
+                                <div id="completed-column" class="p-4 kanban-column-body flex-1">
                                     <div id="completed-tasks" class="space-y-4 kanban-tasks-container">
-                                        @foreach($completedTasks as $task)
-                                            @include('page.kanban.partials.task_card', ['task' => $task, 'currentUser' => $user])
-                                        @endforeach
+                                        @forelse($completedTasks as $task)
+                                            @include('page.kanban.partials.task_card', ['task' => $task])
+                                        @empty
+                                            <p class="text-center text-gray-500 dark:text-gray-400 py-4">No tasks available.</p>
+                                        @endforelse
                                     </div>
                                 </div>
                             </div>
                         </div>
+                        @endif
 
-                        {{-- CANCELLED Column --}}
-                        <div class="flex-shrink-0 w-full md:w-1/3 lg:w-1/4 xl:w-1/5">
-                            <div class="flex flex-col rounded-lg overflow-hidden shadow-lg h-full">
-                                <div class="bg-orange-500 p-3">
-                                    <h2 class="text-xl font-semibold text-white text-center">CANCELLED</h2>
+                        @if($show_cancelled)
+                        <div class="flex-shrink-0 w-[85vw] sm:w-[45vw] md:w-[30vw] lg:w-kanban-column kanban-column">
+                            <div class="flex flex-col rounded-lg overflow-hidden shadow-lg h-full bg-yellow-100 dark:bg-gray-750">
+                                <div class="bg-yellow-500 dark:bg-yellow-600 p-3">
+                                    <h3 class="text-lg font-semibold text-white text-center tracking-wide">CANCELLED</h3>
                                 </div>
-                                <div id="cancelled-column" class="border-2 border-orange-500 rounded-b-lg p-4 kanban-column-body flex-1 bg-orange-50 dark:bg-gray-700">
+                                <div id="cancelled-column" class="p-4 kanban-column-body flex-1">
                                     <div id="cancelled-tasks" class="space-y-4 kanban-tasks-container">
-                                        @foreach($cancelledTasks as $task)
-                                            @include('page.kanban.partials.task_card', ['task' => $task, 'currentUser' => $user])
-                                        @endforeach
+                                        @forelse($cancelledTasks as $task)
+                                            @include('page.kanban.partials.task_card', ['task' => $task])
+                                        @empty
+                                            <p class="text-center text-gray-500 dark:text-gray-400 py-4">No tasks available.</p>
+                                        @endforelse
                                     </div>
                                 </div>
                             </div>
                         </div>
+                        @endif
 
-                        {{-- REJECTED Column --}}
-                        <div class="flex-shrink-0 w-full md:w-1/3 lg:w-1/4 xl:w-1/5">
-                            <div class="flex flex-col rounded-lg overflow-hidden shadow-lg h-full">
-                                <div class="bg-red-600 p-3">
-                                    <h2 class="text-xl font-semibold text-white text-center">REJECTED</h2>
+                        @if($show_rejected)
+                        <div class="flex-shrink-0 w-[85vw] sm:w-[45vw] md:w-[30vw] lg:w-kanban-column kanban-column">
+                            <div class="flex flex-col rounded-lg overflow-hidden shadow-lg h-full bg-red-100 dark:bg-gray-750">
+                                <div class="bg-red-600 dark:bg-red-700 p-3">
+                                    <h3 class="text-lg font-semibold text-white text-center tracking-wide">REJECTED</h3>
                                 </div>
-                                <div id="rejected-column" class="border-2 border-red-600 rounded-b-lg p-4 kanban-column-body flex-1 bg-red-50 dark:bg-gray-700">
+                                <div id="rejected-column" class="p-4 kanban-column-body flex-1">
                                     <div id="rejected-tasks" class="space-y-4 kanban-tasks-container">
-                                        @foreach($rejectedTasks as $task)
-                                            @include('page.kanban.partials.task_card', ['task' => $task, 'currentUser' => $user])
-                                        @endforeach
+                                        @forelse($rejectedTasks as $task)
+                                            @include('page.kanban.partials.task_card', ['task' => $task])
+                                        @empty
+                                            <p class="text-center text-gray-500 dark:text-gray-400 py-4">No tasks available.</p>
+                                        @endforelse
                                     </div>
                                 </div>
                             </div>
                         </div>
+                        @endif
 
-                        {{-- CLOSED Column --}}
-                        <div class="flex-shrink-0 w-full md:w-1/3 lg:w-1/4 xl:w-1/5">
-                            <div class="flex flex-col rounded-lg overflow-hidden shadow-lg h-full">
-                                 <div class="bg-gray-500 p-3">
-                                    <h2 class="text-xl font-semibold text-white text-center">CLOSED (30 Hari Terakhir)</h2>
+                        @if($show_closed)
+                        <div class="flex-shrink-0 w-[85vw] sm:w-[45vw] md:w-[30vw] lg:w-kanban-column kanban-column">
+                            <div class="flex flex-col rounded-lg overflow-hidden shadow-lg h-full bg-gray-200 dark:bg-gray-750">
+                                 <div class="bg-gray-600 dark:bg-gray-700 p-3">
+                                    <h3 class="text-lg font-semibold text-white text-center tracking-wide">CLOSED (30 Days)</h3>
                                 </div>
-                                <div id="closed-column" class="border-2 border-gray-500 rounded-b-lg p-4 kanban-column-body flex-1 bg-gray-100 dark:bg-gray-700">
+                                <div id="closed-column" class="p-4 kanban-column-body flex-1">
                                     <div id="closed-tasks" class="space-y-4 kanban-tasks-container">
-                                         @foreach($closedTasks as $task)
-                                            @include('page.kanban.partials.task_card', ['task' => $task, 'currentUser' => $user])
-                                        @endforeach
+                                         @forelse($closedTasks as $task)
+                                            @include('page.kanban.partials.task_card', ['task' => $task])
+                                        @empty
+                                            <p class="text-center text-gray-500 dark:text-gray-400 py-4">No tasks available.</p>
+                                        @endforelse
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div> {{-- End Kanban Columns Container --}}
-                </div>
+                        @endif
+                    </div>
             </div>
         </div>
     </div>
 
     @push('styles')
-    <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <style>
-        .task-card {
-            /* background-color: #FFFFFF; */ /* Will be set by dark mode or default */
-            /* border: 1px solid #e5e7eb; */ /* Will be set by dark mode or default */
+        .kanban-container {
+            scroll-snap-type: x mandatory;
+            overscroll-behavior-x: contain;
         }
+
+        .kanban-column {
+            scroll-snap-align: start;
+        }
+
+        .lg\:w-kanban-column {
+            width: calc((100% - 2 * 1.5rem) / 3);
+        }
+
         .kanban-column-body {
-            /* background-color: #f9fafb; */ /* Overridden by specific column bg */
-            min-height: 400px; /* Increased min-height */
-        }
-        .task-content-scrollable {
-            max-height: 120px; /* Slightly increased */
+            min-height: 400px;
+            max-height: calc(100vh - 300px);
             overflow-y: auto;
             scrollbar-width: thin;
-            /* scrollbar-color: #9CA3AF #E5E7EB; */ /* Adjust for dark mode if needed */
-            /* background-color: #f3f4f6; */ /* Handled by dark mode */
+            scrollbar-color: #A0AEC0 #E2E8F0;
+        }
+        .dark .kanban-column-body {
+            scrollbar-color: #4A5568 #2D3748;
+        }
+        .kanban-column-body::-webkit-scrollbar { width: 8px; }
+        .kanban-column-body::-webkit-scrollbar-track { background: #E2E8F0; border-radius: 10px; }
+        .dark .kanban-column-body::-webkit-scrollbar-track { background: #2D3748; }
+        .kanban-column-body::-webkit-scrollbar-thumb { background-color: #A0AEC0; border-radius: 10px; border: 2px solid #E2E8F0; }
+        .dark .kanban-column-body::-webkit-scrollbar-thumb { background-color: #4A5568; border: 2px solid #2D3748; }
+
+        .kanban-tasks-container {
+            min-height: 350px;
+        }
+        .task-content-scrollable {
+            max-height: 120px;
+            overflow-y: auto;
+            scrollbar-width: thin;
             padding: 0.5rem;
             border-radius: 0.25rem;
         }
-        .dark .task-content-scrollable {
-            scrollbar-color: #4B5563 #374151;
-        }
-        .task-content-scrollable::-webkit-scrollbar { width: 8px; }
+        .dark .task-content-scrollable { scrollbar-color: #4B5563 #374151; }
+        .task-content-scrollable::-webkit-scrollbar { width: 6px; }
         .task-content-scrollable::-webkit-scrollbar-track { background: #E5E7EB; border-radius: 10px; }
         .dark .task-content-scrollable::-webkit-scrollbar-track { background: #374151; }
-        .task-content-scrollable::-webkit-scrollbar-thumb { background-color: #9CA3AF; border-radius: 10px; border: 2px solid #E5E7EB; }
-        .dark .task-content-scrollable::-webkit-scrollbar-thumb { background-color: #4B5563; border: 2px solid #374151; }
+        .task-content-scrollable::-webkit-scrollbar-thumb { background-color: #9CA3AF; border-radius: 10px; border: 1px solid #E5E7EB; }
+        .dark .task-content-scrollable::-webkit-scrollbar-thumb { background-color: #4B5563; border: 1px solid #374151; }
 
-        .card-header-label {
-            font-size: 0.75rem; /* 12px */
-            /* color: #6B7280; */ /* Handled by dark mode */
-            display: block;
-            margin-bottom: 0.125rem;
-        }
-        .card-header-value {
-            font-size: 0.875rem; /* 14px */
-            /* color: #1F2937; */ /* Handled by dark mode */
-            font-weight: 500;
-        }
-        .status-badge {
-            font-size: 0.7rem; /* Slightly smaller */
-            padding: 0.2rem 0.5rem;
-            border-radius: 0.375rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            line-height: 1; /* Ensure consistent height */
-        }
-        /* Light mode badges */
-        .status-badge.status-pending_approval { background-color: #FEF3C7 !important; color: #92400E !important;} /* amber-200, amber-800 */
-        .status-badge.status-open { background-color: #DBEAFE !important; color: #1D4ED8 !important;} /* blue-100, blue-700 */
-        .status-badge.status-completed { background-color: #D1FAE5 !important; color: #047857 !important;} /* green-100, green-700 */
-        .status-badge.status-cancelled { background-color: #FFEDD5 !important; color: #9A3412 !important;} /* orange-100, orange-700 */
-        .status-badge.status-rejected { background-color: #FEE2E2 !important; color: #991B1B !important;} /* red-100, red-700 */
-        .status-badge.status-closed { background-color: #E5E7EB !important; color: #374151 !important;} /* gray-200, gray-700 */
+        .card-header-label { font-size: 0.75rem; display: block; margin-bottom: 0.125rem; }
+        .card-header-value { font-size: 0.875rem; font-weight: 500; }
+        .status-badge { font-size: 0.65rem; padding: 0.2rem 0.5rem; border-radius: 9999px; font-weight: 600; text-transform: uppercase; line-height: 1; letter-spacing: 0.025em;}
 
-        /* Dark mode badges (Example - adjust colors as needed) */
-        .dark .status-badge.status-pending_approval { background-color: #78350F !important; color: #FEF3C7 !important;} /* amber-800, amber-200 */
-        .dark .status-badge.status-open { background-color: #1E40AF !important; color: #DBEAFE !important;}
-        .dark .status-badge.status-completed { background-color: #065F46 !important; color: #D1FAE5 !important;}
-        .dark .status-badge.status-cancelled { background-color: #7C2D12 !important; color: #FFEDD5 !important;}
-        .dark .status-badge.status-rejected { background-color: #7F1D1D !important; color: #FEE2E2 !important;}
-        .dark .status-badge.status-closed { background-color: #4B5563 !important; color: #E5E7EB !important;}
+        .status-badge.status-pending_approval { background-color: #fef3c7; color: #92400e; }
+        .status-badge.status-open { background-color: #cffafe; color: #0e7490; }
+        .status-badge.status-completed { background-color: #d1fae5; color: #047857; }
+        .status-badge.status-cancelled { background-color: #fef3c7; color: #92400e; }
+        .status-badge.status-rejected { background-color: #fee2e2; color: #991b1b; }
+        .status-badge.status-closed { background-color: #e5e7eb; color: #374151; }
+        .dark .status-badge.status-pending_approval { background-color: #78350f; color: #fef3c7; }
+        .dark .status-badge.status-open { background-color: #164e63; color: #cffafe; }
+        .dark .status-badge.status-completed { background-color: #065f46; color: #d1fae5; }
+        .dark .status-badge.status-cancelled { background-color: #78350f; color: #fef3c7; }
+        .dark .status-badge.status-rejected { background-color: #7f1d1d; color: #fee2e2; }
+        .dark .status-badge.status-closed { background-color: #4b5563; color: #e5e7eb; }
 
-        .task-content-scrollable pre {
-            /* color: #1f2937; */ /* Handled by dark mode */
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
-        .dark .text-gray-700 { color: #D1D5DB; /* gray-300 */ }
-        .dark .text-gray-800 { color: #E5E7EB; /* gray-200 */ }
-        .dark .bg-gray-100 { background-color: #374151; /* gray-700 */ }
-        .dark .border-gray-300 { border-color: #4B5563; /* gray-600 */ }
-        .dark .border-gray-200 { border-color: #4B5563; /* gray-600 */ }
-        .dark .card-header-label { color: #9CA3AF; /* gray-400 */ }
-        .dark .card-header-value { color: #F3F4F6; /* gray-100 */ }
-        .dark .task-card { background-color: #1F2937; border-color: #374151; /* gray-800, gray-700 */ }
+        .task-content-scrollable pre { white-space: pre-wrap; word-break: break-word; }
 
-        /* Department Badge Colors - Light Mode */
-        .dept-badge.dept-engineering-maintainance { background-color: #FECACA; color: #991B1B; } /* red-200, red-700 */
-        .dept-badge.dept-finance-admin { background-color: #FEF08A; color: #854D0E; } /* yellow-200, yellow-700 */
-        .dept-badge.dept-hcd { background-color: #A7F3D0; color: #047857; } /* green-200, green-700 */
-        .dept-badge.dept-manufacturing { background-color: #BFDBFE; color: #1D4ED8; } /* blue-200, blue-700 */
-        .dept-badge.dept-qm-hse { background-color: #C7D2FE; color: #4338CA; } /* indigo-200, indigo-700 */
-        .dept-badge.dept-rd { background-color: #DDD6FE; color: #6D28D9; } /* violet-200, violet-700 */
-        .dept-badge.dept-sales-marketing { background-color: #FBCFE8; color: #9D174D; } /* pink-200, pink-700 */
-        .dept-badge.dept-supply-chain { background-color: #A5F3FC; color: #0E7490; } /* cyan-200, cyan-700 */
-        .dept-badge.dept-secret { background-color: #D1D5DB; color: #374151; } /* gray-300, gray-700 */
-        .dept-badge.dept-default { background-color: #E5E7EB; color: #4B5563; } /* gray-200, gray-600 */
-
-        /* Department Badge Colors - Dark Mode */
+        .dark .text-gray-700 { color: #D1D5DB; } .dark .text-gray-800 { color: #E5E7EB; }
+        .dark .bg-gray-750 { background-color: #2d3748; }
+        .dark .border-gray-300 { border-color: #4B5563; } .dark .border-gray-200 { border-color: #4B5563; }
+        .dark .card-header-label { color: #9CA3AF; } .dark .card-header-value { color: #F3F4F6; }
+        .dark .task-card { background-color: #1F2937; border-color: #374151; }
+        .dept-badge { font-size: 0.7rem; padding: 0.15rem 0.4rem; }
+        .dept-badge.dept-engineering-maintainance { background-color: #FECACA; color: #991B1B; }
+        .dept-badge.dept-finance-admin { background-color: #FEF08A; color: #854D0E; }
+        .dept-badge.dept-hcd { background-color: #A7F3D0; color: #047857; }
+        .dept-badge.dept-manufacturing { background-color: #BFDBFE; color: #1D4ED8; }
+        .dept-badge.dept-qm-hse { background-color: #C7D2FE; color: #4338CA; }
+        .dept-badge.dept-rd { background-color: #DDD6FE; color: #6D28D9; }
+        .dept-badge.dept-sales-marketing { background-color: #FBCFE8; color: #9D174D; }
+        .dept-badge.dept-supply-chain { background-color: #A5F3FC; color: #0E7490; }
+        .dept-badge.dept-it { background-color: #E0E7FF; color: #3730A3; }
+        .dept-badge.dept-secret { background-color: #D1D5DB; color: #374151; }
+        .dept-badge.dept-default, .dept-badge.dept-na { background-color: #E5E7EB; color: #4B5563; }
         .dark .dept-badge.dept-engineering-maintainance { background-color: #7F1D1D; color: #FECACA; }
         .dark .dept-badge.dept-finance-admin { background-color: #713F12; color: #FEF08A; }
         .dark .dept-badge.dept-hcd { background-color: #065F46; color: #A7F3D0; }
@@ -224,147 +283,213 @@
         .dark .dept-badge.dept-rd { background-color: #5B21B6; color: #DDD6FE; }
         .dark .dept-badge.dept-sales-marketing { background-color: #831843; color: #FBCFE8; }
         .dark .dept-badge.dept-supply-chain { background-color: #155E75; color: #A5F3FC; }
+        .dark .dept-badge.dept-it { background-color: #312E81; color: #E0E7FF; }
         .dark .dept-badge.dept-secret { background-color: #4B5563; color: #D1D5DB; }
-        .dark .dept-badge.dept-default { background-color: #374151; color: #9CA3AF; }
+        .dark .dept-badge.dept-default, .dark .dept-badge.dept-na { background-color: #374151; color: #9CA3AF; }
 
+        #taskModal .relative, #cancelTaskModal .inline-block {
+            transition-property: transform, opacity;
+        }
+        #taskModal:not(.hidden) .relative, #cancelTaskModal:not(.hidden) .inline-block {
+            transform: scale(1);
+            opacity: 1;
+        }
     </style>
     @endpush
 
     @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const taskModal = document.getElementById('taskModal');
-        const openTaskModalBtn = document.getElementById('openTaskModalBtn');
-        const closeTaskModalBtn = document.getElementById('closeTaskModalBtn');
-        const cancelTaskFormBtn = document.getElementById('cancelTaskFormBtn');
-        const taskForm = document.getElementById('taskForm');
+        document.addEventListener('DOMContentLoaded', function() {
+            const taskModal = document.getElementById('taskModal');
+            const openTaskModalBtn = document.getElementById('openTaskModalBtn');
+            const closeTaskModalBtn = document.getElementById('closeTaskModalBtn');
+            const taskForm = document.getElementById('taskForm');
+            const cancelTaskFormBtnInsideModal = document.getElementById('cancelTaskFormBtn');
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-        const pendingApprovalTasksContainer = document.getElementById('pending-approval-tasks');
-        const openTasksContainer = document.getElementById('open-tasks');
-        const completedTasksContainer = document.getElementById('completed-tasks');
-        const cancelledTasksContainer = document.getElementById('cancelled-tasks');
-        const rejectedTasksContainer = document.getElementById('rejected-tasks');
-        const closedTasksContainer = document.getElementById('closed-tasks');
+            const cancelTaskModal = document.getElementById('cancelTaskModal');
+            const closeCancelTaskModalBtn = document.getElementById('closeCancelTaskModalBtn');
+            const cancelCancelTaskFormBtn = document.getElementById('cancelCancelTaskFormBtn');
+            const cancelTaskForm = document.getElementById('cancelTaskForm');
+            const cancelTaskIdJobDisplay = document.getElementById('cancel_task_id_job_display');
+            const cancelTaskIdModalInput = document.getElementById('cancel_task_id_modal');
 
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        const currentUser = @json($user); // Assuming $user is passed and has id, isSuperAdmin(), isAdminProject() methods available via User model
+            @php
+                $phpCurrentUser = isset($user)
+                    ? array_merge(
+                        $user->toArray(),
+                        [
+                            'is_super_admin' => $user->isSuperAdmin(),
+                            'is_admin_project' => $user->isAdminProject(),
+                        ]
+                    )
+                    : null;
+            @endphp
+            const currentUser = @json($phpCurrentUser);
 
-        if (openTaskModalBtn && taskModal) {
-            openTaskModalBtn.addEventListener('click', () => {
-                taskModal.classList.remove('hidden');
-                if(taskForm) taskForm.reset();
-                document.getElementById('id_job_modal').focus();
-            });
-        }
-        if (closeTaskModalBtn && taskModal) {
-            closeTaskModalBtn.addEventListener('click', () => taskModal.classList.add('hidden'));
-        }
-        if (cancelTaskFormBtn && taskModal) {
-            cancelTaskFormBtn.addEventListener('click', () => taskModal.classList.add('hidden'));
-        }
-        document.addEventListener('keydown', (event) => {
-            if (event.key === 'Escape' && taskModal && !taskModal.classList.contains('hidden')) {
-                taskModal.classList.add('hidden');
+            function openModal(modalElement) {
+                if (!modalElement) return;
+                modalElement.classList.remove('hidden');
+                setTimeout(() => {
+                    const innerModal = modalElement.querySelector('.relative, .inline-block');
+                    if (innerModal) {
+                        innerModal.classList.remove('scale-95', 'opacity-0');
+                        innerModal.classList.add('scale-100', 'opacity-100');
+                    }
+                    const firstInput = modalElement.querySelector('input:not([type="hidden"]):not([readonly]), select, textarea');
+                    if (firstInput) firstInput.focus();
+                }, 10);
             }
-        });
 
-        function formatDate(dateString, includeTime = false) {
-            if (!dateString) return '---';
-            try {
-                const date = new Date(dateString);
-                if (isNaN(date.getTime())) return 'Invalid Date';
-                const options = { day: '2-digit', month: 'short', year: 'numeric' };
-                if (includeTime) {
-                    options.hour = '2-digit';
-                    options.minute = '2-digit';
-                    options.hour12 = false; // Use 24-hour format for consistency
+            function closeModal(modalElement) {
+                if (!modalElement) return;
+                const innerModal = modalElement.querySelector('.relative, .inline-block');
+                if (innerModal) {
+                    innerModal.classList.remove('scale-100', 'opacity-100');
+                    innerModal.classList.add('scale-95', 'opacity-0');
                 }
-                return date.toLocaleDateString('id-ID', options);
-            } catch (e) {
-                console.error("Error formatting date:", dateString, e);
-                return 'Error Date';
+                setTimeout(() => {
+                    modalElement.classList.add('hidden');
+                }, 300);
             }
-        }
-
-        function getStatusText(status) {
-            if (!status) return 'UNKNOWN';
-            return status.replace(/_/g, ' ').toUpperCase();
-        }
-
-        function getDepartmentSlug(departmentName) {
-            if (!departmentName) return 'default';
-            return departmentName.toLowerCase().replace(/\s*&\s*|\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-        }
 
 
-        function generateButtonsHTML(task, loggedInUser) {
-            let buttonsHtml = '';
-            const commonButtonClass = "text-xs px-3 py-1.5 rounded-md font-semibold focus:outline-none focus:ring-2 focus:ring-offset-1 whitespace-nowrap";
-            // These checks should ideally come from the User model methods if available in JS context,
-            // or be simplified if currentUser object has these flags directly.
-            const isSuperAdmin = loggedInUser && loggedInUser.is_super_admin; // Assuming you add this to the $user json
-            const isAdminProject = loggedInUser && loggedInUser.is_admin_project; // Assuming you add this
-            const isPengaju = loggedInUser && task.pengaju_id && loggedInUser.id === task.pengaju_id;
-            const isTargetDepartmentMember = loggedInUser && loggedInUser.department_id === task.department_id; // For approval
+            if (openTaskModalBtn && taskModal) {
+                openTaskModalBtn.addEventListener('click', () => {
+                    if (taskForm) taskForm.reset();
+                    openModal(taskModal);
+                });
+            }
+            if (closeTaskModalBtn && taskModal) closeTaskModalBtn.addEventListener('click', () => closeModal(taskModal));
+            if (cancelTaskFormBtnInsideModal && taskModal) cancelTaskFormBtnInsideModal.addEventListener('click', (e) => { e.preventDefault(); closeModal(taskModal); });
 
-            if (task.status === 'pending_approval') {
-                // Approval/Rejection usually via email. UI buttons could be added for specific roles.
-                // Example: if (isTargetDepartmentMember || isAdminProject || isSuperAdmin) {
-                //  buttonsHtml += `<button data-action="approve_from_card" data-task-id="${task.id}" class="${commonButtonClass} bg-sky-500 hover:bg-sky-600 text-white focus:ring-sky-400">Approve</button>`;
-                //  buttonsHtml += `<button data-action="reject_from_card" data-task-id="${task.id}" class="${commonButtonClass} bg-pink-500 hover:bg-pink-600 text-white focus:ring-pink-400">Reject</button>`;
-                // }
-            } else if (task.status === 'open') {
-                if (isPengaju || isAdminProject || isSuperAdmin) {
-                    buttonsHtml += `<button data-action="complete" data-task-id="${task.id}" class="${commonButtonClass} bg-green-500 hover:bg-green-600 text-white focus:ring-green-400">Complete</button>`;
-                }
-                if (isPengaju) { // Only requester can cancel
-                    buttonsHtml += `<button data-action="cancel" data-task-id="${task.id}" class="${commonButtonClass} bg-orange-500 hover:bg-orange-600 text-white focus:ring-orange-400">Cancel</button>`;
-                }
-            } else if (task.status === 'completed') {
-                if (isPengaju) { // Only requester can archive
-                    buttonsHtml += `<button data-action="archive" data-task-id="${task.id}" class="${commonButtonClass} bg-gray-500 hover:bg-gray-600 text-white focus:ring-gray-400">Archive</button>`;
-                }
-                if (isAdminProject || isSuperAdmin) {
-                     buttonsHtml += `<button data-action="reopen" data-task-id="${task.id}" class="${commonButtonClass} bg-blue-500 hover:bg-blue-600 text-white focus:ring-blue-400">Re-Open</button>`;
-                }
-            } else if (task.status === 'rejected' || task.status === 'cancelled') {
-                 if (isAdminProject || isSuperAdmin) {
-                    buttonsHtml += `<button data-action="reopen" data-task-id="${task.id}" class="${commonButtonClass} bg-blue-500 hover:bg-blue-600 text-white focus:ring-blue-400">Re-Open</button>`;
-                    buttonsHtml += `<button data-action="delete_permanently" data-task-id="${task.id}" class="${commonButtonClass} bg-red-700 hover:bg-red-800 text-white focus:ring-red-600">Delete</button>`;
+            if (closeCancelTaskModalBtn && cancelTaskModal) closeCancelTaskModalBtn.addEventListener('click', () => closeModal(cancelTaskModal));
+            if (cancelCancelTaskFormBtn && cancelTaskModal) cancelCancelTaskFormBtn.addEventListener('click', (e) => { e.preventDefault(); closeModal(cancelTaskModal); });
+
+            function getStatusText(status) { return status ? status.replace(/_/g, ' ').toUpperCase() : 'N/A'; }
+            function getDepartmentSlug(departmentName) {
+                if (!departmentName) return 'na';
+                return String(departmentName).toLowerCase()
+                    .replace(/\s+/g, '-')
+                    .replace(/[^\w-]+/g, '')
+                    .replace(/--+/g, '-')
+                    .replace(/^-+/, '')
+                    .replace(/-+$/, '');
+            }
+             function formatDate(dateString, includeTime = false) {
+                if (!dateString) return '---';
+                try {
+                    const date = new Date(dateString);
+                    if (isNaN(date.getTime())) return '---';
+
+                    const options = { day: '2-digit', month: 'short', year: 'numeric' };
+                    if (includeTime) {
+                        options.hour = '2-digit';
+                        options.minute = '2-digit';
+                        options.hour12 = false;
+                    }
+                    return date.toLocaleDateString('en-GB', options);
+                } catch (e) {
+                    console.error("Error formatting date:", dateString, e);
+                    return 'Date Error';
                 }
             }
-            return buttonsHtml;
-        }
 
-        function createTaskCardHTML(task) {
-            const pengajuName = task.pengaju ? task.pengaju.name : 'N/A';
-            const departmentName = task.department ? task.department.department_name : 'N/A';
-            const departmentSlug = getDepartmentSlug(departmentName);
-            const penutupName = task.penutup ? task.penutup.name : 'N/A';
-            const approverName = task.approver ? task.approver.name : 'N/A';
+            function generateButtonsHTML(task, loggedInUser) {
+                let buttonsHtml = '';
+                if (!loggedInUser || !task) return buttonsHtml;
 
-            // Dynamic header background based on status
-            let headerBgClass = 'bg-gray-400 dark:bg-gray-600'; // Default
-            if (task.status === 'pending_approval') headerBgClass = 'bg-yellow-500 dark:bg-yellow-600';
-            else if (task.status === 'open') headerBgClass = 'bg-blue-500 dark:bg-blue-600';
-            else if (task.status === 'completed') headerBgClass = 'bg-green-500 dark:bg-green-600';
-            else if (task.status === 'cancelled') headerBgClass = 'bg-orange-500 dark:bg-orange-600';
-            else if (task.status === 'rejected') headerBgClass = 'bg-red-600 dark:bg-red-700';
-            else if (task.status === 'closed') headerBgClass = 'bg-gray-500 dark:bg-gray-700';
+                const commonButtonClass = "text-xs px-3 py-1.5 rounded-md font-semibold focus:outline-none focus:ring-2 focus:ring-offset-1 dark:focus:ring-offset-gray-800 whitespace-nowrap";
+                const isSuperAdmin = loggedInUser.is_super_admin;
+                const isAdminProject = loggedInUser.is_admin_project;
+                const isPengaju = loggedInUser.id === task.pengaju_id;
+                const isTargetDepartmentMember = task.department_id && loggedInUser.department && loggedInUser.department.id === task.department_id;
 
 
-            let cardHTML = `
-                <div class="task-card bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg shadow-md flex flex-col h-full" data-task-id="${task.id}">
+                if (task.status === 'pending_approval') {
+                    if (isPengaju || isAdminProject || isSuperAdmin) {
+                        buttonsHtml += `<button data-action="cancel" data-task-id="${task.id}" data-task-idjob="${task.id_job}" class="${commonButtonClass} bg-yellow-500 hover:bg-yellow-600 text-white focus:ring-yellow-400">Cancel</button>`;
+                    }
+                } else if (task.status === 'open') {
+                    if (isPengaju || isAdminProject || isSuperAdmin || isTargetDepartmentMember) {
+                        buttonsHtml += `<button data-action="complete" data-task-id="${task.id}" class="${commonButtonClass} bg-green-600 hover:bg-green-700 text-white focus:ring-green-500">Complete</button>`;
+                    }
+                    if (isPengaju || isAdminProject || isSuperAdmin) {
+                        buttonsHtml += `<button data-action="cancel" data-task-id="${task.id}" data-task-idjob="${task.id_job}" class="${commonButtonClass} bg-yellow-500 hover:bg-yellow-600 text-white focus:ring-yellow-400 ml-2">Cancel</button>`;
+                    }
+                } else if (task.status === 'completed') {
+                    if (isPengaju || isAdminProject || isSuperAdmin) {
+                        buttonsHtml += `<button data-action="archive" data-task-id="${task.id}" class="${commonButtonClass} bg-gray-600 hover:bg-gray-700 text-white focus:ring-gray-500">Archive</button>`;
+                    }
+                    if (isAdminProject || isSuperAdmin) {
+                        buttonsHtml += `<button data-action="reopen" data-task-id="${task.id}" class="${commonButtonClass} bg-cyan-500 hover:bg-cyan-600 text-white focus:ring-cyan-400 ml-2">Re-Open</button>`;
+                    }
+                } else if (task.status === 'rejected' || task.status === 'cancelled') {
+                    if (isPengaju && task.status === 'rejected') {
+                        buttonsHtml += `<button data-action="archive" data-task-id="${task.id}" class="${commonButtonClass} bg-gray-600 hover:bg-gray-700 text-white focus:ring-gray-500">Archive</button>`;
+                    }
+                    if (isAdminProject || isSuperAdmin) {
+                        buttonsHtml += `<button data-action="reopen" data-task-id="${task.id}" class="${commonButtonClass} bg-cyan-500 hover:bg-cyan-600 text-white focus:ring-cyan-400 ${ (isPengaju && task.status === 'rejected') ? 'ml-2' : '' }">Re-Open</button>`;
+                        buttonsHtml += ` <button data-action="delete_permanently" data-task-id="${task.id}" class="${commonButtonClass} bg-red-600 hover:bg-red-700 text-white focus:ring-red-500 ml-2">Delete</button>`;
+                    }
+                } else if (task.status === 'closed') {
+                    if (isAdminProject || isSuperAdmin) {
+                        buttonsHtml += `<button data-action="reopen" data-task-id="${task.id}" class="${commonButtonClass} bg-cyan-500 hover:bg-cyan-600 text-white focus:ring-cyan-400">Re-Open</button>`;
+                        buttonsHtml += ` <button data-action="delete_permanently" data-task-id="${task.id}" class="${commonButtonClass} bg-red-600 hover:bg-red-700 text-white focus:ring-red-500 ml-2">Delete</button>`;
+                    }
+                }
+                return buttonsHtml;
+            }
+
+            function createTaskCardHTML(task) {
+                const pengajuName = task.pengaju ? task.pengaju.name : 'N/A';
+                const departmentName = task.department ? task.department.department_name : 'N/A';
+                const departmentSlug = getDepartmentSlug(departmentName);
+                const penutupName = task.penutup ? task.penutup.name : 'N/A';
+
+                let processedApprovalDetail = null;
+                let approverName = 'N/A';
+                let processedAt = null;
+                let rejectionNotes = null;
+
+                if (task.approval_details && task.approval_details.length > 0) {
+                    processedApprovalDetail = task.approval_details
+                        .filter(d => d.status === 'approved' || d.status === 'rejected')
+                        .sort((a, b) => new Date(b.processed_at || b.updated_at || 0) - new Date(a.processed_at || a.updated_at || 0))[0];
+
+                    if (processedApprovalDetail) {
+                        approverName = processedApprovalDetail.approver ? processedApprovalDetail.approver.name : (processedApprovalDetail.approver_nik || 'N/A');
+                        processedAt = processedApprovalDetail.processed_at || processedApprovalDetail.updated_at;
+                        if (processedApprovalDetail.status === 'rejected') {
+                            rejectionNotes = processedApprovalDetail.notes;
+                        }
+                    }
+                }
+
+                let headerBgClass = 'bg-gray-600 dark:bg-gray-700';
+                if (task.status === 'pending_approval') headerBgClass = 'bg-yellow-500 dark:bg-yellow-600';
+                else if (task.status === 'open') headerBgClass = 'bg-cyan-500 dark:bg-cyan-600';
+                else if (task.status === 'completed') headerBgClass = 'bg-green-600 dark:bg-green-700';
+                else if (task.status === 'cancelled') headerBgClass = 'bg-yellow-500 dark:bg-yellow-600';
+                else if (task.status === 'rejected') headerBgClass = 'bg-red-600 dark:bg-red-700';
+                else if (task.status === 'closed') headerBgClass = 'bg-gray-600 dark:bg-gray-700';
+
+                const listJobDisplay = task.list_job ? task.list_job.replace(/</g, "<").replace(/>/g, ">") : '';
+                const rejectionNotesDisplay = rejectionNotes ? rejectionNotes.replace(/</g, "<").replace(/>/g, ">") : '';
+                const cancelReasonDisplay = task.cancel_reason ? task.cancel_reason.replace(/</g, "<").replace(/>/g, ">") : '';
+
+
+                let cardHTML = `
+                <div class="task-card rounded-lg shadow-md flex flex-col h-full" data-task-id="${task.id}" data-task-idjob="${task.id_job || ''}">
                     <div class="flex-grow">
                         <div class="flex justify-between items-center ${headerBgClass} text-white p-3 rounded-t-lg">
                             <div>
-                                <span class="block text-xs opacity-80">ID JOB</span>
-                                <span class="text-sm font-semibold">${task.id_job}</span>
+                                <span class="block text-xs opacity-80">JOB ID</span>
+                                <span class="text-sm font-semibold">${task.id_job || 'N/A'}</span>
                             </div>
                             <span class="status-badge status-${task.status}">${getStatusText(task.status)}</span>
                         </div>
-
                         <div class="p-3 space-y-2">
                             <div class="grid grid-cols-2 gap-2">
                                 <div>
@@ -373,7 +498,7 @@
                                 </div>
                                 <div>
                                     <span class="card-header-label text-gray-500 dark:text-gray-400">To Department</span>
-                                    <span class="dept-badge dept-${departmentSlug} text-xs font-medium px-2 py-0.5 rounded-md inline-block truncate" title="${departmentName}">${departmentName}</span>
+                                    <span class="dept-badge dept-${departmentSlug} text-xs font-medium px-2 py-0.5 rounded-full inline-block truncate" title="${departmentName}">${departmentName}</span>
                                 </div>
                                 <div>
                                     <span class="card-header-label text-gray-500 dark:text-gray-400">Start</span>
@@ -385,29 +510,38 @@
                                 </div>
                             </div>`;
 
-            if (task.status === 'rejected' || (task.approver_id && (task.status === 'open' || task.status === 'completed'))) { // Show if approved or rejected
-                cardHTML += `
-                        <div class="pt-1 border-t border-gray-200 dark:border-gray-700 mt-2">
-                             <span class="card-header-label text-gray-500 dark:text-gray-400">${task.status === 'rejected' ? 'Processed by (Rejected)' : 'Processed by (Approved)'}</span>
-                             <span class="card-header-value text-gray-900 dark:text-gray-100">${approverName} at ${formatDate(task.approved_at, true)}</span>
-                        </div>`;
-                if (task.status === 'rejected' && task.rejection_reason) {
+                if (processedApprovalDetail) {
                     cardHTML += `
-                        <div class_("pt-1">
-                             <span class="card-header-label text-gray-500 dark:text-gray-400">Rejection Reason</span>
-                             <span class="card-header-value text-red-600 dark:text-red-400 text-xs">${task.rejection_reason}</span>
-                        </div>`;
+                            <div class="pt-1 border-t border-gray-200 dark:border-gray-700 mt-2">
+                                <span class="card-header-label text-gray-500 dark:text-gray-400">${processedApprovalDetail.status === 'rejected' ? 'Processed by (Rejected)' : 'Processed by (Approved)'}</span>
+                                <span class="card-header-value text-gray-900 dark:text-gray-100">${approverName} ${processedAt ? ' at ' + formatDate(processedAt, true) : ''}</span>
+                            </div>`;
+                    if (rejectionNotesDisplay) {
+                        cardHTML += `
+                            <div class="pt-1">
+                                <span class="card-header-label text-gray-500 dark:text-gray-400">Rejection Notes</span>
+                                <span class="card-header-value text-red-600 dark:text-red-400 text-xs break-all">${rejectionNotesDisplay}</span>
+                            </div>`;
+                    }
                 }
-            }
 
-            if (task.status === 'closed' && task.penutup) {
+                if (task.status === 'cancelled' && cancelReasonDisplay) {
+                    cardHTML += `
+                            <div class="pt-1 border-t border-gray-200 dark:border-gray-700 mt-2">
+                                <span class="card-header-label text-gray-500 dark:text-gray-400">Cancellation Reason</span>
+                                <span class="card-header-value text-yellow-700 dark:text-yellow-500 text-xs break-all">${cancelReasonDisplay}</span>
+                            </div>`;
+                }
+
+                if (task.status === 'closed' && task.penutup) {
+                    cardHTML += `
+                            <div class="pt-1 border-t border-gray-200 dark:border-gray-700 mt-2">
+                                <span class="card-header-label text-gray-500 dark:text-gray-400">Closed by</span>
+                                <span class="card-header-value text-gray-900 dark:text-gray-100">${penutupName} at ${task.closed_at ? formatDate(task.closed_at, true) : '---'}</span>
+                            </div>`;
+                }
+
                 cardHTML += `
-                        <div class="pt-1 border-t border-gray-200 dark:border-gray-700 mt-2">
-                             <span class="card-header-label text-gray-500 dark:text-gray-400">Closed by</span>
-                             <span class="card-header-value text-gray-900 dark:text-gray-100">${penutupName} at ${formatDate(task.closed_at, true)}</span>
-                        </div>`;
-            }
-            cardHTML += `
                         </div>
                         <div class="px-3 py-2 border-t border-gray-200 dark:border-gray-700">
                             <span class="card-header-label text-gray-500 dark:text-gray-400">Location</span>
@@ -415,8 +549,8 @@
                         </div>
                         <div class="px-3 py-2">
                             <p class="text-xs font-medium mb-1 text-gray-600 dark:text-gray-400">Description:</p>
-                            <div class="task-content-scrollable bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600">
-                                <pre class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words">${task.list_job}</pre>
+                            <div class="task-content-scrollable">
+                                <pre class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words">${listJobDisplay}</pre>
                             </div>
                         </div>
                     </div>
@@ -424,180 +558,283 @@
                         ${generateButtonsHTML(task, currentUser)}
                     </div>
                 </div>`;
-            return cardHTML;
-        }
-
-
-        function reRenderTask(updatedTask) {
-            const oldCard = document.querySelector(`.task-card[data-task-id="${updatedTask.id}"]`);
-            if (oldCard) oldCard.remove();
-
-            const newCardHTML = createTaskCardHTML(updatedTask);
-            let targetContainer;
-            if (updatedTask.status === 'pending_approval') targetContainer = pendingApprovalTasksContainer;
-            else if (updatedTask.status === 'open') targetContainer = openTasksContainer;
-            else if (updatedTask.status === 'completed') targetContainer = completedTasksContainer;
-            else if (updatedTask.status === 'cancelled') targetContainer = cancelledTasksContainer;
-            else if (updatedTask.status === 'rejected') targetContainer = rejectedTasksContainer;
-            else if (updatedTask.status === 'closed') targetContainer = closedTasksContainer;
-
-            if (targetContainer) {
-                // Insert at the beginning (top) of the column
-                targetContainer.insertAdjacentHTML('afterbegin', newCardHTML);
-            } else {
-                console.error("Could not find target container for status:", updatedTask.status);
+                return cardHTML;
             }
-        }
 
-        if (taskForm) {
-            taskForm.addEventListener('submit', async function(event) {
-                event.preventDefault();
-                const formData = new FormData(taskForm);
-                const data = Object.fromEntries(formData.entries());
 
-                // Client-side validation example (can be more extensive)
-                if (!data.id_job || !data.department_id || !data.area || !data.list_job) {
-                    Swal.fire('Error', 'ID JOB, Department, Location, and Description are required.', 'error');
+            function getTargetColumnTasksId(status) {
+                switch (status) {
+                    case 'pending_approval': return 'pending-approval-tasks';
+                    case 'open': return 'open-tasks';
+                    case 'completed': return 'completed-tasks';
+                    case 'cancelled': return 'cancelled-tasks';
+                    case 'rejected': return 'rejected-tasks';
+                    case 'closed': return 'closed-tasks';
+                    default: return null;
+                }
+            }
+
+            function reRenderTask(task) {
+                const existingCard = document.querySelector(`.task-card[data-task-id="${task.id}"]`);
+                const newCardHTML = createTaskCardHTML(task);
+                const targetColumnTasksId = getTargetColumnTasksId(task.status);
+
+                if (!targetColumnTasksId) {
+                    console.error(`Unknown status for task ${task.id}: ${task.status}`);
+                    return;
+                }
+                const targetTasksContainer = document.getElementById(targetColumnTasksId);
+                if (!targetTasksContainer) {
+                    console.error(`Target container ${targetColumnTasksId} not found for task ${task.id}`);
                     return;
                 }
 
+                const placeholder = targetTasksContainer.querySelector('.no-tasks-placeholder');
+                if(placeholder) placeholder.remove();
+
+
+                if (existingCard) {
+                    const currentTasksContainer = existingCard.parentElement;
+                    if (currentTasksContainer && currentTasksContainer.id === targetColumnTasksId) {
+                        existingCard.outerHTML = newCardHTML;
+                    } else {
+                        existingCard.remove();
+                        targetTasksContainer.insertAdjacentHTML('afterbegin', newCardHTML);
+                        if(currentTasksContainer && currentTasksContainer.childElementCount === 0) {
+                             currentTasksContainer.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 py-4 no-tasks-placeholder">No tasks available.</p>';
+                        }
+                    }
+                } else {
+                    targetTasksContainer.insertAdjacentHTML('afterbegin', newCardHTML);
+                }
+            }
+
+// Ganti blok ini di dalam file Blade Anda
+if (taskForm) {
+    taskForm.addEventListener('submit', async function(event) {
+        event.preventDefault();
+        const formData = new FormData(taskForm);
+        if (currentUser && currentUser.id && !formData.has('pengaju_id')) {
+            formData.append('pengaju_id', currentUser.id);
+        }
+        const data = Object.fromEntries(formData.entries());
+
+        // ==================================================
+        // PERBAIKAN: Hapus pengecekan untuk id_job
+        // ==================================================
+        if (!data.department_id || !data.area || !data.list_job) {
+            // Sesuaikan juga pesan errornya
+            Swal.fire('Error', 'Department, Location, and Description are required fields.', 'error');
+            return;
+        }
+        // ==================================================
+
+        Swal.fire({ title: 'Saving...', text: 'Please wait a moment.', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+
+        try {
+            const response = await fetch("{{ route('tasks.store') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
+            const responseData = await response.json();
+
+            if (!response.ok) {
+                let htmlMessage = responseData.message || 'Failed to save task.';
+                if (responseData.errors) {
+                    htmlMessage += '<br><ul class="text-left list-disc list-inside mt-2">';
+                    for (const field in responseData.errors) {
+                        htmlMessage += `<li>${responseData.errors[field].join(', ')}</li>`;
+                    }
+                    htmlMessage += '</ul>';
+                }
+                Swal.fire({ icon: 'error', title: 'Validation Failed', html: htmlMessage });
+                return;
+            }
+
+            if (responseData && responseData.id) {
+                reRenderTask(responseData);
+                closeModal(taskModal);
+                taskForm.reset();
+                // Pesan sukses yang lebih informatif
+                Swal.fire('Success!', `Task ${responseData.id_job} created and is awaiting approval.`, 'success');
+            } else {
+                 Swal.fire({ icon: 'error', title: 'Submission Error', text: 'Task data not received from server or invalid format.' });
+            }
+        } catch (error) {
+            console.error('Error submitting task:', error);
+            Swal.fire({ icon: 'error', title: 'Submission Error', text: 'Could not save task. Check connection or server logs.' });
+        }
+    });
+}
+
+            async function handleTaskAction(taskId, action, taskData = null) {
+                let url, method = 'PATCH', newStatus, confirmationTitle, confirmationText, successMessage;
+                let requiresConfirmation = false;
+                let requestBody = {};
+
+                switch (action) {
+                    case 'complete': newStatus = 'completed'; successMessage = 'Task marked as COMPLETED.'; requestBody = { status: newStatus }; break;
+                    case 'archive': newStatus = 'closed'; successMessage = 'Task ARCHIVED.'; requestBody = { status: newStatus }; break;
+                    case 'cancel':
+                        if (cancelTaskModal && taskData && typeof taskData.id_job !== 'undefined') {
+                            cancelTaskIdModalInput.value = taskId;
+                            cancelTaskIdJobDisplay.innerText = taskData.id_job || 'N/A';
+                            document.getElementById('cancel_reason_modal').value = '';
+                            document.getElementById('requester_confirmation_cancel_modal').checked = false;
+                            openModal(cancelTaskModal);
+                        } else {
+                            Swal.fire('Error', 'Cannot open cancel modal. Task information is missing.', 'error');
+                        }
+                        return;
+                    case 'reopen': newStatus = 'open'; successMessage = 'Task RE-OPENED.'; requestBody = { status: newStatus }; break;
+                    case 'delete_permanently':
+                        method = 'DELETE';
+                        confirmationTitle = 'Permanently Delete Task?';
+                        confirmationText = "This action cannot be undone. The task will be deleted forever.";
+                        requiresConfirmation = true;
+                        successMessage = 'Task permanently deleted successfully.';
+                        break;
+                    default: console.error('Unknown action:', action); return;
+                }
+
+                url = `/tasks/${taskId}${method === 'DELETE' ? '' : '/status'}`;
+
+                if (requiresConfirmation) {
+                    const result = await Swal.fire({
+                        title: confirmationTitle, text: confirmationText, icon: 'warning',
+                        showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#3085d6',
+                        confirmButtonText: 'Yes, proceed!', cancelButtonText: 'No, Cancel'
+                    });
+                    if (!result.isConfirmed) return;
+                }
+
+                Swal.fire({ title: 'Processing...', text: 'Please wait a moment.', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+
                 try {
-                    const response = await fetch("{{ route('tasks.store') }}", {
-                        method: 'POST',
+                    const fetchOptions = {
+                        method: method,
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': csrfToken,
-                            'Accept': 'application/json',
+                            'Accept': 'application/json'
                         },
-                        body: JSON.stringify(data)
-                    });
+                    };
+                    if (Object.keys(requestBody).length > 0) {
+                        fetchOptions.body = JSON.stringify(requestBody);
+                    }
 
-                    const responseData = await response.json();
+                    const response = await fetch(url, fetchOptions);
+                    const responseData = (method === 'DELETE' && response.status === 204)
+                        ? { message: successMessage }
+                        : await response.json().catch(() => ({ message: "Error: Invalid server response."}));
 
                     if (!response.ok) {
-                        let htmlMessage = 'Failed to save task:<br>';
+                        let htmlMessage = responseData.message || 'An error occurred.';
                         if (responseData.errors) {
-                            htmlMessage += '<ul class="text-left list-disc list-inside">';
-                            for (const field in responseData.errors) {
-                                htmlMessage += `<li>${responseData.errors[field].join(', ')}</li>`;
-                            }
+                            htmlMessage += '<br><ul class="text-left list-disc list-inside mt-2">';
+                            for (const field in responseData.errors) htmlMessage += `<li>${responseData.errors[field].join(', ')}</li>`;
                             htmlMessage += '</ul>';
-                        } else if (responseData.message) {
-                            htmlMessage += responseData.message;
-                        } else {
-                            htmlMessage += `Error ${response.status}: ${response.statusText}`;
+                        } else if (!responseData.message && response.statusText) {
+                             htmlMessage += ` ${response.status}: ${response.statusText}`;
                         }
-                        Swal.fire({ icon: 'error', title: 'Validation Failed', html: htmlMessage });
+                        Swal.fire({ icon: 'error', title: 'Oops...', html: htmlMessage });
                         return;
                     }
 
-                    const newTask = responseData; // Assuming successful response is the task object
-                    // No need to call createTaskCardHTML if reRenderTask handles it
-                    reRenderTask(newTask); // This will add it to pending_approval
-                    taskModal.classList.add('hidden');
-                    taskForm.reset();
-                    Swal.fire('Success!', 'Task submitted for approval.', 'success');
+                    if (method === 'DELETE') {
+                        const cardToRemove = document.querySelector(`.task-card[data-task-id="${taskId}"]`);
+                        if (cardToRemove) {
+                            const parentContainer = cardToRemove.parentElement;
+                            cardToRemove.remove();
+                            if(parentContainer && parentContainer.childElementCount === 0) {
+                                 parentContainer.innerHTML = '<p class="text-center text-gray-500 dark:text-gray-400 py-4 no-tasks-placeholder">No tasks available.</p>';
+                            }
+                        }
+                        Swal.fire('Success!', responseData.message || successMessage, 'success');
+                    } else if (responseData && responseData.id) {
+                        reRenderTask(responseData);
+                        Swal.fire('Success!', responseData.message || successMessage, 'success');
+                    } else {
+                         Swal.fire({ icon: 'error', title: 'Action Error', text: 'Unexpected response from the server.' });
+                    }
 
                 } catch (error) {
-                    console.error('Error submitting task:', error);
-                    Swal.fire({ icon: 'error', title: 'Submission Error', text: 'Could not save task. Check connection.' });
+                    console.error(`Error during action ${action} for task ${taskId}:`, error);
+                    Swal.fire({ icon: 'error', title: 'Network Error', text: 'Could not connect to the server.' });
+                }
+            }
+
+            if (cancelTaskForm) {
+                cancelTaskForm.addEventListener('submit', async function(event) {
+                    event.preventDefault();
+                    const taskId = document.getElementById('cancel_task_id_modal').value;
+                    const cancelReason = document.getElementById('cancel_reason_modal').value;
+                    const confirmation = document.getElementById('requester_confirmation_cancel_modal').checked;
+
+                    if (!cancelReason.trim()) { Swal.fire('Error', 'Cancellation reason is required.', 'error'); return; }
+                    if (!confirmation) { Swal.fire('Error', 'You must check the confirmation box.', 'error'); return; }
+
+                    const requestBody = {
+                        status: 'cancelled',
+                        cancel_reason: cancelReason,
+                        requester_confirmation_cancel: confirmation ? 1 : 0
+                    };
+
+                    Swal.fire({ title: 'Cancelling...', text: 'Please wait a moment.', didOpen: () => Swal.showLoading(), allowOutsideClick: false });
+
+                    try {
+                        const response = await fetch(`/tasks/${taskId}/status`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
+                            body: JSON.stringify(requestBody)
+                        });
+                        const responseData = await response.json();
+
+                        if (!response.ok) {
+                            let htmlMessage = responseData.message || 'Failed to cancel the task.';
+                            if (responseData.errors) {
+                                htmlMessage += '<br><ul class="text-left list-disc list-inside mt-2">';
+                                for (const field in responseData.errors) htmlMessage += `<li>${responseData.errors[field].join(', ')}</li>`;
+                                htmlMessage += '</ul>';
+                            }
+                            Swal.fire({ icon: 'error', title: 'Oops...', html: htmlMessage });
+                            return;
+                        }
+
+                        if (responseData && responseData.id) {
+                            reRenderTask(responseData);
+                            closeModal(cancelTaskModal);
+                            cancelTaskForm.reset();
+                            Swal.fire('Success!', responseData.message || 'Task cancelled successfully.', 'success');
+                        } else {
+                             Swal.fire({ icon: 'error', title: 'Error', text: 'Task data not received after cancellation or format is invalid.' });
+                        }
+                    } catch (error) {
+                        console.error(`Error cancelling task ${taskId}:`, error);
+                        Swal.fire({ icon: 'error', title: 'Network Error', text: 'Could not connect to the server.' });
+                    }
+                });
+            }
+
+            document.addEventListener('click', function(event) {
+                const targetButton = event.target.closest('button[data-action]');
+                if (!targetButton) return;
+
+                event.preventDefault();
+                const action = targetButton.dataset.action;
+                const taskId = targetButton.dataset.taskId;
+                const taskIdJob = targetButton.dataset.taskIdjob;
+
+                if (action && taskId) {
+                    handleTaskAction(taskId, action, { id_job: taskIdJob });
                 }
             });
-        }
-
-        async function handleTaskAction(taskId, action) {
-            let url, method, newStatus, confirmationTitle, confirmationText, successMessage;
-            let requiresConfirmation = false;
-            let requestBody = {};
-
-            switch (action) {
-                case 'complete':
-                    newStatus = 'completed'; successMessage = 'Task marked as COMPLETED.'; break;
-                case 'archive':
-                    newStatus = 'closed'; successMessage = 'Task ARCHIVED.'; break;
-                case 'cancel':
-                    newStatus = 'cancelled'; successMessage = 'Task CANCELLED.'; break;
-                case 'reopen':
-                    newStatus = 'open'; successMessage = 'Task RE-OPENED.'; break;
-                case 'delete_permanently':
-                    method = 'DELETE';
-                    confirmationTitle = 'Delete Task Permanently?';
-                    confirmationText = "This action cannot be undone.";
-                    requiresConfirmation = true;
-                    successMessage = 'Task permanently deleted.';
-                    break;
-                default: console.error('Unknown action:', action); return;
-            }
-
-            if (newStatus) { // For status updates
-                url = `/tasks/${taskId}/status`;
-                method = 'PATCH';
-                requestBody = { status: newStatus };
-            } else if (method === 'DELETE') { // For deletion
-                url = `/tasks/${taskId}`;
-            }
-
-
-            if (requiresConfirmation) {
-                const result = await Swal.fire({
-                    title: confirmationTitle, text: confirmationText, icon: 'warning',
-                    showCancelButton: true, confirmButtonColor: '#3085d6',
-                    cancelButtonColor: '#d33', confirmButtonText: 'Yes, proceed!', cancelButtonText: 'No, cancel'
-                });
-                if (!result.isConfirmed) return;
-            }
-
-            try {
-                const fetchOptions = {
-                    method: method,
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' },
-                };
-                if (method === 'PATCH' || method === 'POST') {
-                    fetchOptions.body = JSON.stringify(requestBody);
-                }
-
-                const response = await fetch(url, fetchOptions);
-                const responseData = await response.json().catch(() => ({ message: "Error processing server response."}));
-
-                if (!response.ok) {
-                    let htmlMessage = 'An error occurred:<br>';
-                     if (responseData.message) htmlMessage += responseData.message;
-                    else if (responseData.errors) {
-                        htmlMessage += '<ul class="text-left list-disc list-inside">';
-                        for (const field in responseData.errors) htmlMessage += `<li>${responseData.errors[field].join(', ')}</li>`;
-                        htmlMessage += '</ul>';
-                    } else htmlMessage += `Error ${response.status}: ${response.statusText}`;
-                    Swal.fire({ icon: 'error', title: 'Oops...', html: htmlMessage });
-                    return;
-                }
-
-                if (method === 'DELETE') {
-                    const cardToRemove = document.querySelector(`.task-card[data-task-id="${taskId}"]`);
-                    if (cardToRemove) cardToRemove.remove();
-                } else {
-                    reRenderTask(responseData); // responseData should be the updated task object
-                }
-                Swal.fire('Success!', successMessage, 'success');
-
-            } catch (error) {
-                console.error(`Error during action ${action} for task ${taskId}:`, error);
-                Swal.fire({ icon: 'error', title: 'Network Error', text: 'Could not connect to the server.' });
-            }
-        }
-
-        // Event listener for action buttons on cards
-        document.addEventListener('click', function(event) {
-            const target = event.target.closest('button[data-action]');
-            if (!target) return;
-
-            const action = target.dataset.action;
-            const taskId = target.dataset.taskId;
-
-            if (action && taskId) {
-                handleTaskAction(taskId, action);
-            }
         });
-    });
     </script>
     @endpush
 </x-app-layout>

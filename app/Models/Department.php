@@ -17,22 +17,40 @@ class Department extends Model
         return $this->hasMany(User::class);
     }
 
-    public function level()
+
+
+    public function tasks()
     {
-        return $this->belongsTo(Level::class);
+        return $this->hasMany(Task::class);
     }
 
-    public function position()
+    public function departmentApprovers()
     {
-        return $this->belongsTo(Position::class);
+        return $this->hasMany(DepartmentApprover::class);
+    }
+
+    public function getActiveApproverUsers()
+    {
+        return User::whereIn(
+            'nik',
+            $this->departmentApprovers()->where('status', 'active')->pluck('user_nik')->toArray()
+        )->get();
     }
 
     public static function boot()
-{
-    parent::boot();
+    {
+        parent::boot();
 
-    self::creating(function ($department) {
-        $department->department_slug = Str::slug($department->department_name);
-    });
-}
+        self::creating(function ($department) {
+            if (empty($department->department_slug)) {
+                $department->department_slug = Str::slug($department->department_name);
+            }
+        });
+
+        self::updating(function ($department) {
+            if ($department->isDirty('department_name')) {
+                $department->department_slug = Str::slug($department->department_name);
+            }
+        });
+    }
 }

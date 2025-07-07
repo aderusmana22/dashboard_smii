@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ $emailSubject ?? 'Task Status Update' }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
+        .email-container { max-width: 600px; margin: 20px auto; border: 1px solid #ddd; background-color: #ffffff; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        .header { background-color: #A78734; color: white; padding: 15px 20px; text-align: center; }
+        .header h1 { margin: 0; font-size: 24px; font-weight: bold; }
+        .sub-header { background-color: #B99B4A; color: white; padding: 10px 20px; text-align: center; }
+        .sub-header h2 { margin: 0; font-size: 18px; font-weight: normal; }
+        .content { padding: 25px; }
+        .content p { line-height: 1.6; margin: 10px 0; }
+        .info { background-color: #f9f9f9; border-left: 5px solid #A78734; padding: 15px; margin: 20px 0; }
+        .info p { text-align: left; white-space: pre-line; margin: 5px 0; font-size: 14px; }
+        .info strong { font-weight: bold; color: #555; }
+        .info .status-text { font-weight: bold; }
+        .info .status-approved, .info .status-open { color: #28a745; }
+        .info .status-rejected { color: #dc3545; }
+        .info .status-completed { color: #17a2b8; }
+        .info .status-cancelled { color: #ffc107; }
+        .info .status-closed { color: #6c757d; }
+        .reason { padding: 15px; margin: 15px 0; }
+        .reason.rejection { background-color: #f8d7da; border-left: 4px solid #dc3545; }
+        .reason.cancellation { background-color: #fff3cd; border-left: 4px solid #ffc107; }
+        .reason p { text-align: left; white-space: pre-line; margin:0; }
+        .footer { font-size: 12px; color: #777; text-align: center; padding: 20px; border-top: 1px solid #eee; margin-top: 20px; }
+        .footer p { margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header"><h1>{{ $company_name ?? config('app.company_name', 'Your Company') }}</h1></div>
+        <div class="sub-header">
+            <h2>{{ $app_subname ?? 'Marsho JobBoard' }}</h2>
+        </div>
+        <div class="content">
+            <p>Dear <strong>{{ $recipient_name ?? 'User' }}</strong>,</p>
+            
+            {{-- Pesan utama yang dinamis dari controller --}}
+            <p>{!! nl2br(e($message_body)) !!}</p>
+
+            <div class="info">
+                <p><strong>Job ID:</strong> {{ $task_id_job ?? 'N/A' }}<br>
+                {{-- Tampilkan Requester jika penerima bukan requester itu sendiri (berguna untuk notifikasi ke approver) --}}
+                @if(isset($requester_name) && $recipient_name !== $requester_name)
+                    <strong>Requester:</strong> {{ $requester_name }}<br>
+                @endif
+                <strong>Target Department:</strong> {{ $department_name ?? 'N/A' }}<br>
+                <strong>Location/Area:</strong> {{ $task_location ?? 'N/A' }}<br>
+                <strong>Current Status:</strong>
+                    <span class="status-text status-{{ strtolower(str_replace('_', '-', $current_task_status_text ?? '')) }}">
+                        {{ $current_task_status_text ?? 'N/A' }}
+                    </span><br>
+                <strong>Description:</strong><br>{{ $task_description ?? 'No description provided.' }}</p>
+            </div>
+
+            {{-- Tampilkan blok ini hanya jika ada alasan penolakan --}}
+            @if(isset($rejection_reason) && $rejection_reason)
+            <div class="reason rejection">
+                <p><strong>Reason for Rejection:</strong><br>{{ $rejection_reason }}</p>
+            </div>
+            @endif
+
+            {{-- Tampilkan blok ini hanya jika ada alasan pembatalan --}}
+            @if(isset($cancel_reason) && $cancel_reason)
+            <div class="reason cancellation">
+                <p><strong>Reason for Cancellation:</strong><br>{{ $cancel_reason }}</p>
+            </div>
+            @endif
+
+            <p>You can view more task details in the {{ config('app.subname', 'Marsho JobBoard') }} system.</p>
+            <p>Thank you.</p>
+            <p>Regards,<br>The {{ config('app.name') }} Notification System</p>
+        </div>
+        <div class="footer">
+            <p>© {{ $footer_year ?? date('Y') }} {{ $company_name ?? config('app.company_name', 'Your Company') }}. All rights reserved.</p>
+            <p>This is an automatically generated email. Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>

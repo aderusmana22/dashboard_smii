@@ -19,6 +19,7 @@ use App\Http\Controllers\StandardBudgetController;
 use App\Http\Controllers\KanbanController;
 use App\Http\Controllers\Admin\DepartmentApproverController;
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\JobController;
 
 /*
 |--------------------------------------------------------------------------
@@ -141,13 +142,15 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
         return response()->json(['count' => auth()->user()->unreadNotifications->count()]);
     })->name('notifications.count');
 
-    // kanban
-    Route::get('/kanban', [KanbanController::class, 'index'])->name('page.kanban.index');
-    Route::post('/tasks', [KanbanController::class, 'store'])->name('tasks.store');
-    Route::patch('/tasks/{task}/status', [KanbanController::class, 'updateStatus'])->name('tasks.updateStatus');
-    Route::delete('/tasks/{task}', [KanbanController::class, 'destroy'])->name('tasks.destroy');
-    Route::get('/tasks/approval/{token}', [KanbanController::class, 'handleApproval'])->name('tasks.handle_approval');
-    Route::post('/tasks/approval/{token}', [KanbanController::class, 'handleApproval'])->name('tasks.submit_rejection');
+    
+    Route::get('/jobs', [JobController::class, 'index'])->name('jobs.index');
+    Route::post('/jobs', [JobController::class, 'store'])->name('jobs.store');
+    
+    // Aksi pada Job
+    Route::patch('/jobs/{job}/start', [JobController::class, 'start'])->name('jobs.start');
+    Route::post('/jobs/{job}/forward', [JobController::class, 'forward'])->name('jobs.forward');
+    Route::patch('/jobs/{job}/complete', [JobController::class, 'complete'])->name('jobs.complete');
+    Route::patch('/jobs/{job}/close', [JobController::class, 'close'])->name('jobs.close');
 
     //export kanban
         Route::prefix('reports')->name('reports.')->group(function() {

@@ -16,10 +16,10 @@ use Artesaos\SEOTools\Facades\SEOMeta;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardSalesController;
 use App\Http\Controllers\StandardBudgetController;
-use App\Http\Controllers\KanbanController;
-use App\Http\Controllers\Admin\DepartmentApproverController;
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\JobController;
+use App\Http\Controllers\AreaController;
+use App\Http\Controllers\MarshoDepartmentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -143,14 +143,23 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
     })->name('notifications.count');
 
     
+    // Rute untuk Job Kanban
     Route::get('/jobs', [JobController::class, 'index'])->name('jobs.index');
     Route::post('/jobs', [JobController::class, 'store'])->name('jobs.store');
-    
-    // Aksi pada Job
     Route::patch('/jobs/{job}/start', [JobController::class, 'start'])->name('jobs.start');
     Route::post('/jobs/{job}/forward', [JobController::class, 'forward'])->name('jobs.forward');
     Route::patch('/jobs/{job}/complete', [JobController::class, 'complete'])->name('jobs.complete');
-    Route::patch('/jobs/{job}/close', [JobController::class, 'close'])->name('jobs.close');
+    Route::post('/jobs/{job}/close', [JobController::class, 'close'])->name('jobs.close'); // Gunakan POST karena FormData
+
+    // Rute untuk mengelola Resources (Area dan Departemen)
+    Route::resource('areas', AreaController::class)->except(['show', 'edit', 'create']);
+    Route::resource('marsho-departments', MarshoDepartmentController::class)->except(['show', 'edit', 'create']);
+
+       // Rute untuk Activity Log
+    Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
+
+    // Rute untuk melihat log spesifik per Job
+    Route::get('/jobs/{job}/activity-logs', [ActivityLogController::class, 'showForJob'])->name('jobs.activity-logs.show');
 
     //export kanban
         Route::prefix('reports')->name('reports.')->group(function() {
@@ -208,15 +217,6 @@ Route::group(['middleware' => ['role:super-admin|admin']], function () {
     Route::put('levels/{level:level_slug}/update', [LevelController::class, 'update'])->name('level.update');
     Route::post('levels', [LevelController::class, 'store'])->name('level.store');
     Route::delete('levels/{level:level_slug}/delete', [LevelController::class, 'destroy'])->name('level.destroy');
-
-    // kanban approver
-    Route::resource('department-approvers', DepartmentApproverController::class);
-
-        // kanban log
-    Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
-// Contoh route untuk melihat log spesifik per task
-    Route::get('/tasks/{task}/activity-logs', [ActivityLogController::class, 'showForTask'])->name('tasks.activity-logs.show');
-
 });
 
 require __DIR__ . '/auth.php';

@@ -1,4 +1,5 @@
 <x-app-layout>
+    {{-- Slot Header --}}
     <x-slot name="header">
         <div class="flex flex-col md:flex-row justify-between items-center">
             <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight mb-4 md:mb-0">
@@ -13,9 +14,11 @@
         </div>
     </x-slot>
 
+    {{-- Konten Utama --}}
     <div class="py-8 md:py-12">
         <div class="max-w-full mx-auto sm:px-6 lg:px-8">
             <div class="overflow-hidden">
+                {{-- Tombol Tambah Job Baru --}}
                 <div class="flex justify-end items-center mb-8">
                     <button id="openCreateJobModalBtn"
                             class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition duration-150 ease-in-out">
@@ -26,9 +29,11 @@
                     </button>
                 </div>
 
+                {{-- Kanban Board Container --}}
                 <div class="flex overflow-x-auto gap-6 pb-4">
-                    <!-- Kolom Open -->
-                    <div class="flex-shrink-0 w-[85vw] sm:w-[45vw] md:w-[30vw] lg:w-[23%]">
+                    
+                    {{-- Kolom Open --}}
+                    <div class="flex-shrink-0 w-[85vw] sm:w-[48vw] md:w-[48vw] lg:w-[33%]">
                         <div class="flex flex-col rounded-lg shadow-lg h-full bg-gray-100 dark:bg-gray-700">
                             <div class="bg-gray-500 dark:bg-gray-600 p-3 rounded-t-lg">
                                 <h3 class="text-lg font-semibold text-white text-center tracking-wide">OPEN</h3>
@@ -43,8 +48,8 @@
                         </div>
                     </div>
 
-                    <!-- Kolom On Process -->
-                    <div class="flex-shrink-0 w-[85vw] sm:w-[45vw] md:w-[30vw] lg:w-[23%]">
+                    {{-- Kolom On Process --}}
+                    <div class="flex-shrink-0 w-[85vw] sm:w-[48vw] md:w-[48vw] lg:w-[32%]">
                         <div class="flex flex-col rounded-lg shadow-lg h-full bg-blue-100 dark:bg-gray-700">
                             <div class="bg-blue-500 dark:bg-blue-600 p-3 rounded-t-lg">
                                 <h3 class="text-lg font-semibold text-white text-center tracking-wide">ON PROCESS</h3>
@@ -59,8 +64,8 @@
                         </div>
                     </div>
 
-                    <!-- Kolom Completed -->
-                    <div class="flex-shrink-0 w-[85vw] sm:w-[45vw] md:w-[30vw] lg:w-[23%]">
+                    {{-- Kolom Completed --}}
+                    <div class="flex-shrink-0 w-[85vw] sm:w-[48vw] md:w-[48vw] lg:w-[32%]">
                         <div class="flex flex-col rounded-lg shadow-lg h-full bg-green-100 dark:bg-gray-700">
                             <div class="bg-green-600 dark:bg-green-700 p-3 rounded-t-lg">
                                 <h3 class="text-lg font-semibold text-white text-center tracking-wide">COMPLETED</h3>
@@ -75,8 +80,8 @@
                         </div>
                     </div>
 
-                    <!-- Kolom Closed -->
-                    <div class="flex-shrink-0 w-[85vw] sm:w-[45vw] md:w-[30vw] lg:w-[23%]">
+                    {{-- Kolom Closed --}}
+                    <div class="flex-shrink-0 w-[85vw] sm:w-[48vw] md:w-[48vw] lg:w-[32%]">
                         <div class="flex flex-col rounded-lg shadow-lg h-full bg-gray-200 dark:bg-gray-800">
                             <div class="bg-gray-600 dark:bg-gray-900 p-3 rounded-t-lg">
                                 <h3 class="text-lg font-semibold text-white text-center tracking-wide">CLOSED</h3>
@@ -95,9 +100,17 @@
         </div>
     </div>
 
-    @include('jobs.modals.create_job_modal')
-    @include('jobs.modals.forward_job_modal')
-    @include('jobs.modals.complete_job_modal')
+    {{-- ================================================== --}}
+    {{-- START: Semua Modal (Sekarang dipanggil dari file terpisah) --}}
+    {{-- ================================================== --}}
+    @include('jobs.modals.create')
+    @include('jobs.modals.forward')
+    @include('jobs.modals.complete')
+    @include('jobs.modals.close')
+    {{-- ================================================== --}}
+    {{-- END: Semua Modal --}}
+    {{-- ================================================== --}}
+
 
     @push('styles')
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
@@ -112,181 +125,164 @@
 
     @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    {{-- Kode JavaScript Anda tidak perlu diubah dan bisa tetap di sini --}}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            const user = @json($user);
 
-            const createModalEl = document.getElementById('createJobModal');
-            const forwardModalEl = document.getElementById('forwardJobModal');
-            const completeModalEl = document.getElementById('completeJobModal');
+            function openModal(modalEl) { if (modalEl) modalEl.classList.remove('hidden'); }
+            function closeModal(modalEl) { if (modalEl) modalEl.classList.add('hidden'); }
 
-            const createForm = document.getElementById('createJobForm');
-            const forwardForm = document.getElementById('forwardJobForm');
-            const completeForm = document.getElementById('completeJobForm');
-
-            function openModal(modalEl) { modalEl.classList.remove('hidden'); }
-            function closeModal(modalEl) { modalEl.classList.add('hidden'); }
-
-            document.getElementById('openCreateJobModalBtn').addEventListener('click', () => openModal(createModalEl));
-            createModalEl.querySelector('.cancel-modal-btn').addEventListener('click', () => closeModal(createModalEl));
-            forwardModalEl.querySelector('.cancel-modal-btn').addEventListener('click', () => closeModal(forwardModalEl));
-            completeModalEl.querySelector('.cancel-modal-btn').addEventListener('click', () => closeModal(completeModalEl));
-
-            function getCardHtml(job) {
-                const latestRoute = job.latest_route || {};
-                const currentDept = latestRoute.to_department || {};
-                const isSuperAdmin = user.is_super_admin || false;
-                const canAct = user.department_id == currentDept.id || isSuperAdmin;
-                
-                let buttons = '';
-                if (job.status == 'open' && canAct) {
-                    buttons = `<button class="start-job-btn text-xs bg-blue-500 hover:bg-blue-600 text-white font-semibold px-3 py-1 rounded-md" data-job-id="${job.id}">Start Job</button>`;
-                } else if (job.status == 'on_process' && canAct) {
-                    buttons = `
-                        <button class="forward-job-btn text-xs bg-yellow-500 hover:bg-yellow-600 text-white font-semibold px-3 py-1 rounded-md" data-job-id="${job.id}">Forward</button>
-                        <button class="complete-job-btn text-xs bg-green-500 hover:bg-green-600 text-white font-semibold px-3 py-1 rounded-md" data-job-id="${job.id}">Complete</button>
-                    `;
-                } else if (job.status == 'completed' && (job.pengaju_id == user.id || isSuperAdmin)) {
-                    buttons = `<button class="close-job-btn text-xs bg-gray-600 hover:bg-gray-700 text-white font-semibold px-3 py-1 rounded-md" data-job-id="${job.id}">Close Job</button>`;
-                }
-
-                return `
-                    <div class="job-card bg-white dark:bg-gray-800 rounded-lg p-4 shadow-md border border-gray-200 dark:border-gray-700" data-job-id="${job.id}">
-                        <div class="font-bold text-lg mb-2 text-gray-800 dark:text-gray-100">${job.id_job}</div>
-                        <div class="space-y-2 text-sm">
-                            <p><span class="font-semibold text-gray-600 dark:text-gray-400">Area:</span> <span class="text-gray-800 dark:text-gray-200">${job.area}</span></p>
-                            <p><span class="font-semibold text-gray-600 dark:text-gray-400">Requester:</span> <span class="text-gray-800 dark:text-gray-200">${job.pengaju ? job.pengaju.name : 'N/A'}</span></p>
-                            <p><span class="font-semibold text-gray-600 dark:text-gray-400">Current Dept:</span> 
-                                <span class="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300 px-2 py-1 rounded-full text-xs font-medium">${currentDept.department_name || 'N/A'}</span>
-                            </p>
-                        </div>
-                        <div class="mt-4 pt-3 border-t border-gray-200 dark:border-gray-600 flex justify-end flex-wrap gap-2">${buttons}</div>
-                    </div>
-                `;
-            }
-
-            function updateCard(jobData) {
-                const existingCard = document.querySelector(`.job-card[data-job-id="${jobData.id}"]`);
-                const newCardHtml = getCardHtml(jobData);
-                const targetColumn = document.getElementById(`${jobData.status}-column`);
-
-                if (existingCard) {
-                    const sourceColumn = existingCard.parentElement;
-                    if (sourceColumn.id !== targetColumn.id) {
-                        existingCard.remove();
-                        const placeholder = targetColumn.querySelector('.no-jobs-placeholder');
-                        if (placeholder) placeholder.remove();
-                        targetColumn.insertAdjacentHTML('afterbegin', newCardHtml);
-                        if (sourceColumn.children.length === 0) {
-                            sourceColumn.innerHTML = '<p class="no-jobs-placeholder text-center text-gray-500 dark:text-gray-400 py-4">No jobs available.</p>';
-                        }
-                    } else {
-                        existingCard.outerHTML = newCardHtml;
-                    }
-                } else if (targetColumn) {
-                    const placeholder = targetColumn.querySelector('.no-jobs-placeholder');
-                    if (placeholder) placeholder.remove();
-                    targetColumn.insertAdjacentHTML('afterbegin', newCardHtml);
-                }
-            }
-
-            async function handleFormSubmit(url, method, formData, successCallback) {
+            async function handleFormSubmit(url, formData, successMessage) {
                 try {
                     const response = await fetch(url, {
-                        method: method,
+                        method: 'POST',
                         body: formData,
-                        headers: {'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json'}
+                        headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' }
                     });
                     const data = await response.json();
                     if (!response.ok) {
                         let errorHtml = data.message || 'An unknown error occurred.';
                         if (response.status === 422 && data.errors) {
                             errorHtml = 'Please fix the following errors:<br><ul class="text-left list-disc list-inside mt-2">';
-                            for (const field in data.errors) {
-                                errorHtml += `<li>${data.errors[field][0]}</li>`;
-                            }
+                            for (const field in data.errors) { errorHtml += `<li>${data.errors[field][0]}</li>`; }
                             errorHtml += '</ul>';
                         }
-                        Swal.fire({icon: 'error', title: 'Validation Failed', html: errorHtml});
+                        Swal.fire({ icon: 'error', title: 'Operation Failed', html: errorHtml });
                         return;
                     }
-                    successCallback(data);
+                    Swal.fire('Success', successMessage, 'success').then(() => window.location.reload());
                 } catch (error) {
+                    console.error('Form submission error:', error);
                     Swal.fire('Error', 'Could not connect to the server.', 'error');
                 }
             }
 
-            createForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                handleFormSubmit('{{ route("jobs.store") }}', 'POST', new FormData(this), (data) => {
-                    updateCard(data);
-                    closeModal(createModalEl);
-                    this.reset();
-                    Swal.fire('Success', 'Job created!', 'success');
+            const fileHandlers = new Map();
+            function setupAdvancedFileInput(modalId) {
+                const modal = document.getElementById(modalId);
+                if (!modal) return;
+                const triggerButton = modal.querySelector('.trigger-file-input');
+                if (!triggerButton) return;
+                const fileInput = modal.querySelector('.file-input');
+                const previewContainer = modal.querySelector('.file-preview-container');
+                let selectedFiles = new Map();
+                fileHandlers.set(modalId, selectedFiles);
+                triggerButton.addEventListener('click', () => fileInput.click());
+                fileInput.addEventListener('change', (event) => {
+                    const files = event.target.files;
+                    let currentFileCount = selectedFiles.size;
+                    for (const file of files) {
+                        if (currentFileCount >= 3) {
+                            Swal.fire('Limit Reached', 'You can only upload a maximum of 3 files.', 'warning');
+                            break;
+                        }
+                        if (selectedFiles.has(file.name)) continue;
+                        selectedFiles.set(file.name, file);
+                        previewContainer.appendChild(createPreviewElement(file));
+                        currentFileCount++;
+                    }
+                    fileInput.value = '';
                 });
-            });
+                previewContainer.addEventListener('click', (event) => {
+                    const removeBtn = event.target.closest('.remove-file-btn');
+                    if (removeBtn) {
+                        const filename = removeBtn.dataset.filename;
+                        selectedFiles.delete(filename);
+                        removeBtn.parentElement.parentElement.remove();
+                    }
+                });
+            }
 
-            forwardForm.addEventListener('submit', function(e) {
+            function createPreviewElement(file) {
+                const previewWrapper = document.createElement('div');
+                previewWrapper.className = 'flex items-center justify-between p-2 bg-gray-100 dark:bg-gray-700 rounded-md';
+                const fileInfo = document.createElement('div');
+                fileInfo.className = 'flex items-center space-x-2 overflow-hidden';
+                const fileIcon = document.createElement('div');
+                fileIcon.className = 'flex-shrink-0';
+                if (file.type.startsWith('image/')) {
+                    const img = document.createElement('img');
+                    img.src = URL.createObjectURL(file);
+                    img.className = 'w-10 h-10 object-cover rounded';
+                    img.onload = () => URL.revokeObjectURL(img.src);
+                    fileIcon.appendChild(img);
+                } else {
+                    fileIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>`;
+                }
+                const fileNameSpan = document.createElement('span');
+                fileNameSpan.className = 'text-sm text-gray-800 dark:text-gray-200 truncate';
+                fileNameSpan.textContent = file.name;
+                fileInfo.appendChild(fileIcon);
+                fileInfo.appendChild(fileNameSpan);
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.dataset.filename = file.name;
+                removeBtn.className = 'remove-file-btn flex-shrink-0 text-red-500 hover:text-red-700';
+                removeBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>`;
+                previewWrapper.appendChild(fileInfo);
+                previewWrapper.appendChild(removeBtn);
+                return previewWrapper;
+            }
+            
+            setupAdvancedFileInput('createJobModal');
+            setupAdvancedFileInput('completeJobModal');
+
+            document.getElementById('openCreateJobModalBtn')?.addEventListener('click', () => openModal(document.getElementById('createJobModal')));
+            document.getElementById('createJobForm')?.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                fileHandlers.get('createJobModal')?.forEach(file => formData.append('attachments[]', file));
+                closeModal(document.getElementById('createJobModal'));
+                handleFormSubmit('{{ route("jobs.store") }}', formData, 'Job created successfully!');
+            });
+            document.getElementById('forwardJobForm')?.addEventListener('submit', function(e) {
                 e.preventDefault();
                 const jobId = this.querySelector('#forward_job_id').value;
-                handleFormSubmit(`/jobs/${jobId}/forward`, 'POST', new FormData(this), (data) => {
-                    updateCard(data);
-                    closeModal(forwardModalEl);
-                    Swal.fire('Success', 'Job forwarded!', 'success');
-                });
+                closeModal(document.getElementById('forwardJobModal'));
+                handleFormSubmit(`/jobs/${jobId}/forward`, new FormData(this), 'Job forwarded successfully!');
             });
-            
-            completeForm.addEventListener('submit', function(e) {
+            document.getElementById('completeJobForm')?.addEventListener('submit', function(e) {
                 e.preventDefault();
                 const jobId = this.querySelector('#complete_job_id').value;
                 const formData = new FormData(this);
-                const requestBody = { note: formData.get('note'), _method: 'PATCH' };
-                fetch(`/jobs/${jobId}/complete`, {
-                    method: 'POST',
-                    body: JSON.stringify(requestBody),
-                    headers: {'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json', 'Content-Type': 'application/json'}
-                })
-                .then(res => res.json()).then(data => {
-                    if(data.id) {
-                        updateCard(data);
-                        closeModal(completeModalEl);
-                        Swal.fire('Success', 'Job completed!', 'success');
-                    } else {
-                        Swal.fire('Error', data.message || 'Failed to complete.', 'error');
-                    }
-                });
+                fileHandlers.get('completeJobModal')?.forEach(file => formData.append('attachments[]', file));
+                formData.append('_method', 'PATCH');
+                closeModal(document.getElementById('completeJobModal'));
+                handleFormSubmit(`/jobs/${jobId}/complete`, formData, 'Job marked as completed!');
             });
-
+            document.getElementById('closeJobForm')?.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const jobId = this.querySelector('#close_job_id').value;
+                closeModal(document.getElementById('closeJobModal'));
+                handleFormSubmit(`/jobs/${jobId}/close`, new FormData(this), 'Job closed successfully!');
+            });
+            document.querySelectorAll('.cancel-modal-btn').forEach(btn => {
+                btn.addEventListener('click', () => closeModal(btn.closest('.fixed')));
+            });
             document.body.addEventListener('click', function(e) {
                 const target = e.target.closest('button[data-job-id]');
                 if (!target) return;
                 const jobId = target.dataset.jobId;
-                let url, method = 'PATCH';
                 if (target.classList.contains('start-job-btn')) {
-                    url = `/jobs/${jobId}/start`;
-                } else if (target.classList.contains('close-job-btn')) {
-                    url = `/jobs/${jobId}/close`;
+                    const formData = new FormData();
+                    formData.append('_method', 'PATCH');
+                    formData.append('_token', csrfToken);
+                    handleFormSubmit(`/jobs/${jobId}/start`, formData, 'Job status updated!');
                 } else if (target.classList.contains('forward-job-btn')) {
-                    document.getElementById('forward_job_id').value = jobId;
-                    openModal(forwardModalEl);
-                    return;
+                    const modal = document.getElementById('forwardJobModal');
+                    modal.querySelector('#forward_job_id').value = jobId;
+                    openModal(modal);
                 } else if (target.classList.contains('complete-job-btn')) {
-                    document.getElementById('complete_job_id').value = jobId;
-                    openModal(completeModalEl);
-                    return;
-                } else {
-                    return;
+                    const modal = document.getElementById('completeJobModal');
+                    modal.querySelector('#complete_job_id').value = jobId;
+                    openModal(modal);
+                } else if (target.classList.contains('close-job-btn')) {
+                    const modal = document.getElementById('closeJobModal');
+                    modal.querySelector('#close_job_id').value = jobId;
+                    openModal(modal);
                 }
-                fetch(url, { method: method, headers: {'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json'} })
-                .then(res => res.json()).then(data => {
-                    if(data.id) {
-                        updateCard(data);
-                        Swal.fire('Success', `Job status updated!`, 'success');
-                    } else {
-                        Swal.fire('Error', data.message || 'Action failed.', 'error');
-                    }
-                });
             });
         });
     </script>

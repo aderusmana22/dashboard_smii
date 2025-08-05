@@ -5,37 +5,128 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
+use Illuminate\Support\Collection;
 
 class JobMarsho extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
 
     protected $table = 'job_marsho';
 
-    protected $fillable = [
-        'id_job', 'pengaju_id', 'area', 'list_job', 'tanggal_job_mulai',
-        'tanggal_job_selesai', 'status', 'penutup_id', 'closed_at',
-    ];
+    protected $guarded = [];
 
     protected $casts = [
-        'tanggal_job_mulai' => 'date',
-        'tanggal_job_selesai' => 'date',
+        'tanggal_job_mulai' => 'datetime',
+        'tanggal_job_selesai' => 'datetime',
         'closed_at' => 'datetime',
     ];
 
-    public static function generateJobId()
+    public function getActivitylogOptions(): LogOptions
     {
-        $year = Carbon::now()->year;
-        $prefix = "JOB/{$year}/";
-        $lastJob = self::where('id_job', 'like', $prefix . '%')->latest('id')->first();
-        $nextNumber = $lastJob ? ((int) substr($lastJob->id_job, -4)) + 1 : 1;
-        return $prefix . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+        return LogOptions::defaults()
+            ->logFillable()
+            ->logOnlyDirty()
+            ->useLogName('Job')
+            ->setDescriptionForEvent(fn(string $eventName) => "Job '{$this->id_job}' has been {$eventName}");
     }
 
-    public function pengaju() { return $this->belongsTo(User::class, 'pengaju_id'); }
-    public function penutup() { return $this->belongsTo(User::class, 'penutup_id'); }
-    public function routes() { return $this->hasMany(JobRoute::class, 'job_id')->orderBy('created_at'); }
-    public function latestRoute() { return $this->hasOne(JobRoute::class, 'job_id')->latestOfMany('created_at'); }
-    public function attachments() { return $this->hasMany(JobAttachment::class, 'job_id'); }
-    public function notes() { return $this->hasMany(JobNote::class, 'job_id'); }
+    public static function generateJobId()
+    {
+        $date = Carbon::now();
+        $year = $date->format('y');
+        $month = $date->format('m');
+        $day = $date->format('d');
+
+        $latestJob = self::whereYear('created_at', $date->year)
+                         ->whereMonth('created_at', $date->month)
+                         ->whereDay('created_at', $date->day)
+                         ->latest('id')
+                         ->first();
+
+        $sequence = $latestJob ? (int)substr($latestJob->id_job, -4) + 1 : 1;
+        
+        return sprintf('JOB-%s%s%s-%04d', $year, $month, $day, $sequence);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | RELASI-RELASI MODEL
+    |--------------------------------------------------------------------------
+    */
+
+    public function pengaju()
+    {
+        return $this->belongsTo(User::class, 'pengaju_id');
+    }
+
+    public function penutup()
+    {
+        return $this->belongsTo(User::class, 'penutup_id');
+    }
+
+    public function area()
+    {
+        return $this->belongsTo(Area::class, 'area_id');
+    }
+
+    public function routes()
+    {
+        return $this->hasMany(JobRoute::class, 'job_id')->orderBy('created_at');
+    }
+
+    public function latestRoute()
+    {
+        return $this->hasOne(JobRoute::class, 'job_id')->latestOfMany();
+    }
+
+    public function attachments()
+    {
+        return $this->hasMany(JobAttachment::class, 'job_id');
+    }
+
+    public function notes()
+    {
+        return $this->hasMany(JobNote::class, 'job_id');
+    }
+
+
+    // ===================================================================
+    // MODIFIKASI: ACCESSOR BERDASARKAN PATH FOLDER
+    // ===================================================================
+
+    /**
+     * Accessor untuk mendapatkan lampiran awal berdasarkan path folder.
+     *
+     * @return \Illuminate\Support\Collection
+     */
+    public function getInitialAttachmentsAttribute(): Collection
+    {
+        if (!$this->relationLoaded('attachments')) {
+            $this->load('attachments');
+        }
+
+        // Filter lampiran yang path-nya mengandung '/open/'
+        return $this->attachments->filter(function ($attachment) {
+            return str_contains($attachment->file_path, 'job_attachments/open/');
+        });
+    }
+
+    /**
+     * Accessor untuk mendapatkan lampiran penutup berdasarkan path folder.
+     *
+     * @return \Illuminate\Support\Collection
+     */
+    public function getClosingAttachmentsAttribute(): Collection
+    {
+        if (!$this->relationLoaded('attachments')) {
+            $this->load('attachments');
+        }
+
+        // Filter lampiran yang path-nya mengandung '/closed/'
+        return $this->attachments->filter(function ($attachment) {
+            return str_contains($attachment->file_path, 'job_attachments/closed/');
+        });
+    }
 }

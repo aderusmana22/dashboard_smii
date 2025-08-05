@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('id_job')->unique();
             $table->foreignId('pengaju_id')->constrained('users')->comment('Requester');
-            $table->string('area');
+            $table->foreignId('area_id')->constrained('areas')->onDelete('restrict');
             $table->text('list_job');
             $table->date('tanggal_job_mulai')->nullable();
             $table->date('tanggal_job_selesai')->nullable();

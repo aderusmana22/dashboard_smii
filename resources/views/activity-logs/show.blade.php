@@ -1,17 +1,18 @@
 <x-app-layout>
-    @section('title', 'Log Aktivitas untuk Task ' . $task->id_job)
+    @section('title', 'Log Aktivitas untuk Job ' . $job->id_job)
 
     <div class="container-fluid mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Log Aktivitas untuk Task: {{ $task->id_job }}</h3>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="card-title mb-0">Log Aktivitas untuk Job: {{ $job->id_job }}</h3>
                  <div class="card-tools">
-                    <a href="{{-- route('tasks.show', $task) --}}" class="btn btn-sm btn-outline-secondary">Kembali ke Detail Task</a>
+                    <a href="{{ route('activity-logs.index') }}" class="btn btn-sm btn-outline-secondary">Kembali ke Semua Log</a>
+                    <a href="{{ route('jobs.index') }}" class="btn btn-sm btn-outline-primary">Kembali ke Kanban</a>
                  </div>
             </div>
             <div class="card-body">
                 @if($activities->isEmpty())
-                    <p class="text-center text-gray-500">Tidak ada log aktivitas untuk task ini.</p>
+                    <p class="text-center text-gray-500">Tidak ada log aktivitas untuk job ini.</p>
                 @else
                     <div class="list-group">
                         @foreach ($activities as $activity)
@@ -33,7 +34,7 @@
                                     </small>
                                     <!-- Modal -->
                                     <div class="modal fade" id="propertiesModal{{ $activity->id }}" tabindex="-1" aria-labelledby="propertiesModalLabel{{ $activity->id }}" aria-hidden="true">
-                                        <div class="modal-dialog modal-lg">
+                                        <div class="modal-dialog modal-lg modal-dialog-scrollable">
                                             <div class="modal-content">
                                                 <div class="modal-header">
                                                     <h5 class="modal-title" id="propertiesModalLabel{{ $activity->id }}">Detail Perubahan Log #{{ $activity->id }}</h5>
@@ -41,12 +42,12 @@
                                                 </div>
                                                 <div class="modal-body">
                                                     @if($activity->properties->has('old'))
-                                                        <h6>Sebelum:</h6>
-                                                        <pre class="bg-light p-2 rounded"><code>{{ json_encode($activity->properties['old'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</code></pre>
+                                                        <h6>Data Lama (Sebelum):</h6>
+                                                        <pre class="bg-light p-2 rounded"><code>{{ json_encode($activity->properties->get('old'), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</code></pre>
                                                     @endif
                                                     @if($activity->properties->has('attributes'))
-                                                        <h6>Sesudah:</h6>
-                                                        <pre class="bg-light p-2 rounded"><code>{{ json_encode($activity->properties['attributes'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</code></pre>
+                                                        <h6>Data Baru (Sesudah):</h6>
+                                                        <pre class="bg-light p-2 rounded"><code>{{ json_encode($activity->properties->get('attributes'), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</code></pre>
                                                     @endif
                                                 </div>
                                             </div>

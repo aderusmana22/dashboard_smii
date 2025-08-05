@@ -104,15 +104,6 @@
                             </a>
                         </li>
                     @endcan
-                    @can('view department')
-                                <li>
-                        <a href="{{ route('department-approvers.index') }}"
-                        class="{{ request()->routeIs('department-approvers.index') ? 'current' : '' }}">
-                            <i class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>
-                            Departments Approver
-                        </a>
-                    </li>
-                    @endcan
                     @can('view position')
                         <li><a href="{{ route('position.index') }}" class="{{ request()->is('position*') ? 'current' : '' }}"><i
                                     class="icon-Commit"><span class="path1"></span><span
@@ -141,6 +132,34 @@
                 </ul>
             </li>
             @endcan
+            <li
+                class="{{ request()->is('users*') || request()->is('department*') || request()->is('position*') || request()->is('level*') || request()->is('roles*') || request()->is('permissions*') || request()->is('get.master*') ? 'current' : '' }}">
+                <a href="#" style="font-size: 18px;">
+                    <i data-feather="users" style="width: 18px; height: 18px;"></i>
+                    Marsho JobBoard
+                </a>
+                <ul>
+                    <li>
+                        <a href="{{ route('jobs.index') }}" class="{{ request()->is('jobs*') ? 'current' : '' }}">
+                            <i class="icon-Layout-4-blocks"><span class="path1"></span><span class="path2"></span></i>
+                            Jobs Kanban
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="{{ route('areas.index') }}" class="{{ request()->is('areas*') ? 'current' : '' }}">
+                            <i class="icon-Map-pin"><span class="path1"></span><span class="path2"></span></i>
+                            Manage Areas
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('marsho-departments.index') }}" class="{{ request()->is('marsho-departments*') ? 'current' : '' }}">
+                            <i class="icon-Users"><span class="path1"></span><span class="path2"></span></i>
+                            Manage Departments
+                        </a>
+                    </li>
+                </ul>
             </li>
+        </li>
     </ul>
 </nav>

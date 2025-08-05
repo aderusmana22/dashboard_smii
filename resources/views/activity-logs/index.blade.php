@@ -1,34 +1,12 @@
 <x-app-layout>
     @section('title', 'Kanban Activity Log')
 
-    {{-- Style untuk membuat layout tabel tetap/fixed --}}
     <style>
-        .table-fixed {
-            table-layout: fixed;
-            width: 100%;
-        }
-
-        .table-fixed td,
-        .table-fixed th {
-            /* Memaksa teks panjang untuk pindah baris */
-            overflow-wrap: break-word;
-        }
-
-        /* Style bawaan Anda */
-        table.table.table-bordered td,
-        table.table.table-bordered th {
-            border: 1px solid rgb(102, 110, 117) !important;
-            vertical-align: middle;
-        }
-
-        div.card-header {
-            border-bottom: 1px solid rgb(102, 110, 117) !important;
-        }
-
-        [data-bs-theme="dark"] .table-bordered th,
-        [data-bs-theme="dark"] .table-bordered td {
-            border-color: #495057 !important;
-        }
+        .table-fixed { table-layout: fixed; width: 100%; }
+        .table-fixed td, .table-fixed th { overflow-wrap: break-word; }
+        table.table.table-bordered td, table.table.table-bordered th { border: 1px solid rgb(102, 110, 117) !important; vertical-align: middle; }
+        div.card-header { border-bottom: 1px solid rgb(102, 110, 117) !important; }
+        [data-bs-theme="dark"] .table-bordered th, [data-bs-theme="dark"] .table-bordered td { border-color: #495057 !important; }
     </style>
 
     <div class="container-fluid mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -37,13 +15,13 @@
                 <h3 class="card-title">Kanban Activity Log</h3>
             </div>
             <div class="card-body">
-                {{-- FORM FILTER (Tidak ada perubahan di sini) --}}
+                {{-- FORM FILTER --}}
                 <form method="GET" action="{{ route('activity-logs.index') }}" class="mb-4">
                     <div class="table-responsive">
                         <table class="table table-bordered" style="width: 100%;">
                             <tbody>
                                 <tr class="align-middle">
-                                    <td><label for="subject_filter" class="form-label mb-0 fw-bold">Task Job ID</label></td>
+                                    <td><label for="subject_filter" class="form-label mb-0 fw-bold">Job ID</label></td>
                                     <td><label for="event_filter" class="form-label mb-0 fw-bold">Event</label></td>
                                     <td><label for="causer_filter" class="form-label mb-0 fw-bold">Performed By</label></td>
                                     <td><label for="date_from_filter" class="form-label mb-0 fw-bold">From Date</label></td>
@@ -93,18 +71,15 @@
                     </div>
                 </form>
 
-
-                {{-- TABEL DATA DENGAN LAYOUT FIXED DAN KOLOM DETAILS DIHILANGKAN --}}
-               
                <div class="table-responsive">
                     <table class="table table-bordered table-striped table-hover table-fixed">
                         <thead>
                             <tr>
                                 <th style="width: 5%;">ID</th>
-                                <th style="width: 10%;">Task Job ID</th>
+                                <th style="width: 12%;">Job ID</th>
                                 <th style="width: 12%;">Requester</th>
-                                <th style="width: 12%;">Dept To</th>
-                                <th style="width: 26%;">Description</th>
+                                <th style="width: 12%;">Area</th>
+                                <th style="width: 24%;">Description</th>
                                 <th style="width: 10%;">Event</th>
                                 <th style="width: 10%;">Performed By</th>
                                 <th style="width: 15%;">Time</th>
@@ -115,17 +90,18 @@
                                 <tr>
                                     <td>{{ $activity->id }}</td>
                                     <td>
-                                        @if ($activity->subject && $activity->subject_type == \App\Models\Task::class)
-                                            {{ $activity->subject->id_job }}
+                                        @if ($activity->subject && $activity->subject_type == \App\Models\JobMarsho::class)
+                                            <a href="{{ route('jobs.activity-logs.show', $activity->subject_id) }}" class="fw-bold">
+                                                {{ $activity->subject->id_job }}
+                                            </a>
                                         @else
                                             N/A
                                         @endif
                                     </td>
                                     
-                                    {{-- Menampilkan data dari relasi yang benar: 'pengaju' dan 'department' --}}
-                                    @if ($activity->subject && $activity->subject_type == \App\Models\Task::class)
+                                    @if ($activity->subject && $activity->subject_type == \App\Models\JobMarsho::class)
                                         <td>{{ $activity->subject->pengaju->name ?? 'N/A' }}</td>
-                                        <td>{{ $activity->subject->department->department_name ?? 'N/A' }}</td>
+                                        <td>{{ $activity->subject->area->name ?? 'N/A' }}</td>
                                     @else
                                         <td>N/A</td>
                                         <td>N/A</td>

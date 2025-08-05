@@ -1,8 +1,10 @@
+<!-- Forward Job Modal -->
 <div id="forwardJobModal" class="hidden fixed inset-0 z-50 overflow-y-auto bg-gray-600 bg-opacity-75 transition-opacity">
     <div class="flex items-center justify-center min-h-screen">
         <div class="relative bg-white dark:bg-gray-800 w-full max-w-lg mx-auto p-6 rounded-lg shadow-xl">
             <h3 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Forward Job</h3>
             <form id="forwardJobForm" class="space-y-4">
+                @csrf
                 <input type="hidden" id="forward_job_id" name="job_id">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Forward to Department</label>

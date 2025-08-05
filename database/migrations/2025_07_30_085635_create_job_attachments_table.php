@@ -15,7 +15,7 @@ return new class extends Migration
             $table->string('file_path');
             $table->string('file_name')->nullable();
             $table->foreignId('uploaded_by')->constrained('users');
-            $table->timestamp('uploaded_at')->useCurrent();
+            $table->timestamps(); // ini akan buat 'created_at' dan 'updated_at' otomatis
         });
     }
 

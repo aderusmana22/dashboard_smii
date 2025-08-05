@@ -11,4 +11,14 @@ class JobAttachment extends Model
     protected $table = 'job_attachments';
     const UPDATED_AT = null;
     protected $fillable = ['job_id', 'job_route_id', 'file_path', 'file_name', 'uploaded_by', 'uploaded_at'];
+
+    /**
+     * Define the relationship to the user who uploaded the attachment.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function uploadedByUser()
+    {
+        return $this->belongsTo(User::class, 'uploaded_by');
+    }
 }

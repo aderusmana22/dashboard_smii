@@ -1,85 +1,178 @@
 <?php
+
 namespace App\Http\Controllers;
+
 use App\Models\JobMarsho;
-use App\Models\Department;
+use App\Models\MarshoDepartment;
+use App\Models\Area;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
-class JobController extends Controller {
-    public function index() {
-        $user = Auth::user()->load('department');
-        if ($user) {
-            $user->is_super_admin = $user->hasRole('Super Admin'); // Ganti dengan logika role Anda
-        }
-        $jobs = JobMarsho::with(['pengaju', 'penutup', 'latestRoute.toDepartment'])->latest()->get();
-        $groupedJobs = $jobs->groupBy('status');
-        $departments = Department::orderBy('department_name')->pluck('department_name', 'id');
-        return view('jobs.index', [
-            'openJobs' => $groupedJobs->get('open', collect()),
-            'onProcessJobs' => $groupedJobs->get('on_process', collect()),
-            'completedJobs' => $groupedJobs->get('completed', collect()),
-            'closedJobs' => $groupedJobs->get('closed', collect()),
-            'user' => $user,
-            'departments' => $departments,
-        ]);
+
+class JobController extends Controller
+{
+    /**
+     * Menampilkan papan Kanban dengan semua pekerjaan.
+     */
+    public function index()
+    {
+        $user = Auth::user();
+        
+        // Query ini sudah benar, memuat semua relasi yang dibutuhkan tanpa batasan.
+        $jobs = JobMarsho::with([
+            'pengaju', 
+            'area',
+            'latestRoute.toDepartment', 
+            'routes.toDepartment', 
+            'routes.fromDepartment',
+            'attachments.uploadedByUser',
+            'notes.creator'
+        ])->latest()->get();
+
+        $openJobs = $jobs->where('status', 'open');
+        $onProcessJobs = $jobs->where('status', 'on_process');
+        $completedJobs = $jobs->where('status', 'completed');
+        $closedJobs = $jobs->where('status', 'closed');
+        
+        $departments = MarshoDepartment::pluck('department_name', 'id');
+        $areas = Area::pluck('name', 'id');
+
+        return view('jobs.index', compact('openJobs', 'onProcessJobs', 'completedJobs', 'closedJobs', 'user', 'departments', 'areas'));
     }
-    public function store(Request $request) {
-        $validator = Validator::make($request->all(), [
-            'area' => 'required|string|max:255',
+
+    /**
+     * Menyimpan pekerjaan baru, termasuk "Initial Attachments".
+     */
+    public function store(Request $request)
+    {
+        $request->validate([
+            'area_id' => 'required|exists:areas,id',
             'list_job' => 'required|string',
-            'to_department_id' => 'required|exists:departments,id',
+            'to_department_id' => 'required|exists:marsho_departments,id',
+            'attachments' => 'nullable|array|max:3',
+            'attachments.*' => 'file|mimes:jpg,jpeg,png,pdf,doc,docx|max:5120'
         ]);
-        if ($validator->fails()) return response()->json(['errors' => $validator->errors()], 422);
-        DB::beginTransaction();
-        try {
-            $job = JobMarsho::create(['id_job' => JobMarsho::generateJobId(), 'pengaju_id' => Auth::id(), 'area' => $request->area, 'list_job' => $request->list_job, 'tanggal_job_mulai' => Carbon::today(), 'status' => 'open']);
-            $job->routes()->create(['from_department_id' => null, 'to_department_id' => $request->to_department_id, 'note' => 'Initial job creation.', 'created_by' => Auth::id()]);
-            DB::commit();
-            $job->load(['pengaju', 'latestRoute.toDepartment']);
-            return response()->json($job, 201);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Job creation failed: ' . $e->getMessage());
-            return response()->json(['message' => 'Failed to create job.'], 500);
+
+        $user = Auth::user();
+
+        $job = JobMarsho::create([
+            'id_job' => JobMarsho::generateJobId(),
+            'pengaju_id' => $user->id,
+            'area_id' => $request->area_id,
+            'list_job' => $request->list_job,
+            'tanggal_job_mulai' => Carbon::now(),
+            'status' => 'open',
+        ]);
+
+        $route = $job->routes()->create([
+            'to_department_id' => $request->to_department_id,
+            'note' => 'Job created and assigned.',
+            'created_by' => $user->id,
+        ]);
+
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                // MODIFIKASI: Simpan file ke dalam sub-folder 'open'
+                $path = $file->store('job_attachments/open', 'public');
+                
+                $job->attachments()->create([
+                    'job_id' => $job->id,
+                    'job_route_id' => $route->id,
+                    'file_path' => $path,
+                    'file_name' => $file->getClientOriginalName(),
+                    'uploaded_by' => $user->id,
+                ]);
+            }
         }
+
+        return response()->json($job);
     }
-    public function start(JobMarsho $job) {
-        if ($job->status !== 'open') return response()->json(['message' => 'Job cannot be started.'], 403);
+    
+    /**
+     * Memulai pekerjaan, mengubah status menjadi 'on_process'.
+     */
+    public function start(JobMarsho $job)
+    {
         $job->update(['status' => 'on_process']);
-        activity()->performedOn($job)->causedBy(Auth::user())->log('Job was started');
-        $job->load(['pengaju', 'latestRoute.toDepartment']);
         return response()->json($job);
     }
-    public function forward(Request $request, JobMarsho $job) {
-        $validator = Validator::make($request->all(), ['to_department_id' => 'required|exists:departments,id', 'note' => 'required|string|max:1000']);
-        if ($validator->fails()) return response()->json(['errors' => $validator->errors()], 422);
-        if ($job->status !== 'on_process') return response()->json(['message' => 'Only on-process jobs can be forwarded.'], 403);
-        $latestRoute = $job->latestRoute;
-        $job->routes()->create(['from_department_id' => $latestRoute->to_department_id, 'to_department_id' => $request->to_department_id, 'note' => $request->note, 'created_by' => Auth::id()]);
-        $toDeptName = Department::find($request->to_department_id)->department_name ?? 'Unknown';
-        activity()->performedOn($job)->causedBy(Auth::user())->withProperty('note', $request->note)->log("Job was forwarded to {$toDeptName}");
-        $job->load(['pengaju', 'latestRoute.toDepartment']);
+
+    /**
+     * Meneruskan pekerjaan ke departemen lain.
+     */
+    public function forward(Request $request, JobMarsho $job)
+    {
+        $request->validate([
+            'to_department_id' => 'required|exists:marsho_departments,id',
+            'note' => 'required|string',
+        ]);
+
+        $job->routes()->create([
+            'job_id' => $job->id,
+            'from_department_id' => $job->latestRoute->to_department_id,
+            'to_department_id' => $request->to_department_id,
+            'note' => $request->note,
+            'created_by' => Auth::id(),
+        ]);
+
         return response()->json($job);
     }
-    public function complete(Request $request, JobMarsho $job) {
-        $validator = Validator::make($request->all(), ['note' => 'required|string|max:1000']);
-        if ($validator->fails()) return response()->json(['errors' => $validator->errors()], 422);
-        if ($job->status !== 'on_process') return response()->json(['message' => 'Only on-process jobs can be completed.'], 403);
-        $job->update(['status' => 'completed', 'tanggal_job_selesai' => Carbon::today()]);
-        $job->notes()->create(['note' => 'Completion Note: ' . $request->note, 'created_by' => Auth::id()]);
-        activity()->performedOn($job)->causedBy(Auth::user())->withProperty('note', $request->note)->log('Job was completed');
-        $job->load(['pengaju', 'latestRoute.toDepartment']);
+
+    /**
+     * Menyelesaikan pekerjaan, termasuk menyimpan "Closing Attachments".
+     */
+    public function complete(Request $request, JobMarsho $job)
+    {
+        $request->validate([
+            'note' => 'required|string',
+            'attachments' => 'nullable|array|max:3',
+            'attachments.*' => 'file|mimes:jpg,jpeg,png,pdf,doc,docx|max:5120'
+        ]);
+
+        $job->update([
+            'status' => 'completed',
+            'tanggal_job_selesai' => Carbon::now(),
+        ]);
+        
+        $latestRouteId = $job->latestRoute->id;
+
+        $job->notes()->create([
+            'job_id' => $job->id,
+            'job_route_id' => $latestRouteId,
+            'note' => $request->note,
+            'created_by' => Auth::id(),
+        ]);
+
+        if ($request->hasFile('attachments')) {
+            $user = Auth::user();
+            foreach ($request->file('attachments') as $file) {
+                // MODIFIKASI: Simpan file ke dalam sub-folder 'closed'
+                $path = $file->store('job_attachments/closed', 'public');
+
+                $job->attachments()->create([
+                    'job_id' => $job->id,
+                    'job_route_id' => $latestRouteId,
+                    'file_path' => $path,
+                    'file_name' => $file->getClientOriginalName(),
+                    'uploaded_by' => $user->id,
+                ]);
+            }
+        }
+
         return response()->json($job);
     }
-    public function close(JobMarsho $job) {
-        if ($job->status !== 'completed') return response()->json(['message' => 'Only completed jobs can be closed.'], 403);
-        if ($job->pengaju_id !== Auth::id() && !(Auth::user()->is_super_admin ?? false)) return response()->json(['message' => 'Only the requester can close the job.'], 403);
-        $job->update(['status' => 'closed', 'penutup_id' => Auth::id(), 'closed_at' => Carbon::now()]);
-        activity()->performedOn($job)->causedBy(Auth::user())->log('Job was closed and archived');
-        $job->load(['pengaju', 'latestRoute.toDepartment', 'penutup']);
+
+    /**
+     * Menutup pekerjaan, ini adalah langkah konfirmasi akhir tanpa input file.
+     */
+    public function close(Request $request, JobMarsho $job)
+    {
+        $job->update([
+            'status' => 'closed',
+            'penutup_id' => Auth::id(),
+            'closed_at' => Carbon::now(),
+        ]);
+
         return response()->json($job);
     }
 }

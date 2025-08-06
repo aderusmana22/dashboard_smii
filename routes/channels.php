@@ -16,3 +16,9 @@ use Illuminate\Support\Facades\Broadcast;
 Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
 });
+
+Broadcast::channel('jobs', function () {
+    // For this public channel, we simply return true,
+    // allowing any visitor to listen for job updates.
+    return true;
+});

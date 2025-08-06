@@ -14,9 +14,7 @@ class JobMarsho extends Model
     use HasFactory, LogsActivity;
 
     protected $table = 'job_marsho';
-
     protected $guarded = [];
-
     protected $casts = [
         'tanggal_job_mulai' => 'datetime',
         'tanggal_job_selesai' => 'datetime',
@@ -50,83 +48,25 @@ class JobMarsho extends Model
         return sprintf('JOB-%s%s%s-%04d', $year, $month, $day, $sequence);
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | RELASI-RELASI MODEL
-    |--------------------------------------------------------------------------
-    */
+    // Relationships
+    public function pengaju() { return $this->belongsTo(User::class, 'pengaju_id'); }
+    public function penutup() { return $this->belongsTo(User::class, 'penutup_id'); }
+    public function area() { return $this->belongsTo(Area::class, 'area_id'); }
+    public function routes() { return $this->hasMany(JobRoute::class, 'job_id')->orderBy('created_at'); }
+    public function latestRoute() { return $this->hasOne(JobRoute::class, 'job_id')->latestOfMany(); }
+    public function attachments() { return $this->hasMany(JobAttachment::class, 'job_id'); }
+    public function notes() { return $this->hasMany(JobNote::class, 'job_id'); }
 
-    public function pengaju()
-    {
-        return $this->belongsTo(User::class, 'pengaju_id');
-    }
-
-    public function penutup()
-    {
-        return $this->belongsTo(User::class, 'penutup_id');
-    }
-
-    public function area()
-    {
-        return $this->belongsTo(Area::class, 'area_id');
-    }
-
-    public function routes()
-    {
-        return $this->hasMany(JobRoute::class, 'job_id')->orderBy('created_at');
-    }
-
-    public function latestRoute()
-    {
-        return $this->hasOne(JobRoute::class, 'job_id')->latestOfMany();
-    }
-
-    public function attachments()
-    {
-        return $this->hasMany(JobAttachment::class, 'job_id');
-    }
-
-    public function notes()
-    {
-        return $this->hasMany(JobNote::class, 'job_id');
-    }
-
-
-    // ===================================================================
-    // MODIFIKASI: ACCESSOR BERDASARKAN PATH FOLDER
-    // ===================================================================
-
-    /**
-     * Accessor untuk mendapatkan lampiran awal berdasarkan path folder.
-     *
-     * @return \Illuminate\Support\Collection
-     */
+    // Accessors
     public function getInitialAttachmentsAttribute(): Collection
     {
-        if (!$this->relationLoaded('attachments')) {
-            $this->load('attachments');
-        }
-
-        // Filter lampiran yang path-nya mengandung '/open/'
-        return $this->attachments->filter(function ($attachment) {
-            return str_contains($attachment->file_path, 'job_attachments/open/');
-        });
+        if (!$this->relationLoaded('attachments')) $this->load('attachments');
+        return $this->attachments->filter(fn ($attachment) => str_contains($attachment->file_path, 'job_attachments/open/'));
     }
 
-    /**
-     * Accessor untuk mendapatkan lampiran penutup berdasarkan path folder.
-     *
-     * @return \Illuminate\Support\Collection
-     */
     public function getClosingAttachmentsAttribute(): Collection
     {
-        if (!$this->relationLoaded('attachments')) {
-            $this->load('attachments');
-        }
-
-        // Filter lampiran yang path-nya mengandung '/closed/'
-        return $this->attachments->filter(function ($attachment) {
-            return str_contains($attachment->file_path, 'job_attachments/closed/');
-        });
+        if (!$this->relationLoaded('attachments')) $this->load('attachments');
+        return $this->attachments->filter(fn ($attachment) => str_contains($attachment->file_path, 'job_attachments/closed/'));
     }
 }

@@ -32,7 +32,7 @@ class JobCompletedMail extends Mailable
      */
     public function build()
     {
-        return $this->subject('Pekerjaan Telah Selesai: ' . $this->job->id_job)
+        return $this->subject('Marsho JobBoard : ' . $this->job->id_job . ' - completed')
                     ->view('emails.job_completed');
     }
 }

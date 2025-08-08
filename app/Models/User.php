@@ -105,4 +105,9 @@ class User extends Authenticatable
         return optional($this->position)->name === 'Admin Project';
 
     }
+
+        public function marshoProfile()
+    {
+        return $this->hasOne(MarshoUser::class, 'user_id');
+    }
 }

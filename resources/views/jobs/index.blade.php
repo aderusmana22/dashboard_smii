@@ -8,7 +8,7 @@
              @if(isset($user))
                 <div class="text-sm text-gray-600 dark:text-gray-400">
                     <span class="font-medium">{{ $user->name }}</span>
-                    <span class="hidden sm:inline">| {{ optional($user->department)->department_name ?? 'N/A Department' }}</span>
+                    <span class="hidden sm:inline">| {{ optional(optional($user->marshoProfile)->department)->department_name ?? 'N/A Marsho Dept.' }}</span>
                 </div>
             @endif
         </div>
@@ -107,6 +107,14 @@
     @include('jobs.modals.complete')
     @include('jobs.modals.close')
 
+    <!-- PERUBAHAN: Tambahkan elemen spinner di sini -->
+    <div id="global-spinner" class="hidden fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center">
+        <div class="flex flex-col items-center">
+            <div class="w-16 h-16 border-4 border-white border-t-blue-500 rounded-full animate-spin"></div>
+            <p class="text-white text-lg mt-4">Processing...</p>
+        </div>
+    </div>
+
     @push('styles')
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <style>
@@ -125,6 +133,12 @@
     <script>
     document.addEventListener('DOMContentLoaded', function() {
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        // --- PERUBAHAN: Definisikan spinner dan fungsi untuk mengontrolnya ---
+        const spinner = document.getElementById('global-spinner');
+        const showSpinner = () => spinner.classList.remove('hidden');
+        const hideSpinner = () => spinner.classList.add('hidden');
+        // --- Akhir Perubahan ---
 
         // --- CORE UI UPDATE FUNCTION ---
         function updateKanbanUI(job, html) {
@@ -167,7 +181,9 @@
         }
 
         // --- AJAX FORM SUBMISSION HANDLER ---
+        // --- PERUBAHAN: Tambahkan kontrol spinner di sini ---
         async function handleFormSubmit(url, formData) {
+            showSpinner(); // Tampilkan spinner sebelum request
             try {
                 const response = await fetch(url, {
                     method: 'POST', body: formData,
@@ -191,14 +207,18 @@
             } catch (error) {
                 console.error('Form submission error:', error);
                 Swal.fire('Error', 'Could not connect to the server.', 'error');
+            } finally {
+                hideSpinner(); // Selalu sembunyikan spinner setelah selesai (baik sukses maupun error)
             }
         }
+        // --- Akhir Perubahan ---
 
         // --- REAL-TIME BROADCAST LISTENER ---
         if (window.Echo) {
             window.Echo.channel('jobs')
                 .listen('JobUpdated', (data) => {
                     console.log('Real-time event received:', data);
+                    // Jangan tampilkan spinner untuk update real-time agar tidak mengganggu
                     updateKanbanUI(data.job, data.html);
                 });
         }

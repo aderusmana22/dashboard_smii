@@ -20,6 +20,7 @@ use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\AreaController;
 use App\Http\Controllers\MarshoDepartmentController;
+use App\Http\Controllers\MarshoUserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -160,6 +161,9 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
 
     // Rute untuk melihat log spesifik per Job
     Route::get('/jobs/{job}/activity-logs', [ActivityLogController::class, 'showForJob'])->name('jobs.activity-logs.show');
+
+    Route::get('/marsho-users', [MarshoUserController::class, 'index'])->name('marsho-users.index');
+Route::post('/marsho-users', [MarshoUserController::class, 'store'])->name('marsho-users.store');
 
     //export kanban
         Route::prefix('reports')->name('reports.')->group(function() {

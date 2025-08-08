@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\View;
 use App\Jobs\SendJobCompletedEmail; // <-- Impor kelas Job
+use App\Models\MarshoUser;
 
 class JobController extends Controller
 {

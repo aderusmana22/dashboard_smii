@@ -9,7 +9,8 @@ class MarshoDepartmentController extends Controller
 {
     public function index()
     {
-        $departments = MarshoDepartment::latest()->paginate(10);
+        // Hitung berdasarkan profil pengguna Marsho yang terkait
+        $departments = MarshoDepartment::withCount('marshoUsers')->latest()->paginate(10);
         return view('resources.departments.index', compact('departments'));
     }
 
@@ -35,7 +36,11 @@ class MarshoDepartmentController extends Controller
 
     public function destroy(MarshoDepartment $marshoDepartment)
     {
-        // Anda bisa menambahkan validasi pengecekan jika departemen sedang digunakan
+        // Validasi: Cek apakah departemen ini masih memiliki profil user Marsho
+        if ($marshoDepartment->marshoUsers()->exists()) {
+            return redirect()->route('marsho-departments.index')->with('error', 'Cannot delete department: It is still assigned to one or more users.');
+        }
+
         $marshoDepartment->delete();
         return redirect()->route('marsho-departments.index')->with('success', 'Department deleted successfully.');
     }

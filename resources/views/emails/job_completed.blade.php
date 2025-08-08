@@ -11,7 +11,7 @@
         }
         .container {
             width: 100%;
-            max-width: 600px;
+            max-width: 800px;
             margin: 0 auto;
             background-color: #ffffff;
             border-radius: 8px;
@@ -87,7 +87,8 @@
             <p>Marsho JobBoard</p>
         </div>
         <div class="content">
-            <p>Dear {{ $job->pengaju->name }} ({{ $job->pengaju->department->department_name }}),</p>
+            {{-- Perubahan di sini: Menggunakan relasi marshoProfile untuk pengaju --}}
+            <p>Dear {{ $job->pengaju->name }} ({{ optional(optional($job->pengaju->marshoProfile)->department)->department_name ?? 'N/A Marsho Dept.' }}),</p>
             <p>The job you submitted with ID <strong>{{ $job->id_job }}</strong> has been completed.</p>
 
             <div class="job-details">

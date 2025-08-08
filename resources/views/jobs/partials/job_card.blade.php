@@ -3,7 +3,7 @@
 @php
     // --- Data Preparation ---
     $user = Auth::user();
-    $isSuperAdmin = $user->is_super_admin ?? false;
+    $isSuperAdmin = $user->isSuperAdmin(); // Menggunakan method dari model User Anda
 
     // Relationships and key data
     $firstRoute = $job->routes->first();
@@ -17,8 +17,9 @@
     $initialAttachments = $job->initial_attachments;
     $closingAttachments = $job->closing_attachments;
 
-    // Logic for displaying action buttons
-    $canAct = ($user->department_id == $currentDeptId) || $isSuperAdmin;
+    // Perubahan di sini: Logika otorisasi menggunakan marshoProfile
+    $userMarshoDepartmentId = optional($user->marshoProfile)->marsho_department_id;
+    $canAct = ($userMarshoDepartmentId == $currentDeptId) || $isSuperAdmin;
     $isRequester = $job->pengaju_id == $user->id;
 
     // Prepare JSON arrays of image URLs for the Alpine.js gallery
@@ -33,7 +34,7 @@
         ->values();
 @endphp
 
-{{-- The Job Card Component with Alpine.js for interactivity --}}
+{{-- ... sisa kode dari file asli Anda tidak berubah ... --}}
 <div class="job-card bg-white dark:bg-gray-800 rounded-lg p-4 shadow-md border border-gray-200 dark:border-gray-700 flex flex-col"
      id="job-card-{{ $job->id }}"
      x-data="{

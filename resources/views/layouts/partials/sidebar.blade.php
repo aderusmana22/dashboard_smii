@@ -158,6 +158,20 @@
                             Manage Departments
                         </a>
                     </li>
+                    <li>
+                        <a href="{{ route('marsho-users.index') }}" class="{{ request()->is('marsho-users*') ? 'current' : '' }}">
+                            <i class="icon-Users"><span class="path1"></span><span class="path2"></span></i>
+                            Manage Marsho Users
+                        </a>
+                    </li>
+
+                    <!-- Link Baru untuk Activity Logs -->
+                    <li>
+                        <a href="{{ route('activity-logs.index') }}" class="{{ request()->is('activity-logs*') ? 'current' : '' }}">
+                            <i class="icon-History"><span class="path1"></span><span class="path2"></span></i>
+                            Activity Logs
+                        </a>
+                    </li>
                 </ul>
             </li>
         </li>

@@ -21,6 +21,7 @@ use App\Http\Controllers\JobController;
 use App\Http\Controllers\AreaController;
 use App\Http\Controllers\MarshoDepartmentController;
 use App\Http\Controllers\MarshoUserController;
+use App\Http\Controllers\ReportController; 
 
 /*
 |--------------------------------------------------------------------------
@@ -167,10 +168,10 @@ Route::post('/marsho-users', [MarshoUserController::class, 'store'])->name('mars
 
     //export kanban
         Route::prefix('reports')->name('reports.')->group(function() {
-        // Halaman untuk menampilkan daftar task dengan filter
-        Route::get('/tasks', [KanbanController::class, 'taskListReport'])->name('tasks.list');
-        // Proses ekspor task ke Excel
-        Route::get('/tasks/export', [KanbanController::class, 'exportTasks'])->name('tasks.export');
+            // == ROUTE BARU UNTUK EKSPOR MARSHO JOBS ==
+            Route::get('/marsho-jobs', [ReportController::class, 'showJobsExportPage'])->name('marsho-jobs.page');
+
+        Route::get('/marsho-jobs/export', [ReportController::class, 'exportMarshoJobs'])->name('marsho-jobs.export');
     });
 
 });

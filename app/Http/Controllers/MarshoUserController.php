@@ -13,15 +13,25 @@ class MarshoUserController extends Controller
     /**
      * Menampilkan halaman untuk mengelola departemen Marsho bagi setiap pengguna.
      */
-    public function index()
+ public function index(Request $request)
     {
-        // Ambil semua user dari sistem utama, dan eager load profil Marsho mereka
-        $users = User::with('marshoProfile.department')
-                     ->orderBy('name')
-                     ->get();
+        $marshoDepartments = MarshoDepartment::all();
 
-        // Ambil semua departemen Marsho untuk dropdown
-        $marshoDepartments = MarshoDepartment::orderBy('department_name')->get();
+        // Mulai query builder untuk User
+        $query = User::query();
+
+        // Jika ada input pencarian
+        if ($request->has('search') && $request->search != '') {
+            $searchTerm = $request->search;
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('email', 'like', '%' . $searchTerm . '%');
+            });
+        }
+
+        // Lakukan pagination pada hasil query
+        // Eager load relasi untuk menghindari N+1 problem
+        $users = $query->with('marshoProfile.department')->paginate(10); // Tampilkan 10 user per halaman
 
         return view('resources.marsho_users.index', compact('users', 'marshoDepartments'));
     }

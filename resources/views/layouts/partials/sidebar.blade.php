@@ -165,11 +165,17 @@
                         </a>
                     </li>
 
-                    <!-- Link Baru untuk Activity Logs -->
                     <li>
                         <a href="{{ route('activity-logs.index') }}" class="{{ request()->is('activity-logs*') ? 'current' : '' }}">
                             <i class="icon-History"><span class="path1"></span><span class="path2"></span></i>
                             Activity Logs
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="{{ route('reports.marsho-jobs.page') }}" class="{{ request()->is('reports/marsho-jobs*') ? 'current' : '' }}">
+                            <i class="icon-File_Export"><span class="path1"></span><span class="path2"></span></i>
+                            Marsho Jobs Export
                         </a>
                     </li>
                 </ul>

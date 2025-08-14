@@ -109,6 +109,12 @@ Route::prefix('standard-budgets')->name('standard-budgets.')->middleware('auth')
 
     Route::get('dashboard-inventory', [InventoryController::class, 'dashboardInventory'])->name('dashboard.dashboardInventory');
 
+    Route::prefix('dashboard/safety-board')->name('dashboard.safety-board.')->group(function () {
+        Route::get('/', [SafetyBoardController::class, 'index'])->name('index');
+        Route::get('/api/safety-data', [SafetyBoardController::class, 'getSafetyData']); // For AJAX calls
+        
+    });
+
 
     Route::post('/notifications/mark-as-read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
     Route::post('/notifications/markAllAsRead', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');

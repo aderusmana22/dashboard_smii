@@ -16,7 +16,12 @@ use Artesaos\SEOTools\Facades\SEOMeta;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DashboardSalesController;
 use App\Http\Controllers\StandardBudgetController;
-use App\Http\Controllers\KanbanController;
+use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\JobController;
+use App\Http\Controllers\AreaController;
+use App\Http\Controllers\MarshoDepartmentController;
+use App\Http\Controllers\MarshoUserController;
+use App\Http\Controllers\ReportController; 
 
 
 Route::get('/', function () {
@@ -123,13 +128,36 @@ Route::prefix('standard-budgets')->name('standard-budgets.')->middleware('auth')
         return response()->json(['count' => auth()->user()->unreadNotifications->count()]);
     })->name('notifications.count');
 
-    // kanban
-    Route::get('/kanban', [KanbanController::class, 'index'])->name('page.kanban.index');
-    Route::post('/tasks', [KanbanController::class, 'store'])->name('tasks.store');
-    Route::patch('/tasks/{task}/status', [KanbanController::class, 'updateStatus'])->name('tasks.updateStatus');
-    Route::delete('/tasks/{task}', [KanbanController::class, 'destroy'])->name('tasks.destroy');
-    Route::get('/tasks/approval/{token}', [KanbanController::class, 'handleApproval'])->name('tasks.handle_approval');
-    Route::post('/tasks/approval/{token}', [KanbanController::class, 'handleApproval'])->name('tasks.submit_rejection');
+    
+    // Rute untuk Job Kanban
+    Route::get('/jobs', [JobController::class, 'index'])->name('jobs.index');
+    Route::post('/jobs', [JobController::class, 'store'])->name('jobs.store');
+    Route::patch('/jobs/{job}/start', [JobController::class, 'start'])->name('jobs.start');
+    Route::post('/jobs/{job}/forward', [JobController::class, 'forward'])->name('jobs.forward');
+    Route::patch('/jobs/{job}/complete', [JobController::class, 'complete'])->name('jobs.complete');
+    Route::post('/jobs/{job}/close', [JobController::class, 'close'])->name('jobs.close'); // Gunakan POST karena FormData
+
+    // Rute untuk mengelola Resources (Area dan Departemen)
+    Route::resource('areas', AreaController::class)->except(['show', 'edit', 'create']);
+    Route::resource('marsho-departments', MarshoDepartmentController::class)->except(['show', 'edit', 'create']);
+
+       // Rute untuk Activity Log
+    Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
+
+    // Rute untuk melihat log spesifik per Job
+    Route::get('/jobs/{job}/activity-logs', [ActivityLogController::class, 'showForJob'])->name('jobs.activity-logs.show');
+
+    Route::get('/marsho-users', [MarshoUserController::class, 'index'])->name('marsho-users.index');
+Route::post('/marsho-users', [MarshoUserController::class, 'store'])->name('marsho-users.store');
+
+    //export kanban
+        Route::prefix('reports')->name('reports.')->group(function() {
+            // == ROUTE BARU UNTUK EKSPOR MARSHO JOBS ==
+            Route::get('/marsho-jobs', [ReportController::class, 'showJobsExportPage'])->name('marsho-jobs.page');
+
+        Route::get('/marsho-jobs/export', [ReportController::class, 'exportMarshoJobs'])->name('marsho-jobs.export');
+    });
+
 });
 
 

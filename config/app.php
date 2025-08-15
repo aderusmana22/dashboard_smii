@@ -172,6 +172,7 @@ return [
         RealRashid\SweetAlert\SweetAlertServiceProvider::class,
         Laravel\Passport\PassportServiceProvider::class,
         Maatwebsite\Excel\ExcelServiceProvider::class,
+        BeyondCode\LaravelWebSockets\WebSocketsServiceProvider::class,
 
 
 

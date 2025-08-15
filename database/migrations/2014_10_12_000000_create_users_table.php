@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::connection('mysql')->create('users', function (Blueprint $table) {
             $table->id();
-            $table->string('nik');
+           $table->string('nik', 255)->unique();
             $table->string('username')->unique();
             $table->string('name');
             $table->string('email')->unique();

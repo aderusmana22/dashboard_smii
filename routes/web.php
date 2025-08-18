@@ -22,7 +22,7 @@ use App\Http\Controllers\AreaController;
 use App\Http\Controllers\MarshoDepartmentController;
 use App\Http\Controllers\MarshoUserController;
 use App\Http\Controllers\ReportController; 
-
+use App\Http\Controllers\HSE\SafetyBoardController; 
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -132,9 +132,20 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
     /*Dashboard Production*/
     Route::get('dashboard/dashboard-production', [ProductionController::class, 'dashboardProductionIndex'])->name('dashboard.dashboardProduction');
 
+    Route::prefix('dashboard/safety-board')->name('dashboard.safety-board.')->group(function () {
+        Route::get('/', [SafetyBoardController::class, 'index'])->name('index');
+        Route::get('/api/safety-data', [SafetyBoardController::class, 'getSafetyData']); // For AJAX calls
+        
+    });
+
+    Route::get('/form-kecelakaan', function () {
+    // 'safetyboard.form' mengarah ke 'resources/views/safetyboard/form.blade.php'
+    return view('safetyboard.form'); 
+    });
+
 
     /*Dashboard Inventory*/
-    Route::get('dashboard-inventory', [InventoryController::class, 'dashboardInventory'])->name('dashboard.dashboardInventory');
+    Route::get('dashboard-inve  ntory', [InventoryController::class, 'dashboardInventory'])->name('dashboard.dashboardInventory');
 
 
     Route::post('/notifications/mark-as-read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');

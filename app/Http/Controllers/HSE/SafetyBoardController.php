@@ -99,8 +99,8 @@ class SafetyBoardController extends Controller
     private function _fetchWeatherData()
     {
         // Koordinat Pulo Gadung, Jakarta Timur
-        $latitude = -6.18;
-        $longitude = 106.90;
+        $latitude = -6.205053840196611;
+        $longitude = 106.91191809343205;
         $timezone = 'Asia/Jakarta';
 
         try {

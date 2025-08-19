@@ -3,255 +3,173 @@
     Form Laporan Kecelakaan
     @endsection
 
-    @push('styles')
-    <style>
-        .section-title {
-            font-size: 1.2rem;
-            font-weight: 600;
-            padding-top: 1.5rem;
-            margin-top: 1.5rem;
-            border-top: 1px solid #dee2e6;
-        }
-        .apd-item-container, .sebab-container {
-            background-color: #f8f9fa;
-        }
-        .apd-details {
-            transition: all 0.3s ease-in-out;
-        }
-        .sebab-container .form-check {
-            margin-bottom: 0.5rem;
-        }
+    {{-- Styling sekarang menggunakan kelas-kelas Tailwind CSS --}}
 
-        /* === CSS BARU UNTUK MERAPIKAN FORM SECARA KONSISTEN === */
-        .form-horizontal .row {
-            margin-bottom: 1rem;
-        }
-        .form-horizontal .col-form-label {
-            font-weight: 500;
-            text-align: left; /* Default untuk mobile */
-        }
-        @media (min-width: 768px) {
-            .form-horizontal .col-form-label {
-                text-align: right; /* Rata kanan untuk desktop */
-            }
-        }
-        .form-horizontal .col-form-label {
-            margin-bottom: 0;
-        }
-        /* Menjaga jarak untuk elemen yang tidak menggunakan grid horizontal */
-        .form-section {
-            margin-bottom: 1rem;
-        }
-    </style>
-    @endpush
-
-    <div class="py-5">
-        <div class="container">
-            <div class="card shadow-sm">
-                <div class="card-body p-4 p-md-5">
-                    <h2 class="card-title text-center fw-bold mb-4">FORM LAPORAN KECELAKAAN</h2>
-
-                    <form action="#" method="POST" class="form-horizontal">
+    <div class="py-10">
+        <div class="container mx-auto px-4">
+            <div class="bg-white shadow-md rounded-lg">
+                <div class="p-4 md:p-8">
+                    <form action="{{ route('accidents-report.store') }}" method="POST" class="mt-5">
                         @csrf
 
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="row">
-                                    <label for="nomor_form" class="col-md-4 col-form-label">Nomor form :</label>
-                                    <div class="col-md-8">
-                                        <input type="text" id="nomor_form" name="nomor_form" class="form-control">
-                                    </div>
+                        <!-- HEADER FORM MENGGUNAKAN TAILWIND CSS GRID -->
+                        <div class="border rounded-lg">
+                            <div class="grid grid-cols-1 md:grid-cols-12">
+                                <!-- Kolom Logo -->
+                                <div class="md:col-span-3 flex flex-col justify-center items-center p-3">
+                                     <img src="{{ asset('assets/images/logohitam.png') }}" alt="Sinar Meadow Logo">
+                                    <p class="mb-0 font-semibold text-center text-sm">PT SINAR MEADOW<br>INTERNATIONAL INDONESIA</p>
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="row">
-                                    <label for="date" class="col-md-4 col-form-label">Date :</label>
-                                    <div class="col-md-8">
-                                        <input type="text" id="date" name="date" readonly class="form-control bg-light">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
 
-                        <h4 class="section-title mb-4">Detail Insiden & Dampak</h4>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="row">
-                                    <label for="kategori_kecelakaan" class="col-md-4 col-form-label">Kategori Kecelakaan</label>
-                                    <div class="col-md-8">
-                                        <select id="kategori_kecelakaan" name="kategori_kecelakaan" class="form-select">
-                                            <option value="Kerja">Kerja</option>
-                                            <option value="Lalu Lintas">Lalu Lintas</option>
-                                            <option value="Kebakaran">Kebakaran</option>
-                                            <option value="Lain-lain">Lain-lain</option>
-                                        </select>
-                                    </div>
+                                <!-- Kolom Judul -->
+                                <div class="md:col-span-6 border-l border-r flex flex-col justify-center text-center font-bold">
+                                    <div class="p-2 border-b text-xl">FORM</div>
+                                    <div class="p-4 text-2xl">LAPORAN INVESTIGASI KECELAKAAN KERJA</div>
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="row">
-                                    <label for="kategori_dampak" class="col-md-4 col-form-label">Kategori Dampak</label>
-                                    <div class="col-md-8">
-                                        <select id="kategori_dampak" name="kategori_dampak" class="form-select">
-                                            <option value="Ringan">Ringan (Minor)</option>
-                                            <option value="Sedang">Sedang (Moderate)</option>
-                                            <option value="Berat">Berat (Major)</option>
-                                            <option value="Kematian">Kematian (Fatality)</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <label for="waktu_kecelakaan" class="col-md-3 col-form-label">Tanggal & Jam Kecelakaan</label>
-                            <div class="col-md-9">
-                                <input type="datetime-local" id="waktu_kecelakaan" name="waktu_kecelakaan" class="form-control">
-                            </div>
-                        </div>
-                        <div class="row">
-                            <label for="lokasi_kecelakaan" class="col-md-3 col-form-label">Lokasi Kecelakaan</label>
-                            <div class="col-md-9">
-                                <input type="text" id="lokasi_kecelakaan" name="lokasi_kecelakaan" class="form-control">
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="row">
-                                    <label for="tipe_kecelakaan" class="col-md-4 col-form-label">Tipe Kecelakaan</label>
-                                    <div class="col-md-8">
-                                        <input type="text" id="tipe_kecelakaan" name="tipe_kecelakaan" class="form-control" placeholder="cth: Terpeleset, Terjatuh">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="row">
-                                    <label for="bagian_terluka" class="col-md-4 col-form-label">Bagian yang Terluka</label>
-                                    <div class="col-md-8">
-                                        <input type="text" id="bagian_terluka" name="bagian_terluka" class="form-control" placeholder="cth: Tangan Kanan">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-section">
-                            <label for="uraian_kejadian" class="form-label">Uraian Kejadian</label>
-                            <textarea id="uraian_kejadian" name="uraian_kejadian" class="form-control" rows="8"></textarea>
-                        </div>
 
-                        <h4 class="section-title mb-4">Data Korban</h4>
-                        <div class="row">
-                            <label for="nama_korban" class="col-md-3 col-form-label">Nama Korban</label>
-                            <div class="col-md-9">
-                                <input type="text" id="nama_korban" name="nama_korban" class="form-control">
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="row">
-                                    <label for="nik" class="col-md-4 col-form-label">NIK</label>
-                                    <div class="col-md-8">
-                                        <input type="text" id="nik" name="nik" class="form-control">
+                                <!-- Kolom Nomor & Tanggal -->
+                                <div class="md:col-span-3 p-3 space-y-2">
+                                    <div class="grid grid-cols-3 items-center">
+                                        <label for="nomor_form" class="col-span-1 text-sm">Nomor form:</label>
+                                        <div class="col-span-2">
+                                            <input type="text" id="nomor_form" name="nomor_form" class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="row">
-                                    <label for="tanggal_lahir" class="col-md-4 col-form-label">Tanggal Lahir</label>
-                                    <div class="col-md-8">
-                                        <input type="date" id="tanggal_lahir" name="tanggal_lahir" class="form-control" onchange="hitungUsia()">
+                                    <div class="grid grid-cols-3 items-center">
+                                        <label for="date" class="col-span-1 text-sm">Date:</label>
+                                        <div class="col-span-2">
+                                            <input type="text" id="date" name="date" readonly class="w-full bg-gray-100 border-transparent rounded-md px-2">
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="row">
-                            <label for="usia" class="col-md-3 col-form-label">Usia</label>
-                            <div class="col-md-3">
-                                <input type="text" id="usia" name="usia" readonly class="form-control bg-light">
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="row">
-                                    <label for="tanggal_masuk" class="col-md-4 col-form-label">Tanggal Masuk Kerja</label>
-                                    <div class="col-md-8">
-                                        <input type="date" id="tanggal_masuk" name="tanggal_masuk" class="form-control" onchange="hitungMasaKerja()">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="row">
-                                    <label for="masa_kerja" class="col-md-4 col-form-label">Masa Kerja</label>
-                                    <div class="col-md-8">
-                                        <input type="text" id="masa_kerja" name="masa_kerja" readonly class="form-control bg-light">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <label for="jabatan" class="col-md-3 col-form-label">Jabatan</label>
-                            <div class="col-md-9">
-                                <input type="text" id="jabatan" name="jabatan" class="form-control">
-                            </div>
-                        </div>
-                        <div class="row">
-                            <label for="departemen" class="col-md-3 col-form-label">Seksi / Departemen</label>
-                            <div class="col-md-9">
-                                <input type="text" id="departemen" name="departemen" class="form-control">
-                            </div>
-                        </div>
+                        <!-- AKHIR HEADER FORM -->
 
-                        <h4 class="section-title mb-4">Tindakan Pertolongan & Akibat</h4>
-                        <div class="row">
-                            <label for="pertolongan" class="col-md-3 col-form-label">Diberikan pertolongan (P3K)</label>
-                            <div class="col-md-9">
-                                <select id="pertolongan" name="pertolongan" class="form-select">
-                                    <option value="Di Tempat Kejadian">Di Tempat Kejadian</option>
-                                    <option value="Di Klinik">Di Klinik</option>
-                                    <option value="Di Rumah Sakit">Di Rumah Sakit</option>
+                        <h4 class="font-bold text-xl mt-8 pt-4 border-t mb-4">Detail Insiden & Dampak</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                            <div>
+                                <label for="kategori_kecelakaan" class="block text-sm font-medium text-gray-700">Kategori Kecelakaan</label>
+                                <select id="kategori_kecelakaan" name="kategori_kecelakaan" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                                    <option value="Kerja">Kerja</option>
+                                    <option value="Lalu Lintas">Lalu Lintas</option>
+                                    <option value="Kebakaran">Kebakaran</option>
+                                    <option value="Lain-lain">Lain-lain</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="kategori_dampak" class="block text-sm font-medium text-gray-700">Kategori Dampak</label>
+                                <select id="kategori_dampak" name="kategori_dampak" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                                    <option value="Ringan">Ringan (Minor)</option>
+                                    <option value="Sedang">Sedang (Moderate)</option>
+                                    <option value="Berat">Berat (Major)</option>
+                                    <option value="Kematian">Kematian (Fatality)</option>
                                 </select>
                             </div>
                         </div>
-                        <div class="row align-items-center">
-                            <label for="p3k_oleh" class="col-md-3 col-form-label">P3K dilakukan Oleh</label>
-                            <div class="col-md-9">
-                                <div class="row">
-                                    <div class="col-md-8">
-                                        <input type="text" id="p3k_oleh" name="p3k_oleh" class="form-control">
-                                    </div>
-                                    <label for="jam_p3k" class="col-md-1 col-form-label">Jam</label>
-                                    <div class="col-md-3">
-                                        <input type="time" id="jam_p3k" name="jam_p3k" class="form-control">
-                                    </div>
+                        <div class="mb-4">
+                            <label for="waktu_kecelakaan" class="block text-sm font-medium text-gray-700">Tanggal & Jam Kecelakaan</label>
+                            <input type="datetime-local" id="waktu_kecelakaan" name="waktu_kecelakaan" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                        </div>
+                        <div class="mb-4">
+                            <label for="lokasi_kecelakaan" class="block text-sm font-medium text-gray-700">Lokasi Kecelakaan</label>
+                            <input type="text" id="lokasi_kecelakaan" name="lokasi_kecelakaan" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                            <div>
+                                <label for="tipe_kecelakaan" class="block text-sm font-medium text-gray-700">Tipe Kecelakaan</label>
+                                <input type="text" id="tipe_kecelakaan" name="tipe_kecelakaan" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" placeholder="cth: Terpeleset, Terjatuh">
+                            </div>
+                            <div>
+                                <label for="bagian_terluka" class="block text-sm font-medium text-gray-700">Bagian yang Terluka</label>
+                                <input type="text" id="bagian_terluka" name="bagian_terluka" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" placeholder="cth: Tangan Kanan">
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label for="uraian_kejadian" class="block text-sm font-medium text-gray-700">Uraian Kejadian</label>
+                            <textarea id="uraian_kejadian" name="uraian_kejadian" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" rows="8"></textarea>
+                        </div>
+
+                        <h4 class="font-bold text-xl mt-8 pt-4 border-t mb-4">Data Korban</h4>
+                        <div class="mb-4">
+                            <label for="nama_korban" class="block text-sm font-medium text-gray-700">Nama Korban</label>
+                            <input type="text" id="nama_korban" name="nama_korban" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                            <div>
+                                <label for="nik" class="block text-sm font-medium text-gray-700">NIK</label>
+                                <input type="text" id="nik" name="nik" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                            </div>
+                            <div>
+                                <label for="tanggal_lahir" class="block text-sm font-medium text-gray-700">Tanggal Lahir</label>
+                                <input type="date" id="tanggal_lahir" name="tanggal_lahir" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" onchange="hitungUsia()">
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label for="usia" class="block text-sm font-medium text-gray-700">Usia</label>
+                            <input type="text" id="usia" name="usia" readonly class="mt-1 block w-1/4 bg-gray-100 border-transparent rounded-md px-2">
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
+                            <div>
+                                <label for="tanggal_masuk" class="block text-sm font-medium text-gray-700">Tanggal Masuk Kerja</label>
+                                <input type="date" id="tanggal_masuk" name="tanggal_masuk" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" onchange="hitungMasaKerja()">
+                            </div>
+                            <div>
+                                <label for="masa_kerja" class="block text-sm font-medium text-gray-700">Masa Kerja</label>
+                                <input type="text" id="masa_kerja" name="masa_kerja" readonly class="mt-1 block w-full bg-gray-100 border-transparent rounded-md px-2">
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label for="jabatan" class="block text-sm font-medium text-gray-700">Jabatan</label>
+                            <input type="text" id="jabatan" name="jabatan" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                        </div>
+                        <div class="mb-4">
+                            <label for="departemen" class="block text-sm font-medium text-gray-700">Seksi / Departemen</label>
+                            <input type="text" id="departemen" name="departemen" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                        </div>
+
+                        <h4 class="font-bold text-xl mt-8 pt-4 border-t mb-4">Tindakan Pertolongan & Akibat</h4>
+                        <div class="mb-4">
+                            <label for="pertolongan" class="block text-sm font-medium text-gray-700">Diberikan pertolongan (P3K)</label>
+                            <select id="pertolongan" name="pertolongan" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                                <option value="Di Tempat Kejadian">Di Tempat Kejadian</option>
+                                <option value="Di Klinik">Di Klinik</option>
+                                <option value="Di Rumah Sakit">Di Rumah Sakit</option>
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center mb-4">
+                            <label for="p3k_oleh" class="md:col-span-3 text-sm font-medium text-gray-700">P3K dilakukan Oleh</label>
+                            <div class="md:col-span-9 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                                <div class="md:col-span-8">
+                                    <input type="text" id="p3k_oleh" name="p3k_oleh" class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                                </div>
+                                <label for="jam_p3k" class="md:col-span-1 text-sm">Jam</label>
+                                <div class="md:col-span-3">
+                                    <input type="time" id="jam_p3k" name="jam_p3k" class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                                 </div>
                             </div>
                         </div>
-                        <div class="row">
-                            <label for="akibat_kecelakaan" class="col-md-3 col-form-label">Akibat Kecelakaan</label>
-                            <div class="col-md-9">
-                                <select id="akibat_kecelakaan" name="akibat_kecelakaan" class="form-select">
-                                    <option value="Sementara Total tak mampu bekerja">Sementara Total tak mampu bekerja</option>
-                                    <option value="Sementara Sebagian tak mampu bekerja">Sementara Sebagian tak mampu bekerja</option>
-                                    <option value="Tetap Sebagian tak mampu bekerja">Tetap Sebagian tak mampu bekerja</option>
-                                    <option value="Tetap Total tak mampu bekerja">Tetap Total tak mampu bekerja</option>
-                                    <option value="Meninggal">Meninggal</option>
-                                </select>
-                            </div>
+                        <div class="mb-4">
+                            <label for="akibat_kecelakaan" class="block text-sm font-medium text-gray-700">Akibat Kecelakaan</label>
+                            <select id="akibat_kecelakaan" name="akibat_kecelakaan" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                                <option value="Sementara Total tak mampu bekerja">Sementara Total tak mampu bekerja</option>
+                                <option value="Sementara Sebagian tak mampu bekerja">Sementara Sebagian tak mampu bekerja</option>
+                                <option value="Tetap Sebagian tak mampu bekerja">Tetap Sebagian tak mampu bekerja</option>
+                                <option value="Tetap Total tak mampu bekerja">Tetap Total tak mampu bekerja</option>
+                                <option value="Meninggal">Meninggal</option>
+                            </select>
                         </div>
-                        <div class="row">
-                            <label for="waktu_hilang" class="col-md-3 col-form-label">Jumlah waktu hilang (hari)</label>
-                            <div class="col-md-3">
-                                <input type="number" id="waktu_hilang" name="waktu_hilang" class="form-control">
-                            </div>
+                        <div class="mb-4">
+                            <label for="waktu_hilang" class="block text-sm font-medium text-gray-700">Jumlah waktu hilang (hari)</label>
+                            <input type="number" id="waktu_hilang" name="waktu_hilang" class="mt-1 block w-1/4 border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                         </div>
-                        <div class="row">
-                            <label class="col-md-3 col-form-label">Biaya Perawatan</label>
-                            <div class="col-md-9">
-                                <div id="biaya-container"></div>
-                                <button type="button" class="btn btn-secondary mt-2" onclick="tambahBiaya()">Tambah Biaya</button>
-                            </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700">Biaya Perawatan</label>
+                            <div id="biaya-container" class="mt-2 space-y-2"></div>
+                            <button type="button" class="mt-2 px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" onclick="tambahBiaya()">Tambah Biaya</button>
                         </div>
 
-                        <h4 class="section-title mb-4">Alat Pelindung Diri (APD)</h4>
-                        {{-- Bagian APD sengaja tidak diubah ke form horizontal karena strukturnya unik --}}
+                        <h4 class="font-bold text-xl mt-8 pt-4 border-t mb-4">Alat Pelindung Diri (APD)</h4>
                         @php
                             $apds = [
                                 'sarung_tangan' => 'Sarung Tangan', 'sepatu' => 'Sepatu Keselamatan', 'helm' => 'Helm',
@@ -260,35 +178,34 @@
                             ];
                         @endphp
                         @foreach ($apds as $key => $label)
-                        <div class="apd-item-container border p-3 mb-3 rounded">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="apd_wajib_{{ $key }}" onchange="toggleApdDetails('{{ $key }}')">
-                                <label class="form-check-label fw-bold" for="apd_wajib_{{ $key }}">{{ $label }} Diwajibkan</label>
+                        <div class="border rounded-md p-3 mb-3 bg-gray-50">
+                            <div class="flex items-center">
+                                <input class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" type="checkbox" id="apd_wajib_{{ $key }}" onchange="toggleApdDetails('{{ $key }}')">
+                                <label class="ml-2 block text-sm font-bold text-gray-900" for="apd_wajib_{{ $key }}">{{ $label }} Diwajibkan</label>
                             </div>
-                            <div id="apd_details_{{ $key }}" class="apd-details d-none ps-4 mt-3">
+                            <div id="apd_details_{{ $key }}" class="apd-details hidden pl-6 mt-3">
                                 @if ($key == 'sarung_tangan')
                                 <div class="mb-2">
-                                    <label for="apd_keterangan_{{ $key }}" class="form-label form-label-sm">Keterangan (Jenis/Spesifikasi):</label>
-                                    <input type="text" id="apd_keterangan_{{ $key }}" name="apd_keterangan_{{ $key }}" class="form-control form-control-sm" disabled>
+                                    <label for="apd_keterangan_{{ $key }}" class="text-sm font-medium text-gray-700">Keterangan (Jenis/Spesifikasi):</label>
+                                    <input type="text" id="apd_keterangan_{{ $key }}" name="apd_keterangan_{{ $key }}" class="mt-1 block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" disabled>
                                 </div>
                                 @endif
                                 <div>
-                                    <label class="form-label form-label-sm">Apakah Dipakai oleh Korban?</label>
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" name="apd_dipakai_{{ $key }}" id="apd_dipakai_{{ $key }}_ya" value="ya" disabled>
-                                        <label class="form-check-label" for="apd_dipakai_{{ $key }}_ya">Ya</label>
+                                    <label class="text-sm font-medium text-gray-700">Apakah Dipakai oleh Korban?</label>
+                                    <div class="flex items-center mt-1">
+                                        <input class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300" type="radio" name="apd_dipakai_{{ $key }}" id="apd_dipakai_{{ $key }}_ya" value="ya" disabled>
+                                        <label class="ml-2 text-sm text-gray-900" for="apd_dipakai_{{ $key }}_ya">Ya</label>
                                     </div>
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" name="apd_dipakai_{{ $key }}" id="apd_dipakai_{{ $key }}_tidak" value="tidak" disabled>
-                                        <label class="form-check-label" for="apd_dipakai_{{ $key }}_tidak">Tidak</label>
+                                    <div class="flex items-center mt-1">
+                                        <input class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300" type="radio" name="apd_dipakai_{{ $key }}" id="apd_dipakai_{{ $key }}_tidak" value="tidak" disabled>
+                                        <label class="ml-2 text-sm text-gray-900" for="apd_dipakai_{{ $key }}_tidak">Tidak</label>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         @endforeach
 
-                        <h4 class="section-title mb-4">Analisa Sebab Utama Kecelakaan</h4>
-                        {{-- Bagian ini juga tidak diubah karena merupakan daftar pilihan --}}
+                        <h4 class="font-bold text-xl mt-8 pt-4 border-t mb-4">Analisa Sebab Utama Kecelakaan</h4>
                         @php
                             $tindakanBerbahaya = [
                                 'Mengoperasikan tanpa wewenang', 'Mengoperasikan dengan kecepatan berlebihan', 'Alat penyelamat tidak berfungsi',
@@ -303,68 +220,68 @@
                                 'Kebisingan tinggi', 'Paparan / tekanan panas', 'Pencahayaan kurang'
                             ];
                         @endphp
-                        <div class="sebab-container border p-3 mb-3 rounded">
-                            <p class="fw-bold">A. Tindakan Berbahaya (Unsafe Human Act)</p>
+                        <div class="border rounded-md p-3 mb-3 bg-gray-50">
+                            <p class="font-bold">A. Tindakan Berbahaya (Unsafe Human Act)</p>
                             @foreach ($tindakanBerbahaya as $index => $sebab)
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="sebab_utama" id="sebab_a_{{ $index }}" value="A - {{ $sebab }}">
-                                <label class="form-check-label" for="sebab_a_{{ $index }}">{{ $loop->iteration }}. {{ $sebab }}</label>
+                            <div class="flex items-center mb-2">
+                                <input class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300" type="radio" name="sebab_utama" id="sebab_a_{{ $index }}" value="A - {{ $sebab }}">
+                                <label class="ml-2 text-sm text-gray-900" for="sebab_a_{{ $index }}">{{ $loop->iteration }}. {{ $sebab }}</label>
                             </div>
                             @endforeach
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="sebab_utama" id="sebab_a_lain">
-                                <label class="form-check-label" for="sebab_a_lain">{{ count($tindakanBerbahaya) + 1 }}. Lain-lain, sebutkan:</label>
-                                <input type="text" id="sebab_a_lain_input" name="sebab_a_lain_input" class="form-control form-control-sm mt-1" disabled>
+                            <div class="flex items-center">
+                                <input class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300" type="radio" name="sebab_utama" id="sebab_a_lain">
+                                <label class="ml-2 text-sm text-gray-900" for="sebab_a_lain">{{ count($tindakanBerbahaya) + 1 }}. Lain-lain, sebutkan:</label>
                             </div>
+                            <input type="text" id="sebab_a_lain_input" name="sebab_a_lain_input" class="mt-1 block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 disabled:bg-gray-200" disabled>
                         </div>
-                        <div class="sebab-container border p-3 mb-3 rounded">
-                            <p class="fw-bold">B. Keadaan Berbahaya (Unsafe Condition)</p>
+                        <div class="border rounded-md p-3 mb-3 bg-gray-50">
+                            <p class="font-bold">B. Keadaan Berbahaya (Unsafe Condition)</p>
                             @foreach ($keadaanBerbahaya as $index => $sebab)
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="sebab_utama" id="sebab_b_{{ $index }}" value="B - {{ $sebab }}">
-                                <label class="form-check-label" for="sebab_b_{{ $index }}">{{ $loop->iteration }}. {{ $sebab }}</label>
+                            <div class="flex items-center mb-2">
+                                <input class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300" type="radio" name="sebab_utama" id="sebab_b_{{ $index }}" value="B - {{ $sebab }}">
+                                <label class="ml-2 text-sm text-gray-900" for="sebab_b_{{ $index }}">{{ $loop->iteration }}. {{ $sebab }}</label>
                             </div>
                             @endforeach
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="sebab_utama" id="sebab_b_lain">
-                                <label class="form-check-label" for="sebab_b_lain">{{ count($keadaanBerbahaya) + 1 }}. Lain-lain, sebutkan:</label>
-                                <input type="text" id="sebab_b_lain_input" name="sebab_b_lain_input" class="form-control form-control-sm mt-1" disabled>
+                            <div class="flex items-center">
+                                <input class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300" type="radio" name="sebab_utama" id="sebab_b_lain">
+                                <label class="ml-2 text-sm text-gray-900" for="sebab_b_lain">{{ count($keadaanBerbahaya) + 1 }}. Lain-lain, sebutkan:</label>
                             </div>
+                            <input type="text" id="sebab_b_lain_input" name="sebab_b_lain_input" class="mt-1 block w-full text-sm border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 disabled:bg-gray-200" disabled>
                         </div>
 
-                        <h4 class="section-title mb-4">Analisa Masalah</h4>
-                        <div class="form-section">
-                            <textarea id="analisa_masalah" name="analisa_masalah" class="form-control" rows="6"></textarea>
+                        <h4 class="font-bold text-xl mt-8 pt-4 border-t mb-4">Analisa Masalah</h4>
+                        <div class="mb-4">
+                            <textarea id="analisa_masalah" name="analisa_masalah" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" rows="6"></textarea>
                         </div>
 
-                        <h4 class="section-title mb-4">Saran Perbaikan</h4>
-                        <div class="table-responsive mb-2">
-                            <table class="table table-bordered align-middle">
-                                <thead class="table-light">
+                        <h4 class="font-bold text-xl mt-8 pt-4 border-t mb-4">Saran Perbaikan</h4>
+                        <div class="overflow-x-auto mb-2">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
                                     <tr>
-                                        <th style="width: 5%;" class="text-center">No</th>
-                                        <th>Tindakan Perbaikan</th>
-                                        <th style="width: 20%;">PIC</th>
-                                        <th style="width: 20%;">Due Date</th>
-                                        <th style="width: 10%;" class="text-center">Aksi</th>
+                                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[5%]">No</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tindakan Perbaikan</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[20%]">PIC</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[20%]">Due Date</th>
+                                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody id="perbaikan-container"></tbody>
+                                <tbody id="perbaikan-container" class="bg-white divide-y divide-gray-200"></tbody>
                             </table>
                         </div>
-                        <button type="button" class="btn btn-secondary" onclick="tambahSaranPerbaikan()">Tambah Saran</button>
+                        <button type="button" class="px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500" onclick="tambahSaranPerbaikan()">Tambah Saran</button>
 
-                        <h4 class="section-title mb-4">Tindakan Pencegahan</h4>
-                        <div class="form-section">
-                            <textarea id="tindakan_pencegahan" name="tindakan_pencegahan" class="form-control" rows="6"></textarea>
+                        <h4 class="font-bold text-xl mt-8 pt-4 border-t mb-4">Tindakan Pencegahan</h4>
+                        <div class="mb-4">
+                            <textarea id="tindakan_pencegahan" name="tindakan_pencegahan" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" rows="6"></textarea>
                         </div>
 
-                        <h4 class="section-title mb-4">Rekomendasi</h4>
-                        <div class="form-section">
-                            <textarea id="rekomendasi" name="rekomendasi" class="form-control" rows="6"></textarea>
+                        <h4 class="font-bold text-xl mt-8 pt-4 border-t mb-4">Rekomendasi</h4>
+                        <div class="mb-4">
+                            <textarea id="rekomendasi" name="rekomendasi" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" rows="6"></textarea>
                         </div>
 
-                        <button type="submit" class="btn btn-primary w-100 mt-5 py-2 fs-5">Submit Laporan</button>
+                        <button type="submit" class="w-full mt-8 py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Submit Laporan</button>
                     </form>
                 </div>
             </div>
@@ -413,14 +330,14 @@
             biayaCount++;
             const c=document.getElementById('biaya-container');
             const n=document.createElement('div');
-            n.classList.add('input-group','mb-2');
+            n.className = 'flex space-x-2';
             n.id='biaya_item_'+biayaCount;
-            n.innerHTML=`<span class="input-group-text">Rp</span><input type="number" name="biaya_harga[]" class="form-control" placeholder="Harga"><input type="text" name="biaya_kategori[]" class="form-control" placeholder="Kategori"><button type="button" class="btn btn-danger" onclick="hapusBiaya(${biayaCount})">Hapus</button>`;
+            n.innerHTML=`<span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">Rp</span><input type="number" name="biaya_harga[]" class="flex-1 block w-full rounded-none border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" placeholder="Harga"><input type="text" name="biaya_kategori[]" class="flex-1 block w-full border-gray-300 focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" placeholder="Kategori"><button type="button" class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-r-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500" onclick="hapusBiaya(${biayaCount})">Hapus</button>`;
             c.appendChild(n);
         }
         function hapusBiaya(id){document.getElementById('biaya_item_'+id).remove()}
         
-        function toggleApdDetails(key){const c=document.getElementById(`apd_wajib_${key}`);const d=document.getElementById(`apd_details_${key}`);const k=document.getElementById(`apd_keterangan_${key}`);const r=document.getElementsByName(`apd_dipakai_${key}`);if(c.checked){d.classList.remove('d-none');if(k){k.disabled=false}r.forEach(rad=>rad.disabled=false)}else{d.classList.add('d-none');if(k){k.disabled=true;k.value=''}r.forEach(rad=>{rad.disabled=true;rad.checked=false})}}
+        function toggleApdDetails(key){const c=document.getElementById(`apd_wajib_${key}`);const d=document.getElementById(`apd_details_${key}`);const k=document.getElementById(`apd_keterangan_${key}`);const r=document.getElementsByName(`apd_dipakai_${key}`);if(c.checked){d.classList.remove('hidden');if(k){k.disabled=false}r.forEach(rad=>rad.disabled=false)}else{d.classList.add('hidden');if(k){k.disabled=true;k.value=''}r.forEach(rad=>{rad.disabled=true;rad.checked=false})}}
 
         function tambahSaranPerbaikan() {
             const container = document.getElementById('perbaikan-container');
@@ -428,11 +345,11 @@
             const newRow = container.insertRow(newIndex);
             newRow.id = 'perbaikan_item_' + newIndex;
             newRow.innerHTML = `
-                <td class="text-center">${newIndex + 1}</td>
-                <td><input type="text" name="perbaikan_tindakan[]" class="form-control" placeholder="Uraian tindakan perbaikan"></td>
-                <td><input type="text" name="perbaikan_pic[]" class="form-control" placeholder="Nama PIC"></td>
-                <td><input type="date" name="perbaikan_due_date[]" class="form-control"></td>
-                <td class="text-center"><button type="button" class="btn btn-danger btn-sm" onclick="hapusSaranPerbaikan('perbaikan_item_${newIndex}')">Hapus</button></td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-center text-gray-500">${newIndex + 1}</td>
+                <td class="px-6 py-4"><input type="text" name="perbaikan_tindakan[]" class="w-full border-gray-300 rounded-md shadow-sm" placeholder="Uraian tindakan perbaikan"></td>
+                <td class="px-6 py-4"><input type="text" name="perbaikan_pic[]" class="w-full border-gray-300 rounded-md shadow-sm" placeholder="Nama PIC"></td>
+                <td class="px-6 py-4"><input type="date" name="perbaikan_due_date[]" class="w-full border-gray-300 rounded-md shadow-sm"></td>
+                <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium"><button type="button" class="text-red-600 hover:text-red-900" onclick="hapusSaranPerbaikan('perbaikan_item_${newIndex}')">Hapus</button></td>
             `;
         }
 

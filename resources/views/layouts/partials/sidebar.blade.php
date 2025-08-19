@@ -132,7 +132,8 @@
                 </ul>
             </li>
             @endcan
-            <li
+        </li>
+           <li
                 class="{{ request()->is('users*') || request()->is('department*') || request()->is('position*') || request()->is('level*') || request()->is('roles*') || request()->is('permissions*') || request()->is('get.master*') ? 'current' : '' }}">
                 <a href="#" style="font-size: 18px;">
                     <i data-feather="users" style="width: 18px; height: 18px;"></i>
@@ -180,6 +181,26 @@
                     </li>
                 </ul>
             </li>
+        <li class="{{ request()->is('accidents-report*') || request()->is('dashboard/safety-board*') ? 'current' : '' }}">
+    <a href="#" style="font-size: 18px;">
+        <i data-feather="shield" style="width: 18px; height: 18px;"></i>
+        Accident Report
+    </a>
+    <ul>
+        <li>
+            <a href="{{ route('accidents-report.index') }}" class="{{ request()->is('accidents-report*') ? 'current' : '' }}">
+                <i class="icon-File_Exclamation"><span class="path1"></span><span class="path2"></span></i>
+                Laporan Kecelakaan
+            </a>
         </li>
+
+        <li>
+            <a href="{{ route('dashboard.safety-board.index') }}" class="{{ request()->is('dashboard/safety-board*') ? 'current' : '' }}">
+                <i class="icon-Display-board"><span class="path1"></span><span class="path2"></span></i>
+                Safety Board
+            </a>
+        </li>
+    </ul>
+</li>
     </ul>
 </nav>

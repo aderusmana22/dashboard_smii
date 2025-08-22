@@ -4,7 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne; // TAMBAHKAN INI
 
 class LaporanKecelakaan extends Model
 {
@@ -12,27 +14,63 @@ class LaporanKecelakaan extends Model
 
     protected $guarded = ['id'];
 
-    /**
-     * Casts untuk menangani kolom JSON secara otomatis.
-     */
     protected $casts = [
         'waktu_kecelakaan' => 'datetime',
         'apd_data' => 'array',
+        'date' => 'date',
+        'tanggal_lahir' => 'date',
+        'tanggal_masuk' => 'date',
     ];
 
-    /**
-     * Relasi ke BiayaPerawatan.
-     */
+    // --- RELASI BARU UNTUK APPROVAL ---
+    public function approvalStatus(): HasOne
+    {
+        return $this->hasOne(LaporanApprovalStatus::class);
+    }
+
+    public function approvalHistories(): HasMany
+    {
+        return $this->hasMany(LaporanApprovalHistory::class);
+    }
+    // --- AKHIR RELASI BARU ---
+
     public function biayaPerawatan(): HasMany
     {
         return $this->hasMany(BiayaPerawatan::class);
     }
 
-    /**
-     * Relasi ke SaranPerbaikan.
-     */
     public function saranPerbaikan(): HasMany
     {
         return $this->hasMany(SaranPerbaikan::class);
+    }
+
+    public function pembuatLaporan(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'pembuat_laporan_id');
+    }
+
+    public function managerHse(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'manager_hse_id');
+    }
+
+    public function managerTerkait(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'manager_terkait_id');
+    }
+
+    public function deptHead(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'dept_head_id');
+    }
+
+    public function generalManager(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'gm_id');
+    }
+
+     public function revisedFrom(): BelongsTo
+    {
+        return $this->belongsTo(LaporanKecelakaan::class, 'revised_from_id');
     }
 }

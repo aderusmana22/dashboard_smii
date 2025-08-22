@@ -11,12 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('saran_perbaikans', function (Blueprint $table) {
+        Schema::create('laporan_approval_statuses', function (Blueprint $table) {
             $table->id();
             $table->foreignId('laporan_kecelakaan_id')->constrained('laporan_kecelakaans')->onDelete('cascade');
-            $table->text('tindakan');
-            $table->string('pic');
-            $table->date('due_date');
+            $table->string('status')->default('pending_manager_hse');
+            $table->foreignId('current_approver_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->text('rejection_reason')->nullable();
             $table->timestamps();
         });
     }
@@ -26,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('saran_perbaikans');
+        Schema::dropIfExists('laporan_approval_statuses');
     }
 };

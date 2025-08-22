@@ -6,19 +6,14 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('laporan_kecelakaans', function (Blueprint $table) {
             $table->id();
-
-            // Informasi Umum
+            // Header
             $table->string('nomor_form')->unique()->nullable();
             $table->date('date');
-
-            // Detail Insiden & Dampak
+            // Detail Insiden
             $table->string('kategori_kecelakaan');
             $table->string('kategori_dampak');
             $table->dateTime('waktu_kecelakaan');
@@ -26,7 +21,6 @@ return new class extends Migration
             $table->string('tipe_kecelakaan')->nullable();
             $table->string('bagian_terluka')->nullable();
             $table->text('uraian_kejadian');
-
             // Data Korban
             $table->string('nama_korban');
             $table->string('nik')->nullable();
@@ -36,31 +30,29 @@ return new class extends Migration
             $table->string('masa_kerja')->nullable();
             $table->string('jabatan')->nullable();
             $table->string('departemen')->nullable();
-
-            // Tindakan Pertolongan & Akibat
+            // Tindakan Pertolongan
             $table->string('pertolongan');
             $table->string('p3k_oleh')->nullable();
             $table->time('jam_p3k')->nullable();
             $table->string('akibat_kecelakaan');
             $table->integer('waktu_hilang')->nullable();
-
-            // APD & Analisa (Disimpan sebagai JSON agar fleksibel)
+            // APD & Analisa
             $table->json('apd_data')->nullable();
-            $table->string('sebab_utama_kategori')->nullable(); // A atau B
+            $table->string('sebab_utama_kategori')->nullable(); // 'A' atau 'B'
             $table->text('sebab_utama_deskripsi')->nullable();
             $table->text('analisa_masalah')->nullable();
-
-            // Tindak Lanjut
             $table->text('tindakan_pencegahan')->nullable();
             $table->text('rekomendasi')->nullable();
-
+            // Kolom Persetujuan (Foreign Keys ke tabel users)
+            $table->foreignId('pembuat_laporan_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('manager_hse_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('manager_terkait_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('dept_head_id')->nullable()->constrained('users')->onDelete('set null');
+            $table->foreignId('gm_id')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('laporan_kecelakaans');

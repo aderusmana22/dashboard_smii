@@ -139,8 +139,13 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
         
     });
 
-    Route::resource('accidents-report', LaporanKecelakaanController::class);
-
+Route::get('accidents-report/{laporan}/revise', [\App\Http\Controllers\LaporanKecelakaanController::class, 'revise'])->name('accidents-report.revise');
+Route::post('accidents-report/{laporan}/approve', [\App\Http\Controllers\LaporanKecelakaanController::class, 'approve'])->name('accidents-report.approve');
+Route::post('accidents-report/{laporan}/reject', [\App\Http\Controllers\LaporanKecelakaanController::class, 'reject'])->name('accidents-report.reject');
+  
+Route::resource('accidents-report', LaporanKecelakaanController::class)->parameters([
+    'accidents-report' => 'laporan'
+]);
     /*Dashboard Inventory*/
     Route::get('dashboard-inventory', [InventoryController::class, 'dashboardInventory'])->name('dashboard.dashboardInventory');
 

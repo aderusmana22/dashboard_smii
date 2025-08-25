@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage; // <-- Tambahkan ini
 
 class LaporanKecelakaanController extends Controller
 {
@@ -30,13 +31,13 @@ class LaporanKecelakaanController extends Controller
         return view('safetyboard.index', compact('laporan'));
     }
 
-public function create()
-{
-    $users = User::orderBy('name')->get(['id', 'name']);
-    // Define $laporan as null for the create form
-    $laporan = null;
-    return view('safetyboard.form', compact('users', 'laporan'));
-}
+    public function create()
+    {
+        $users = User::orderBy('name')->get(['id', 'name']);
+        // Define $laporan as null for the create form
+        $laporan = null;
+        return view('safetyboard.form', compact('users', 'laporan'));
+    }
 
     public function store(Request $request)
     {
@@ -80,19 +81,32 @@ public function create()
 
         DB::beginTransaction();
         try {
+            // --- PROSES GAMBAR BASE64 DARI EDITOR (PERUBAHAN DI SINI) ---
+            if (!empty($validatedData['uraian_kejadian'])) {
+                $validatedData['uraian_kejadian'] = $this->prosesGambarEditor($validatedData['uraian_kejadian']);
+            }
+            if (!empty($validatedData['analisa_masalah'])) {
+                $validatedData['analisa_masalah'] = $this->prosesGambarEditor($validatedData['analisa_masalah']);
+            }
+            if (!empty($validatedData['tindakan_pencegahan'])) {
+                $validatedData['tindakan_pencegahan'] = $this->prosesGambarEditor($validatedData['tindakan_pencegahan']);
+            }
+            if (!empty($validatedData['rekomendasi'])) {
+                $validatedData['rekomendasi'] = $this->prosesGambarEditor($validatedData['rekomendasi']);
+            }
+            // --- AKHIR PROSES GAMBAR ---
+
             $year = date('Y');
             // Mengunci tabel untuk mencegah race condition saat menghitung nomor urut
             $latestReportCount = LaporanKecelakaan::whereYear('created_at', $year)->lockForUpdate()->count();
             $nextNumber = $latestReportCount + 1;
 
-            // --- LOGIKA PEMBUATAN NOMOR FORM OTOMATIS (DIPERBAIKI) ---
             if (!$request->has('revised_from_id')) {
                 $validatedData['nomor_form'] = sprintf("HSE-%s-%d", $year, $nextNumber);
             } else {
                 $validatedData['nomor_form'] = sprintf("HSE-%s-%d-REV", $year, $nextNumber);
             }
 
-            // --- LOGIKA PENANGANAN REVISI ---
             if ($request->has('revised_from_id')) {
                 $originalReport = LaporanKecelakaan::with('approvalStatus')->findOrFail($request->input('revised_from_id'));
                 if ($originalReport->approvalStatus) {
@@ -231,6 +245,51 @@ public function create()
     }
 
     // --- Helper Functions ---
+
+    /**
+     * Memproses konten HTML dari editor, mencari gambar base64,
+     * menyimpannya ke storage, dan menggantinya dengan URL.
+     * (FUNGSI BARU DI SINI)
+     *
+     * @param string $content
+     * @return string
+     */
+    private function prosesGambarEditor(string $content): string
+    {
+        $dom = new \DOMDocument();
+        // Mengatasi error parsing pada HTML5 tags dan karakter UTF-8
+        @$dom->loadHtml(mb_convert_encoding($content, 'HTML-ENTITIES', 'UTF-8'), LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+
+        $images = $dom->getElementsByTagName('img');
+
+        foreach ($images as $img) {
+            $src = $img->getAttribute('src');
+            // Cek apakah src adalah data base64
+            if (strpos($src, 'data:image/') === 0) {
+                try {
+                    list($type, $data) = explode(';', $src);
+                    list(, $data)      = explode(',', $data);
+                    $data = base64_decode($data);
+
+                    $image_type = explode('/', $type)[1];
+                    $extension = $image_type;
+                    
+                    $path = 'editor-uploads/' . uniqid() . date('YmdHis') . '.' . $extension;
+
+                    Storage::disk('public')->put($path, $data);
+
+                    $img->setAttribute('src', Storage::url($path));
+                    $img->removeAttribute('data-mce-src');
+                } catch (\Exception $e) {
+                    Log::error('Gagal memproses gambar base64: ' . $e->getMessage());
+                    // Biarkan gambar base64 jika terjadi error
+                    continue;
+                }
+            }
+        }
+
+        return $dom->saveHTML();
+    }
 
     private function getCurrentApproverField(LaporanKecelakaan $laporan): ?string
     {

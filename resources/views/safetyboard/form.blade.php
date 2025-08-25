@@ -82,7 +82,6 @@
                                         <label for="date_display" class="col-span-1 text-sm">Date:</label>
                                         <div class="col-span-2">
                                             <input type="text" id="date_display" readonly class="w-full bg-gray-100 border-transparent rounded-md px-2 text-sm">
-                                            {{-- PERBAIKAN: Tambahkan pengecekan $isUpdate --}}
                                             <input type="hidden" id="date" name="date" value="{{ old('date', ($isUpdate && $laporan->date) ? $laporan->date->format('Y-m-d') : '') }}">
                                         </div>
                                     </div>
@@ -345,7 +344,7 @@
                                 <select id="{{ $key }}_id" name="{{ $key }}_id" class="user-select w-full">
                                     <option value=""></option>
                                     @foreach ($users as $user)
-                                        <option value="{{ $user->id }}" 
+                                        <option value="{{ $user->id }}"
                                             {{ old($key.'_id', $laporan->{$key.'_id'} ?? ($key == 'pembuat_laporan' ? Auth::id() : '')) == $user->id ? 'selected' : '' }}>
                                             {{ $user->name }}
                                         </option>
@@ -374,154 +373,177 @@
     const isUpdate = @json($isUpdate ?? false);
     const biayaData = @json($isUpdate ? $laporan->biayaPerawatan : []);
     const perbaikanData = @json($isUpdate ? $laporan->saranPerbaikan : []);
-    const apdData = @json($isUpdate ? $laporan->apd_data : []); // Note: Default is now an empty array for consistency
+    const apdData = @json($isUpdate ? $laporan->apd_data : []);
     const sebabUtamaKategori = @json($isUpdate ? $laporan->sebab_utama_kategori : null);
     const sebabUtamaDeskripsi = @json($isUpdate ? $laporan->sebab_utama_deskripsi : null);
 
-        document.addEventListener('DOMContentLoaded', function () {
-            if (typeof tinymce !== 'undefined') {
-                tinymce.init({
-                    selector: 'textarea#uraian_kejadian, textarea#analisa_masalah, textarea#tindakan_pencegahan, textarea#rekomendasi',
-                    plugins: 'autolink lists link charmap preview anchor',
-                    toolbar: 'undo redo | bold italic | alignleft aligncenter alignright | bullist numlist outdent indent',
-                    height: 250, promotion: false, license_key: 'gpl'
-                });
-            }
+    document.addEventListener('DOMContentLoaded', function () {
+        if (typeof tinymce !== 'undefined') {
 
-            const allRadioSebab = document.querySelectorAll('input[name="sebab_utama"]');
-            const lainInputA = document.getElementById('sebab_a_lain_input');
-            const lainInputB = document.getElementById('sebab_b_lain_input');
-            const lainRadioA = document.getElementById('sebab_a_lain');
-            const lainRadioB = document.getElementById('sebab_b_lain');
+            // ==================================================================
+            // --- KONFIGURASI TINYMCE BARU (UNGGAH SAAT SUBMIT FORM) ---
+            // ==================================================================
+            tinymce.init({
+                selector: 'textarea#uraian_kejadian, textarea#analisa_masalah, textarea#tindakan_pencegahan, textarea#rekomendasi',
 
-            function handleSebabChange() {
-                lainInputA.disabled = !lainRadioA.checked;
-                if (!lainRadioA.checked) lainInputA.value = ''; else lainInputA.focus();
-                lainInputB.disabled = !lainRadioB.checked;
-                if (!lainRadioB.checked) lainInputB.value = ''; else lainInputB.focus();
-            }
-            allRadioSebab.forEach(radio => radio.addEventListener('change', handleSebabChange));
+                plugins: 'autolink lists link charmap preview anchor image media paste',
+                toolbar: 'undo redo | styles | bold italic | alignleft aligncenter alignright | bullist numlist outdent indent | link image media',
 
-            $('.user-select').select2({ placeholder: 'Cari & pilih pengguna', allowClear: true });
+                // Izinkan gambar ditempel sebagai data base64 ke dalam editor.
+                paste_data_images: true,
 
-            const dateInput = document.getElementById('date');
-            const dateDisplay = document.getElementById('date_display');
-            const initialDate = dateInput.value ? new Date(dateInput.value + 'T00:00:00') : new Date();
-            dateDisplay.value = initialDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
-            if (!dateInput.value) {
-                dateInput.value = initialDate.toISOString().split('T')[0];
-            }
+                // Nonaktifkan unggahan otomatis. Gambar akan tetap sebagai base64 hingga form disubmit.
+                automatic_uploads: false,
+                
+                // Menentukan tipe file yang bisa dipilih dari file picker.
+                file_picker_types: 'image',
 
-            if (isUpdate) {
-                biayaData.forEach(item => tambahBiaya(item));
-                perbaikanData.forEach(item => tambahSaranPerbaikan(item));
-                for (const key in apdData) {
-                    const apd = apdData[key];
-                    const checkbox = document.getElementById(`apd_wajib_${key}`);
-                    if (checkbox) {
-                        checkbox.checked = true;
-                        toggleApdDetails(key);
-                        if (document.getElementById(`apd_keterangan_${key}`)) {
-                            document.getElementById(`apd_keterangan_${key}`).value = apd.keterangan || '';
-                        }
-                        if (apd.dipakai) {
-                            const radio = document.getElementById(`apd_dipakai_${key}_${apd.dipakai}`);
-                            if (radio) radio.checked = true;
-                        }
+                // Handler unggahan (images_upload_handler) DIHAPUS.
+                // Proses upload akan ditangani oleh controller di backend.
+
+                height: 350,
+                promotion: false,
+                license_key: 'gpl'
+            });
+            // ==================================================================
+            // --- AKHIR KONFIGURASI ---
+            // ==================================================================
+        }
+
+        const allRadioSebab = document.querySelectorAll('input[name="sebab_utama"]');
+        const lainInputA = document.getElementById('sebab_a_lain_input');
+        const lainInputB = document.getElementById('sebab_b_lain_input');
+        const lainRadioA = document.getElementById('sebab_a_lain');
+        const lainRadioB = document.getElementById('sebab_b_lain');
+
+        function handleSebabChange() {
+            lainInputA.disabled = !lainRadioA.checked;
+            if (!lainRadioA.checked) lainInputA.value = ''; else lainInputA.focus();
+            lainInputB.disabled = !lainRadioB.checked;
+            if (!lainRadioB.checked) lainInputB.value = ''; else lainInputB.focus();
+        }
+        allRadioSebab.forEach(radio => radio.addEventListener('change', handleSebabChange));
+
+        $('.user-select').select2({ placeholder: 'Cari & pilih pengguna', allowClear: true });
+
+        const dateInput = document.getElementById('date');
+        const dateDisplay = document.getElementById('date_display');
+        const initialDate = dateInput.value ? new Date(dateInput.value + 'T00:00:00') : new Date();
+        dateDisplay.value = initialDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+        if (!dateInput.value) {
+            dateInput.value = initialDate.toISOString().split('T')[0];
+        }
+
+        if (isUpdate) {
+            biayaData.forEach(item => tambahBiaya(item));
+            perbaikanData.forEach(item => tambahSaranPerbaikan(item));
+            for (const key in apdData) {
+                const apd = apdData[key];
+                const checkbox = document.getElementById(`apd_wajib_${key}`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                    toggleApdDetails(key);
+                    if (document.getElementById(`apd_keterangan_${key}`)) {
+                        document.getElementById(`apd_keterangan_${key}`).value = apd.keterangan || '';
+                    }
+                    if (apd.dipakai) {
+                        const radio = document.getElementById(`apd_dipakai_${key}_${apd.dipakai}`);
+                        if (radio) radio.checked = true;
                     }
                 }
-                if (sebabUtamaKategori && sebabUtamaDeskripsi) {
-                    const radioValue = `${sebabUtamaKategori} - ${sebabUtamaDeskripsi}`;
-                    const targetRadio = document.querySelector(`input[name="sebab_utama"][value="${radioValue}"]`);
-                    if (targetRadio) {
-                        targetRadio.checked = true;
-                    } else {
-                        const lainRadio = document.getElementById(`sebab_${sebabUtamaKategori.toLowerCase()}_lain`);
-                        const lainInput = document.getElementById(`sebab_${sebabUtamaKategori.toLowerCase()}_lain_input`);
-                        if (lainRadio && lainInput) {
-                            lainRadio.checked = true;
-                            lainInput.value = sebabUtamaDeskripsi;
-                            lainInput.disabled = false;
-                        }
+            }
+            if (sebabUtamaKategori && sebabUtamaDeskripsi) {
+                const radioValue = `${sebabUtamaKategori} - ${sebabUtamaDeskripsi}`;
+                const targetRadio = document.querySelector(`input[name="sebab_utama"][value="${radioValue}"]`);
+                if (targetRadio) {
+                    targetRadio.checked = true;
+                } else {
+                    const lainRadio = document.getElementById(`sebab_${sebabUtamaKategori.toLowerCase()}_lain`);
+                    const lainInput = document.getElementById(`sebab_${sebabUtamaKategori.toLowerCase()}_lain_input`);
+                    if (lainRadio && lainInput) {
+                        lainRadio.checked = true;
+                        lainInput.value = sebabUtamaDeskripsi;
+                        lainInput.disabled = false;
                     }
                 }
             }
-        });
-        
-        function hitungUsia() {
-            const tgl = document.getElementById('tanggal_lahir').value;
-            if (tgl) {
-                const birthDate = new Date(tgl);
-                const today = new Date();
-                let age = today.getFullYear() - birthDate.getFullYear();
-                const m = today.getMonth() - birthDate.getMonth();
-                if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) { age--; }
-                document.getElementById('usia').value = age + " tahun";
-            }
         }
+    });
 
-        function hitungMasaKerja() {
-            const tgl = document.getElementById('tanggal_masuk').value;
-            if (tgl) {
-                const startDate = new Date(tgl);
-                const today = new Date();
-                let years = today.getFullYear() - startDate.getFullYear();
-                let months = today.getMonth() - startDate.getMonth();
-                if (months < 0 || (months === 0 && today.getDate() < startDate.getDate())) { years--; months += 12; }
-                document.getElementById('masa_kerja').value = years + " tahun " + months + " bulan";
-            }
+    function hitungUsia() {
+        const tgl = document.getElementById('tanggal_lahir').value;
+        if (tgl) {
+            const birthDate = new Date(tgl);
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const m = today.getMonth() - birthDate.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) { age--; }
+            document.getElementById('usia').value = age + " tahun";
         }
-        
-        let biayaCount = 0;
-        function tambahBiaya(data = null) {
-            biayaCount++;
-            const container = document.getElementById('biaya-container');
-            const newItem = document.createElement('div');
-            newItem.className = 'flex space-x-2';
-            newItem.id = 'biaya_item_' + biayaCount;
-            newItem.innerHTML = `<span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">Rp</span><input type="number" name="biaya_harga[]" class="flex-1 block w-full rounded-none border-gray-300" placeholder="Harga" value="${data ? data.harga : ''}"><input type="text" name="biaya_kategori[]" class="flex-1 block w-full border-gray-300" placeholder="Kategori" value="${data ? data.kategori : ''}"><button type="button" class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-r-md text-white bg-red-600 hover:bg-red-700" onclick="hapusBiaya(${biayaCount})">Hapus</button>`;
-            container.appendChild(newItem);
-        }
-        function hapusBiaya(id) { document.getElementById('biaya_item_' + id).remove(); }
-        
-        function toggleApdDetails(key) {
-            const checkbox = document.getElementById(`apd_wajib_${key}`);
-            const detailsDiv = document.getElementById(`apd_details_${key}`);
-            const keteranganInput = document.getElementById(`apd_keterangan_${key}`);
-            const radioButtons = document.getElementsByName(`apd_dipakai_${key}`);
-            if (checkbox.checked) {
-                detailsDiv.classList.remove('hidden');
-                if (keteranganInput) { keteranganInput.disabled = false; }
-                radioButtons.forEach(radio => radio.disabled = false);
-            } else {
-                detailsDiv.classList.add('hidden');
-                if (keteranganInput) { keteranganInput.disabled = true; keteranganInput.value = ''; }
-                radioButtons.forEach(radio => { radio.disabled = true; radio.checked = false; });
-            }
-        }
+    }
 
-        function tambahSaranPerbaikan(data = null) {
-            const container = document.getElementById('perbaikan-container');
-            const newIndex = container.rows.length;
-            const newRow = container.insertRow(newIndex);
-            newRow.id = 'perbaikan_item_' + newIndex;
-            newRow.innerHTML = `
-                <td class="px-6 py-4 text-sm text-center text-gray-500">${newIndex + 1}</td>
-                <td class="px-6 py-4"><input type="text" name="perbaikan_tindakan[]" class="w-full border-gray-300 rounded-md shadow-sm" placeholder="Uraian tindakan perbaikan" value="${data ? data.tindakan : ''}"></td>
-                <td class="px-6 py-4"><input type="text" name="perbaikan_pic[]" class="w-full border-gray-300 rounded-md shadow-sm" placeholder="Nama PIC" value="${data ? data.pic : ''}"></td>
-                <td class="px-6 py-4"><input type="date" name="perbaikan_due_date[]" class="w-full border-gray-300 rounded-md shadow-sm" value="${data ? data.due_date : ''}"></td>
-                <td class="px-6 py-4 text-center text-sm font-medium"><button type="button" class="text-red-600 hover:text-red-900" onclick="hapusSaranPerbaikan('perbaikan_item_${newIndex}')">Hapus</button></td>
-            `;
+    function hitungMasaKerja() {
+        const tgl = document.getElementById('tanggal_masuk').value;
+        if (tgl) {
+            const startDate = new Date(tgl);
+            const today = new Date();
+            let years = today.getFullYear() - startDate.getFullYear();
+            let months = today.getMonth() - startDate.getMonth();
+            if (months < 0 || (months === 0 && today.getDate() < startDate.getDate())) { years--; months += 12; }
+            document.getElementById('masa_kerja').value = years + " tahun " + months + " bulan";
         }
-        function hapusSaranPerbaikan(rowId) { document.getElementById(rowId).remove(); updateNomorSaran(); }
-        function updateNomorSaran() {
-            const rows = document.getElementById('perbaikan-container').rows;
-            for (let i = 0; i < rows.length; i++) {
-                rows[i].cells[0].innerText = i + 1;
-                rows[i].id = 'perbaikan_item_' + i;
-                rows[i].querySelector('button').setAttribute('onclick', `hapusSaranPerbaikan('perbaikan_item_${i}')`);
-            }
+    }
+
+    let biayaCount = 0;
+    function tambahBiaya(data = null) {
+        biayaCount++;
+        const container = document.getElementById('biaya-container');
+        const newItem = document.createElement('div');
+        newItem.className = 'flex space-x-2';
+        newItem.id = 'biaya_item_' + biayaCount;
+        newItem.innerHTML = `<span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">Rp</span><input type="number" name="biaya_harga[]" class="flex-1 block w-full rounded-none border-gray-300" placeholder="Harga" value="${data ? data.harga : ''}"><input type="text" name="biaya_kategori[]" class="flex-1 block w-full border-gray-300" placeholder="Kategori" value="${data ? data.kategori : ''}"><button type="button" class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-r-md text-white bg-red-600 hover:bg-red-700" onclick="hapusBiaya(${biayaCount})">Hapus</button>`;
+        container.appendChild(newItem);
+    }
+    function hapusBiaya(id) { document.getElementById('biaya_item_' + id).remove(); }
+
+    function toggleApdDetails(key) {
+        const checkbox = document.getElementById(`apd_wajib_${key}`);
+        const detailsDiv = document.getElementById(`apd_details_${key}`);
+        const keteranganInput = document.getElementById(`apd_keterangan_${key}`);
+        const radioButtons = document.getElementsByName(`apd_dipakai_${key}`);
+        if (checkbox.checked) {
+            detailsDiv.classList.remove('hidden');
+            if (keteranganInput) { keteranganInput.disabled = false; }
+            radioButtons.forEach(radio => radio.disabled = false);
+        } else {
+            detailsDiv.classList.add('hidden');
+            if (keteranganInput) { keteranganInput.disabled = true; keteranganInput.value = ''; }
+            radioButtons.forEach(radio => { radio.disabled = true; radio.checked = false; });
         }
+    }
+
+    function tambahSaranPerbaikan(data = null) {
+        const container = document.getElementById('perbaikan-container');
+        const newIndex = container.rows.length;
+        const newRow = container.insertRow(newIndex);
+        newRow.id = 'perbaikan_item_' + newIndex;
+        newRow.innerHTML = `
+            <td class="px-6 py-4 text-sm text-center text-gray-500">${newIndex + 1}</td>
+            <td class="px-6 py-4"><input type="text" name="perbaikan_tindakan[]" class="w-full border-gray-300 rounded-md shadow-sm" placeholder="Uraian tindakan perbaikan" value="${data ? data.tindakan : ''}"></td>
+            <td class="px-6 py-4"><input type="text" name="perbaikan_pic[]" class="w-full border-gray-300 rounded-md shadow-sm" placeholder="Nama PIC" value="${data ? data.pic : ''}"></td>
+            <td class="px-6 py-4"><input type="date" name="perbaikan_due_date[]" class="w-full border-gray-300 rounded-md shadow-sm" value="${data ? data.due_date : ''}"></td>
+            <td class="px-6 py-4 text-center text-sm font-medium"><button type="button" class="text-red-600 hover:text-red-900" onclick="hapusSaranPerbaikan('perbaikan_item_${newIndex}')">Hapus</button></td>
+        `;
+    }
+    function hapusSaranPerbaikan(rowId) { document.getElementById(rowId).remove(); updateNomorSaran(); }
+    function updateNomorSaran() {
+        const rows = document.getElementById('perbaikan-container').rows;
+        for (let i = 0; i < rows.length; i++) {
+            rows[i].cells[0].innerText = i + 1;
+            rows[i].id = 'perbaikan_item_' + i;
+            rows[i].querySelector('button').setAttribute('onclick', `hapusSaranPerbaikan('perbaikan_item_${i}')`);
+        }
+    }
     </script>
     @endpush
 </x-app-layout>

@@ -24,6 +24,7 @@ use App\Http\Controllers\MarshoUserController;
 use App\Http\Controllers\ReportController; 
 use App\Http\Controllers\HSE\SafetyBoardController; 
 use App\Http\Controllers\LaporanKecelakaanController; 
+use App\Http\Controllers\EditorImageController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -143,6 +144,8 @@ Route::get('accidents-report/{laporan}/revise', [\App\Http\Controllers\LaporanKe
 Route::post('accidents-report/{laporan}/approve', [\App\Http\Controllers\LaporanKecelakaanController::class, 'approve'])->name('accidents-report.approve');
 Route::post('accidents-report/{laporan}/reject', [\App\Http\Controllers\LaporanKecelakaanController::class, 'reject'])->name('accidents-report.reject');
   
+  Route::post('editor/upload-image', [EditorImageController::class, 'store'])->name('editor.upload.image');
+
 Route::resource('accidents-report', LaporanKecelakaanController::class)->parameters([
     'accidents-report' => 'laporan'
 ]);

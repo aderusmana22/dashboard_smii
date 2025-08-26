@@ -187,7 +187,13 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
     Route::post('/jobs/{job}/close', [JobController::class, 'close'])->name('jobs.close'); // Gunakan POST karena FormData
 
     // Rute untuk mengelola Resources (Area dan Departemen)
-    Route::resource('areas', AreaController::class)->except(['show', 'edit', 'create']);
+        // Route ini sudah menangani GET (index) dan POST (store)
+    Route::resource('areas', AreaController::class)->except(['create', 'show', 'edit']);
+
+    // Biasanya, resource controller sudah mencakup ini, tetapi pastikan:
+    Route::put('/areas/{area}', [AreaController::class, 'update'])->name('areas.update');
+    Route::delete('/areas/{area}', [AreaController::class, 'destroy'])->name('areas.destroy');
+
     Route::resource('marsho-departments', MarshoDepartmentController::class)->except(['show', 'edit', 'create']);
 
        // Rute untuk Activity Log

@@ -4,44 +4,54 @@ namespace App\Http\Controllers;
 
 use App\Models\Area;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class AreaController extends Controller
 {
     public function index()
     {
-        $areas = Area::latest()->paginate(10);
+        // Data awal masih dikirim seperti biasa saat halaman pertama kali dimuat
+        $areas = Area::latest()->get(); 
         return view('resources.areas.index', compact('areas'));
     }
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validatedData = $request->validate([
             'name' => 'required|string|max:255|unique:areas,name',
             'description' => 'nullable|string',
         ]);
 
-        Area::create($request->all());
-        return redirect()->route('areas.index')->with('success', 'Area created successfully.');
+        $area = Area::create($validatedData);
+
+        // Mengembalikan data area yang baru dibuat sebagai JSON dengan status 201 Created
+        return response()->json(['area' => $area, 'message' => 'Area created successfully.'], 201);
     }
 
     public function update(Request $request, Area $area)
     {
-        $request->validate([
+        $validatedData = $request->validate([
             'name' => 'required|string|max:255|unique:areas,name,' . $area->id,
             'description' => 'nullable|string',
         ]);
 
-        $area->update($request->all());
-        return redirect()->route('areas.index')->with('success', 'Area updated successfully.');
+        $area->update($validatedData);
+
+        // Mengembalikan data area yang telah diperbarui sebagai JSON
+        return response()->json(['area' => $area, 'message' => 'Area updated successfully.']);
     }
 
     public function destroy(Area $area)
     {
+        // Logika bisnis tetap sama, tetapi responsnya berbeda
         if ($area->jobs()->exists()) {
-            return redirect()->route('areas.index')->with('error', 'Cannot delete area that is in use by a job.');
+            // Mengembalikan respons error sebagai JSON dengan status 422 Unprocessable Entity
+            return response()->json(['message' => 'Cannot delete area that is in use by a job.'], 422);
         }
         
         $area->delete();
-        return redirect()->route('areas.index')->with('success', 'Area deleted successfully.');
+
+        // Mengembalikan respons kosong dengan status 204 No Content, menandakan sukses
+        return response()->json(null, 204);
     }
 }

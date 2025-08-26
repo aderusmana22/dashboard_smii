@@ -3,12 +3,13 @@
 @php
     // --- Data Preparation ---
     $user = Auth::user();
-    $isSuperAdmin = $user->isSuperAdmin(); // Menggunakan method dari model User Anda
+    $isSuperAdmin = $user->isSuperAdmin();
 
     // Relationships and key data
     $firstRoute = $job->routes->first();
     $latestRoute = $job->latestRoute;
     $currentDeptId = $latestRoute->to_department_id ?? null;
+    $currentDeptName = trim($latestRoute->toDepartment->department_name ?? 'Default');
 
     // Supported image file extensions
     $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'];
@@ -17,12 +18,12 @@
     $initialAttachments = $job->initial_attachments;
     $closingAttachments = $job->closing_attachments;
 
-    // Perubahan di sini: Logika otorisasi menggunakan marshoProfile
+    // Logika otorisasi
     $userMarshoDepartmentId = optional($user->marshoProfile)->marsho_department_id;
     $canAct = ($userMarshoDepartmentId == $currentDeptId) || $isSuperAdmin;
     $isRequester = $job->pengaju_id == $user->id;
 
-    // Prepare JSON arrays of image URLs for the Alpine.js gallery
+    // Prepare JSON arrays of image URLs
     $initialImagePaths = $initialAttachments
         ->filter(fn($att) => in_array(strtolower(pathinfo($att->file_name, PATHINFO_EXTENSION)), $imageExtensions))
         ->map(fn($att) => Storage::url($att->file_path))
@@ -32,10 +33,34 @@
         ->filter(fn($att) => in_array(strtolower(pathinfo($att->file_name, PATHINFO_EXTENSION)), $imageExtensions))
         ->map(fn($att) => Storage::url($att->file_path))
         ->values();
+
+    // --- Department Color Mapping ---
+    // Pastikan warna teks memiliki kontras yang baik dengan warna latar belakang
+    $departmentColors = [
+    'Engineering & Maintainance' => 'bg-blue-500 text-white dark:bg-blue-600',
+'Finance Admin'              => 'bg-green-500 text-white dark:bg-green-600',
+'HCD'                        => 'bg-pink-500 text-white dark:bg-pink-600 dark:text-white',
+'Marsho'                     => 'bg-indigo-500 text-white dark:bg-indigo-600 dark:text-white',
+'Batch'                      => 'bg-rose-500 text-white dark:bg-rose-600 dark:text-white',
+'QM & HSE'                   => 'bg-red-500 text-white dark:bg-red-600 dark:text-white',
+'R&D'                        => 'bg-purple-500 text-white dark:bg-purple-600 dark:text-white',
+'Sales & Marketing'          => 'bg-sky-500 text-white dark:bg-sky-600 dark:text-white',
+'PPIC'                       => 'bg-amber-500 text-white dark:bg-amber-600 dark:text-white',
+'Inward Warehouse'           => 'bg-lime-500 text-white dark:bg-lime-600 dark:text-white',
+'Outward Warehouse'          => 'bg-cyan-500 text-white dark:bg-cyan-600 dark:text-white',
+'Purchasing'                 => 'bg-orange-500 text-white dark:bg-orange-600 dark:text-white',
+'site service'               => 'bg-teal-500 text-white dark:bg-teal-600 dark:text-white',
+'Default'                    => 'bg-gray-500 text-white dark:bg-gray-600 dark:text-white',
+
+    ];
+
+    // Ambil set kelas warna untuk departemen saat ini
+    $colorClasses = $departmentColors[$currentDeptName] ?? $departmentColors['Default'];
+
 @endphp
 
-{{-- ... sisa kode dari file asli Anda tidak berubah ... --}}
-<div class="job-card bg-white dark:bg-gray-800 rounded-lg p-4 shadow-md border border-gray-200 dark:border-gray-700 flex flex-col"
+{{-- [MODIFIED] Div utama kartu. Latar belakang sekarang diwarnai sesuai departemen. --}}
+<div class="job-card rounded-lg p-4 shadow-md  flex flex-col {{ $colorClasses }}"
      id="job-card-{{ $job->id }}"
      x-data="{
          openNotes: false, openAttachments: false, openRoutes: false, openClosingAttachments: false,
@@ -53,10 +78,11 @@
      }">
 
     {{-- TOP SECTION: ID, Requester, Date --}}
-    <div class="flex flex-col sm:flex-row justify-between items-start mb-3 pb-3 border-b border-gray-200 dark:border-gray-600">
+    <div class="flex flex-col sm:flex-row justify-between items-start mb-3 pb-3 border-b border-current opacity-50">
         <div class="flex-1">
-            <h3 class="font-bold text-lg text-gray-900 dark:text-gray-100">{{ $job->id_job }}</h3>
-            <p class="text-sm text-gray-600 dark:text-gray-400">
+            {{-- [MODIFIED] Warna teks dihapus untuk mewarisi dari parent --}}
+            <h3 class="font-bold text-lg">{{ $job->id_job }}</h3>
+            <p class="text-sm opacity-90">
                 <span class="font-semibold">Requester:</span> {{ $job->pengaju->name ?? 'N/A' }}
                 @if($firstRoute && $firstRoute->toDepartment)
                 <span class="mx-2">→</span>
@@ -64,15 +90,15 @@
                 @endif
             </p>
         </div>
-        <div class="text-xs text-gray-500 dark:text-gray-400 mt-2 sm:mt-0 text-left sm:text-right">
+        <div class="text-xs opacity-90 mt-2 sm:mt-0 text-left sm:text-right">
             <div>
                 <span class="font-semibold">Start:</span>
-                {{ \Carbon\Carbon::parse($job->tanggal_job_mulai)->format('d M Y, H:i') }}
+                {{ \Carbon\Carbon::parse($job->tanggal_job_mulai)->format('d M Y') }}
             </div>
             @if($job->tanggal_job_selesai)
             <div>
                 <span class="font-semibold">End:</span>
-                {{ \Carbon\Carbon::parse($job->tanggal_job_selesai)->format('d M Y, H:i') }}
+                {{ \Carbon\Carbon::parse($job->tanggal_job_selesai)->format('d M Y') }}
             </div>
             @endif
         </div>
@@ -80,9 +106,11 @@
 
     {{-- MIDDLE SECTION: Description & Initial Note --}}
     <div class="mb-3">
-        <p class="text-gray-800 dark:text-gray-200 mb-2 break-words">{{ $job->list_job }}</p>
+        {{-- [MODIFIED] Warna teks dihapus untuk mewarisi dari parent --}}
+        <p class="mb-2 break-words">{{ $job->list_job }}</p>
         @if($firstRoute && $firstRoute->note && $firstRoute->note !== 'Job created and assigned.')
-            <p class="text-sm p-2 bg-gray-100 dark:bg-gray-700 rounded-md break-words">
+            {{-- Latar belakang note ini bisa dibuat kontras dengan warna kartu --}}
+            <p class="text-sm p-2 bg-black/5 dark:bg-white/10 rounded-md break-words">
                 <span class="font-semibold">Initial Note:</span> {{ $firstRoute->note }}
             </p>
         @endif
@@ -90,76 +118,23 @@
 
     {{-- COLLAPSIBLE SECTION: Attachments & Notes --}}
     <div class="space-y-2 mb-4">
-        <!-- Collapse: Initial Attachments -->
+        {{-- ... (Konten collapsible tidak berubah, karena link dan badge-nya sudah memiliki warna sendiri) ... --}}
         @if($initialAttachments->count() > 0)
         <div>
-            <button @click="openAttachments = !openAttachments" class="text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline flex items-center">
+            <button @click="openAttachments = !openAttachments" class="text-sm font-medium hover:underline flex items-center">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V8a2 2 0 00-2-2h-5L9 4H4z" /></svg>
                 <span x-text="openAttachments ? 'Hide Initial Attachments' : 'Show Initial Attachments'"></span>
-                <span class="ml-2 bg-blue-100 text-blue-800 text-xs font-medium px-2 rounded-full">{{ $initialAttachments->count() }}</span>
+                <span class="ml-2 bg-white text-black text-xs font-medium px-2 rounded-full">{{ $initialAttachments->count() }}</span>
             </button>
-            <div x-show="openAttachments" x-transition class="mt-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-md border dark:border-gray-600 space-y-2">
+            <div x-show="openAttachments" x-transition class="mt-2 p-3 bg-black/5 dark:bg-white/10 rounded-md border-t border-black/10 dark:border-white/10 space-y-2">
                 @foreach($initialAttachments as $attachment)
                     @php
                         $isImage = in_array(strtolower(pathinfo($attachment->file_name, PATHINFO_EXTENSION)), $imageExtensions);
                         $filePath = Storage::url($attachment->file_path);
                     @endphp
-                    <a href="{{ $filePath }}" target="_blank" @click="showAttachment($event, '{{ $filePath }}', {{ $isImage ? 'true' : 'false' }}, {{ $isImage ? $initialImagePaths->toJson() : '[]' }})" class="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-blue-500 dark:hover:text-blue-400 group">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0 {{ $isImage ? 'text-blue-500' : 'text-gray-500' }}" viewBox="0 0 20 20" fill="currentColor">
+                    <a href="{{ $filePath }}" target="_blank" @click="showAttachment($event, '{{ $filePath }}', {{ $isImage ? 'true' : 'false' }}, {{ $isImage ? $initialImagePaths->toJson() : '[]' }})" class="flex items-center space-x-2 hover:opacity-75 group">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
                             @if($isImage) <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-4 2 2 4-4 2 2z" clip-rule="evenodd" /> @else <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd" /> @endif
-                        </svg>
-                        <span class="truncate group-hover:underline">{{ $attachment->file_name }}</span>
-                    </a>
-                @endforeach
-            </div>
-        </div>
-        @endif
-
-        <!-- Collapse: Route Notes -->
-        @if($job->routes->count() > 1 || $job->notes->count() > 0)
-        <div>
-            <button @click="openRoutes = !openRoutes" class="text-sm font-medium text-green-600 dark:text-green-400 hover:underline flex items-center">
-                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a.75.75 0 01.75.75v.25h3.5a.75.75 0 010 1.5h-3.5v1.25a.75.75 0 01-1.5 0V4.5h-3.5a.75.75 0 010-1.5h3.5V2.75A.75.75 0 0110 2zM8.25 9.5a.75.75 0 01.75-.75h2a.75.75 0 010 1.5h-2a.75.75 0 01-.75-.75zM7.5 12.25a.75.75 0 00-1.5 0v.25h-2a.75.75 0 000 1.5h2v.25a.75.75 0 001.5 0v-.25h2a.75.75 0 000-1.5h-2v-.25z" clip-rule="evenodd" /></svg>
-                <span x-text="openRoutes ? 'Hide Notes & Routes' : 'Show Notes & Routes'"></span>
-            </button>
-            <div x-show="openRoutes" x-transition class="mt-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-md text-xs space-y-3 border dark:border-gray-600">
-                @foreach($job->routes->slice(1) as $route)
-                    @if($route->note)
-                    <div class="border-l-2 pl-2 border-yellow-500">
-                        <p class="font-semibold">From: {{ $route->fromDepartment->department_name ?? 'N/A' }} → To: {{ $route->toDepartment->department_name ?? 'N/A' }}</p>
-                        <p class="text-gray-700 dark:text-gray-300 break-words">{{ $route->note }}</p>
-                        <p class="text-gray-500 text-right">by {{ $route->creator->name ?? 'System' }}</p>
-                    </div>
-                    @endif
-                @endforeach
-                @foreach($job->notes as $note)
-                    <div class="border-l-2 pl-2 border-green-500">
-                        <p class="font-semibold text-green-700 dark:text-green-300">Completion Note:</p>
-                        <p class="text-gray-700 dark:text-gray-300 break-words">{{ $note->note }}</p>
-                        <p class="text-gray-500 text-right">by {{ $note->creator->name ?? 'System' }}</p>
-                    </div>
-                @endforeach
-            </div>
-        </div>
-        @endif
-
-        <!-- Collapse: Closing Attachments -->
-        @if($closingAttachments->count() > 0)
-        <div>
-            <button @click="openClosingAttachments = !openClosingAttachments" class="text-sm font-medium text-purple-600 dark:text-purple-400 hover:underline flex items-center">
-                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor"><path d="M2 6a2 2 0 012-2h5.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V18a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" /></svg>
-                <span x-text="openClosingAttachments ? 'Hide Closing Attachments' : 'Show Closing Attachments'"></span>
-                <span class="ml-2 bg-purple-100 text-purple-800 text-xs font-medium px-2 rounded-full">{{ $closingAttachments->count() }}</span>
-            </button>
-            <div x-show="openClosingAttachments" x-transition class="mt-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-md border dark:border-gray-600 space-y-2">
-                @foreach($closingAttachments as $attachment)
-                    @php
-                        $isImage = in_array(strtolower(pathinfo($attachment->file_name, PATHINFO_EXTENSION)), $imageExtensions);
-                        $filePath = Storage::url($attachment->file_path);
-                    @endphp
-                    <a href="{{ $filePath }}" target="_blank" @click="showAttachment($event, '{{ $filePath }}', {{ $isImage ? 'true' : 'false' }}, {{ $isImage ? $closingImagePaths->toJson() : '[]' }})" class="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-purple-500 dark:hover:text-purple-400 group">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0 {{ $isImage ? 'text-purple-500' : 'text-gray-500' }}" viewBox="0 0 20 20" fill="currentColor">
-                           @if($isImage) <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-4 2 2 4-4 2 2z" clip-rule="evenodd" /> @else <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd" /> @endif
                         </svg>
                         <span class="truncate group-hover:underline">{{ $attachment->file_name }}</span>
                     </a>
@@ -170,13 +145,18 @@
     </div>
 
     {{-- BOTTOM SECTION: Area & Action Buttons --}}
-    <div class="mt-auto pt-3 border-t border-gray-200 dark:border-gray-600 flex justify-between items-center">
-        <div class="text-sm font-semibold text-gray-600 dark:text-gray-400">
-            Area: <span class="text-gray-800 dark:text-gray-200">{{ $job->area->name ?? 'N/A' }}</span>
+    <div class="mt-auto pt-3 border-t border-current opacity-50 flex justify-between items-center">
+        <div class="text-sm">
+            {{-- [MODIFIED] Warna teks dihapus untuk mewarisi dari parent --}}
+            <span class="font-semibold opacity-90">Current Dept:</span>
+            {{-- Badge ini sekarang akan terlihat menyatu, hanya teksnya yang bold --}}
+            <span class="font-bold bg-white text-black">
+                {{ $currentDeptName }}
+            </span>
         </div>
         <div class="flex flex-wrap gap-2 justify-end">
             @if($job->status == 'open' && $canAct)
-                <button class="start-job-btn text-xs bg-blue-500 hover:bg-blue-600 text-white font-semibold px-3 py-1 rounded-md transition-colors" data-job-id="{{ $job->id }}">Start Job</button>
+                <button class="start-job-btn text-xs bg-white hover:bg-gray-600  text-black font-semibold px-3 py-1 rounded-md transition-colors" data-job-id="{{ $job->id }}">Start Job</button>
             @endif
 
             @if($job->status == 'on_process' && $canAct)

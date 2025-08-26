@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\MarshoDepartment;
 use App\Models\MarshoUser;
 use App\Models\User;
@@ -11,33 +10,36 @@ use Illuminate\Http\Request;
 class MarshoUserController extends Controller
 {
     /**
-     * Menampilkan halaman untuk mengelola departemen Marsho bagi setiap pengguna.
+     * Menampilkan view utama atau mengembalikan data JSON untuk AJAX.
+     * Mampu menangani filtering pencarian dan paginasi.
      */
- public function index(Request $request)
+    public function index(Request $request)
     {
-        $marshoDepartments = MarshoDepartment::all();
+        // Departemen akan kita kirimkan pada initial load saja
+        $marshoDepartments = MarshoDepartment::orderBy('department_name')->get();
 
-        // Mulai query builder untuk User
-        $query = User::query();
+        $query = User::query()
+            ->with('marshoProfile.department') // Eager load relasi
+            ->when($request->search, function ($q, $search) {
+                return $q->where('name', 'like', "%{$search}%")
+                         ->orWhere('email', 'like', "%{$search}%");
+            })
+            ->orderBy('name'); // Urutkan berdasarkan nama
 
-        // Jika ada input pencarian
-        if ($request->has('search') && $request->search != '') {
-            $searchTerm = $request->search;
-            $query->where(function ($q) use ($searchTerm) {
-                $q->where('name', 'like', '%' . $searchTerm . '%')
-                  ->orWhere('email', 'like', '%' . $searchTerm . '%');
-            });
+        $users = $query->paginate(10);
+
+        // Jika ini adalah request AJAX, kirim data paginasi sebagai JSON
+        if ($request->expectsJson()) {
+            return $users;
         }
 
-        // Lakukan pagination pada hasil query
-        // Eager load relasi untuk menghindari N+1 problem
-        $users = $query->with('marshoProfile.department')->paginate(10); // Tampilkan 10 user per halaman
-
+        // Jika ini adalah request awal (load halaman), kirim ke view
         return view('resources.marsho_users.index', compact('users', 'marshoDepartments'));
     }
 
     /**
-     * Menyimpan atau memperbarui penugasan departemen Marsho untuk seorang pengguna.
+     * Menyimpan atau memperbarui penugasan departemen dan mengembalikan
+     * profil pengguna yang diperbarui sebagai JSON.
      */
     public function store(Request $request)
     {
@@ -46,18 +48,26 @@ class MarshoUserController extends Controller
             'marsho_department_id' => 'nullable|exists:marsho_departments,id',
         ]);
 
-        // Jika tidak ada departemen yang dipilih, hapus profil Marsho user tersebut
-        if (is_null($request->marsho_department_id)) {
-            MarshoUser::where('user_id', $request->user_id)->delete();
-            return back()->with('success', 'User has been unassigned from Marsho system.');
+        $message = '';
+        $userId = $request->user_id;
+
+        if (is_null($request->marsho_department_id) || $request->marsho_department_id === '') {
+            MarshoUser::where('user_id', $userId)->delete();
+            $message = 'User has been unassigned from Marsho system.';
+        } else {
+            MarshoUser::updateOrCreate(
+                ['user_id' => $userId],
+                ['marsho_department_id' => $request->marsho_department_id]
+            );
+            $message = 'User\'s Marsho department has been updated successfully.';
         }
+        
+        // Ambil kembali data user yang sudah diperbarui dengan relasinya
+        $updatedUser = User::with('marshoProfile.department')->find($userId);
 
-        // Gunakan updateOrCreate untuk membuat profil baru atau memperbarui yang sudah ada
-        MarshoUser::updateOrCreate(
-            ['user_id' => $request->user_id], // Kondisi pencarian
-            ['marsho_department_id' => $request->marsho_department_id] // Data untuk diupdate/create
-        );
-
-        return back()->with('success', 'User\'s Marsho department has been updated successfully.');
+        return response()->json([
+            'user' => $updatedUser,
+            'message' => $message
+        ], 200); // 200 OK
     }
 }

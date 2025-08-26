@@ -140,15 +140,32 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
         
     });
 
-Route::get('accidents-report/{laporan}/revise', [\App\Http\Controllers\LaporanKecelakaanController::class, 'revise'])->name('accidents-report.revise');
-Route::post('accidents-report/{laporan}/approve', [\App\Http\Controllers\LaporanKecelakaanController::class, 'approve'])->name('accidents-report.approve');
-Route::post('accidents-report/{laporan}/reject', [\App\Http\Controllers\LaporanKecelakaanController::class, 'reject'])->name('accidents-report.reject');
-  
-  Route::post('editor/upload-image', [EditorImageController::class, 'store'])->name('editor.upload.image');
 
-Route::resource('accidents-report', LaporanKecelakaanController::class)->parameters([
-    'accidents-report' => 'laporan'
-]);
+    Route::prefix('accidents-report')->name('accidents-report.')->group(function () {
+        
+        // Halaman utama yang akan menampilkan tabel DataTables
+        Route::get('/', [LaporanKecelakaanController::class, 'index'])->name('index');
+
+        // Endpoint khusus untuk DataTables mengambil data via AJAX (Server-Side)
+        Route::get('/data', [LaporanKecelakaanController::class, 'getData'])->name('data');
+
+        // Rute untuk membuat laporan baru
+        Route::get('/create', [LaporanKecelakaanController::class, 'create'])->name('create');
+        Route::post('/', [LaporanKecelakaanController::class, 'store'])->name('store');
+
+        // Rute untuk melihat detail laporan
+        Route::get('/{laporan}', [LaporanKecelakaanController::class, 'show'])->name('show');
+
+        // Rute untuk merevisi laporan yang ditolak
+        Route::get('/{laporan}/revise', [LaporanKecelakaanController::class, 'revise'])->name('revise');
+
+        // Rute untuk aksi persetujuan dan penolakan (akan dipanggil via AJAX)
+        Route::post('/{laporan}/approve', [LaporanKecelakaanController::class, 'approve'])->name('approve');
+        Route::post('/{laporan}/reject', [LaporanKecelakaanController::class, 'reject'])->name('reject');
+    });
+
+    Route::post('editor/upload-image', [EditorImageController::class, 'store'])->name('editor.upload.image');
+
     /*Dashboard Inventory*/
     Route::get('dashboard-inventory', [InventoryController::class, 'dashboardInventory'])->name('dashboard.dashboardInventory');
 

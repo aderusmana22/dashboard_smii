@@ -9,13 +9,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage; // <-- Tambahkan ini
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
+use App\Models\LaporanApprovalStatus;
 
 class LaporanKecelakaanController extends Controller
 {
-    /**
-     * Mendefinisikan urutan persetujuan.
-     */
     private $approvalOrder = [
         'manager_hse_id',
         'manager_terkait_id',
@@ -25,18 +24,70 @@ class LaporanKecelakaanController extends Controller
 
     public function index()
     {
-        $laporan = LaporanKecelakaan::with(['pembuatLaporan', 'approvalStatus.currentApprover'])
-            ->latest()
-            ->paginate(15);
-        return view('safetyboard.index', compact('laporan'));
+        return view('safetyboard.index');
     }
 
-    public function create()
+    public function getData(Request $request)
     {
-        $users = User::orderBy('name')->get(['id', 'name']);
-        // Define $laporan as null for the create form
-        $laporan = null;
-        return view('safetyboard.form', compact('users', 'laporan'));
+        $approvalStatusTable = (new LaporanApprovalStatus)->getTable();
+
+        // PERUBAHAN UTAMA 1: Query dasar sekarang HANYA mengambil laporan yang aktif.
+        $query = LaporanKecelakaan::where('laporan_kecelakaans.is_active', true)
+            ->with(['approvalStatus', 'pembuatLaporan'])
+            ->leftJoin($approvalStatusTable, 'laporan_kecelakaans.id', '=', $approvalStatusTable . '.laporan_kecelakaan_id')
+            ->select('laporan_kecelakaans.*');
+
+        // --- FILTERING ---
+        if ($request->filled('nomor_form')) {
+            $query->where('laporan_kecelakaans.nomor_form', 'like', '%' . $request->nomor_form . '%');
+        }
+        if ($request->filled('nama_korban')) {
+            $query->where('laporan_kecelakaans.nama_korban', 'like', '%' . $request->nama_korban . '%');
+        }
+        if ($request->filled('status')) {
+            $query->where($approvalStatusTable . '.status', $request->status);
+        }
+        if ($request->filled('date_start')) {
+            $query->whereDate('laporan_kecelakaans.date', '>=', $request->date_start);
+        }
+        if ($request->filled('date_end')) {
+            $query->whereDate('laporan_kecelakaans.date', '<=', $request->date_end);
+        }
+
+        // PERUBAHAN UTAMA 2: Hitung total record setelah filtering, sebelum pagination.
+        $totalFiltered = $query->count();
+        $totalData = LaporanKecelakaan::where('is_active', true)->count();
+
+        // --- SORTING ---
+        if ($request->has('order')) {
+            $orderColumnIndex = $request->input('order.0.column');
+            $orderColumnName = $request->input('columns.' . $orderColumnIndex . '.name');
+            $orderDirection = $request->input('order.0.dir');
+
+            if ($orderColumnName) {
+                if ($orderColumnName === 'approval_statuses.status') {
+                    $query->orderBy($approvalStatusTable . '.status', $orderDirection);
+                } else {
+                    $query->orderBy($orderColumnName, $orderDirection);
+                }
+            }
+        } else {
+            $query->latest('laporan_kecelakaans.created_at');
+        }
+
+        // --- PAGINATION ---
+        if ($request->filled('length') && $request->length != -1) {
+            $query->skip($request->input('start'))->take($request->input('length'));
+        }
+
+        $laporan = $query->get();
+
+        return response()->json([
+            "draw"            => intval($request->input('draw')),
+            "recordsTotal"    => intval($totalData),
+            "recordsFiltered" => intval($totalFiltered),
+            "data"            => $laporan
+        ]);
     }
 
     public function store(Request $request)
@@ -81,7 +132,6 @@ class LaporanKecelakaanController extends Controller
 
         DB::beginTransaction();
         try {
-            // --- PROSES GAMBAR BASE64 DARI EDITOR (PERUBAHAN DI SINI) ---
             if (!empty($validatedData['uraian_kejadian'])) {
                 $validatedData['uraian_kejadian'] = $this->prosesGambarEditor($validatedData['uraian_kejadian']);
             }
@@ -94,29 +144,46 @@ class LaporanKecelakaanController extends Controller
             if (!empty($validatedData['rekomendasi'])) {
                 $validatedData['rekomendasi'] = $this->prosesGambarEditor($validatedData['rekomendasi']);
             }
-            // --- AKHIR PROSES GAMBAR ---
 
-            $year = date('Y');
-            // Mengunci tabel untuk mencegah race condition saat menghitung nomor urut
-            $latestReportCount = LaporanKecelakaan::whereYear('created_at', $year)->lockForUpdate()->count();
-            $nextNumber = $latestReportCount + 1;
+            $laporan = new LaporanKecelakaan($validatedData);
 
-            if (!$request->has('revised_from_id')) {
-                $validatedData['nomor_form'] = sprintf("HSE-%s-%d", $year, $nextNumber);
-            } else {
-                $validatedData['nomor_form'] = sprintf("HSE-%s-%d-REV", $year, $nextNumber);
-            }
-
+            // PERUBAHAN UTAMA 3: Logika baru untuk penomoran revisi
             if ($request->has('revised_from_id')) {
+                // Mengambil laporan original yang akan direvisi
                 $originalReport = LaporanKecelakaan::with('approvalStatus')->findOrFail($request->input('revised_from_id'));
+
+                // 1. Menonaktifkan laporan lama agar tidak muncul di daftar utama
+                $originalReport->is_active = false;
+                $originalReport->save();
+
+                // 2. Mengupdate status approval laporan lama menjadi "revised"
                 if ($originalReport->approvalStatus) {
                     $originalReport->approvalStatus->update(['status' => 'revised']);
                 }
-                $validatedData['revision_number'] = $originalReport->revision_number + 1;
-                $validatedData['revised_from_id'] = $originalReport->id;
-            }
+                
+                // 3. Membentuk nomor form revisi yang baru
+                //    Ini akan mengambil basis nomor (misal: HSE-2025-5) bahkan jika sudah ada -REV sebelumnya
+                $baseNomorForm = explode('-REV', $originalReport->nomor_form)[0];
+                $newRevisionNumber = $originalReport->revision_number + 1;
 
-            $laporan = new LaporanKecelakaan($validatedData);
+                // Format baru: HSE-2025-5-REV1, HSE-2025-5-REV2, dst.
+                $laporan->nomor_form = $baseNomorForm . '-REV' . $newRevisionNumber;
+                $laporan->revision_number = $newRevisionNumber;
+                $laporan->revised_from_id = $originalReport->id;
+
+            } else {
+                // Logika untuk Laporan Baru (tanpa revisi)
+                $year = date('Y');
+                // Menghitung hanya laporan utama (bukan revisi) untuk menentukan nomor berikutnya
+                $latestReportCount = LaporanKecelakaan::whereYear('created_at', $year)
+                                        ->whereNull('revised_from_id') 
+                                        ->lockForUpdate()
+                                        ->count();
+                $nextNumber = $latestReportCount + 1;
+                $laporan->nomor_form = sprintf("HSE-%s-%d", $year, $nextNumber);
+            }
+            
+            // `is_active` sudah default true dari migrasi, jadi tidak perlu diset manual
             $laporan->apd_data = $this->prosesApdData($request);
             list($kategori, $deskripsi) = $this->prosesSebabUtama($request);
             $laporan->sebab_utama_kategori = $kategori;
@@ -147,6 +214,91 @@ class LaporanKecelakaanController extends Controller
         }
     }
 
+    public function approve(Request $request, LaporanKecelakaan $laporan)
+    {
+        $status = $laporan->approvalStatus;
+        if (!$status || $status->current_approver_id !== Auth::id()) {
+            return response()->json(['success' => false, 'message' => 'Anda tidak memiliki wewenang untuk aksi ini.'], 403);
+        }
+
+        DB::beginTransaction();
+        try {
+            $currentApproverField = $this->getCurrentApproverField($laporan);
+            if ($currentApproverField === null) {
+                return response()->json(['success' => false, 'message' => 'Status laporan tidak valid untuk persetujuan.'], 400);
+            }
+            
+            $currentIndex = array_search($currentApproverField, $this->approvalOrder);
+
+            $laporan->approvalHistories()->create([
+                'user_id' => Auth::id(),
+                'action' => 'approved',
+                'notes' => 'Menyetujui laporan sebagai ' . $this->getRoleName($currentApproverField),
+            ]);
+
+            if ($currentIndex === count($this->approvalOrder) - 1) {
+                $status->update(['status' => 'approved', 'current_approver_id' => null]);
+            } else {
+                $nextApproverField = $this->approvalOrder[$currentIndex + 1];
+                $nextApproverId = $laporan->{$nextApproverField};
+                $nextStatus = 'pending_' . str_replace('_id', '', $nextApproverField);
+                $status->update(['status' => $nextStatus, 'current_approver_id' => $nextApproverId]);
+            }
+
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Laporan berhasil disetujui.']);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Gagal menyetujui laporan: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Terjadi kesalahan saat menyetujui laporan.'], 500);
+        }
+    }
+
+    public function reject(Request $request, LaporanKecelakaan $laporan)
+    {
+        $validator = Validator::make($request->all(), [
+            'rejection_reason' => 'required|string|min:10'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'message' => 'Validasi gagal.', 'errors' => $validator->errors()], 422);
+        }
+
+        $status = $laporan->approvalStatus;
+        if (!$status || $status->current_approver_id !== Auth::id()) {
+            return response()->json(['success' => false, 'message' => 'Anda tidak memiliki wewenang untuk aksi ini.'], 403);
+        }
+
+        DB::beginTransaction();
+        try {
+            $currentApproverField = $this->getCurrentApproverField($laporan);
+            $status->update([
+                'status' => 'rejected',
+                'current_approver_id' => null,
+                'rejection_reason' => $request->rejection_reason,
+            ]);
+            $laporan->approvalHistories()->create([
+                'user_id' => Auth::id(),
+                'action' => 'rejected',
+                'notes' => 'Menolak laporan sebagai ' . $this->getRoleName($currentApproverField) . '. Alasan: ' . $request->rejection_reason,
+            ]);
+            DB::commit();
+            return response()->json(['success' => true, 'message' => 'Laporan telah ditolak.']);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Gagal menolak laporan: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Terjadi kesalahan saat menolak laporan.'], 500);
+        }
+    }
+
+    public function create()
+    {
+        $users = User::orderBy('name')->get(['id', 'name']);
+        $laporan = null;
+        return view('safetyboard.form', compact('users', 'laporan'));
+    }
+    
     public function show(LaporanKecelakaan $laporan)
     {
         $laporan->load('approvalStatus', 'approvalHistories.user', 'pembuatLaporan', 'revisedFrom');
@@ -173,121 +325,30 @@ class LaporanKecelakaanController extends Controller
         ]);
     }
 
-    public function approve(LaporanKecelakaan $laporan)
-    {
-        $status = $laporan->approvalStatus;
-        if (!$status || $status->current_approver_id !== Auth::id()) {
-            return redirect()->route('accidents-report.index')->with('error', 'Anda tidak memiliki wewenang untuk aksi ini.');
-        }
-
-        DB::beginTransaction();
-        try {
-            $currentApproverField = $this->getCurrentApproverField($laporan);
-            if ($currentApproverField === null) {
-                return redirect()->route('accidents-report.index')->with('error', 'Status laporan tidak valid untuk persetujuan.');
-            }
-            
-            $currentIndex = array_search($currentApproverField, $this->approvalOrder);
-
-            $laporan->approvalHistories()->create([
-                'user_id' => Auth::id(),
-                'action' => 'approved',
-                'notes' => 'Menyetujui laporan sebagai ' . $this->getRoleName($currentApproverField),
-            ]);
-
-            if ($currentIndex === count($this->approvalOrder) - 1) {
-                $status->update(['status' => 'approved', 'current_approver_id' => null]);
-            } else {
-                $nextApproverField = $this->approvalOrder[$currentIndex + 1];
-                $nextApproverId = $laporan->{$nextApproverField};
-                $nextStatus = 'pending_' . str_replace('_id', '', $nextApproverField);
-                $status->update(['status' => $nextStatus, 'current_approver_id' => $nextApproverId]);
-            }
-
-            DB::commit();
-            return redirect()->route('accidents-report.index')->with('success', 'Laporan berhasil disetujui.');
-
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Gagal menyetujui laporan: ' . $e->getMessage());
-            return redirect()->route('accidents-report.index')->with('error', 'Terjadi kesalahan saat menyetujui laporan.');
-        }
-    }
-
-    public function reject(Request $request, LaporanKecelakaan $laporan)
-    {
-        $request->validate(['rejection_reason' => 'required|string|min:10']);
-        $status = $laporan->approvalStatus;
-        if (!$status || $status->current_approver_id !== Auth::id()) {
-            return redirect()->route('accidents-report.index')->with('error', 'Anda tidak memiliki wewenang untuk aksi ini.');
-        }
-
-        DB::beginTransaction();
-        try {
-            $currentApproverField = $this->getCurrentApproverField($laporan);
-            $status->update([
-                'status' => 'rejected',
-                'current_approver_id' => null,
-                'rejection_reason' => $request->rejection_reason,
-            ]);
-            $laporan->approvalHistories()->create([
-                'user_id' => Auth::id(),
-                'action' => 'rejected',
-                'notes' => 'Menolak laporan sebagai ' . $this->getRoleName($currentApproverField) . '. Alasan: ' . $request->rejection_reason,
-            ]);
-            DB::commit();
-            return redirect()->route('accidents-report.index')->with('success', 'Laporan telah ditolak.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Gagal menolak laporan: ' . $e->getMessage());
-            return redirect()->route('accidents-report.index')->with('error', 'Terjadi kesalahan saat menolak laporan.');
-        }
-    }
-
-    // --- Helper Functions ---
-
-    /**
-     * Memproses konten HTML dari editor, mencari gambar base64,
-     * menyimpannya ke storage, dan menggantinya dengan URL.
-     * (FUNGSI BARU DI SINI)
-     *
-     * @param string $content
-     * @return string
-     */
     private function prosesGambarEditor(string $content): string
     {
         $dom = new \DOMDocument();
-        // Mengatasi error parsing pada HTML5 tags dan karakter UTF-8
         @$dom->loadHtml(mb_convert_encoding($content, 'HTML-ENTITIES', 'UTF-8'), LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
-
         $images = $dom->getElementsByTagName('img');
-
         foreach ($images as $img) {
             $src = $img->getAttribute('src');
-            // Cek apakah src adalah data base64
             if (strpos($src, 'data:image/') === 0) {
                 try {
                     list($type, $data) = explode(';', $src);
                     list(, $data)      = explode(',', $data);
                     $data = base64_decode($data);
-
                     $image_type = explode('/', $type)[1];
                     $extension = $image_type;
-                    
                     $path = 'editor-uploads/' . uniqid() . date('YmdHis') . '.' . $extension;
-
                     Storage::disk('public')->put($path, $data);
-
                     $img->setAttribute('src', Storage::url($path));
                     $img->removeAttribute('data-mce-src');
                 } catch (\Exception $e) {
                     Log::error('Gagal memproses gambar base64: ' . $e->getMessage());
-                    // Biarkan gambar base64 jika terjadi error
                     continue;
                 }
             }
         }
-
         return $dom->saveHTML();
     }
 

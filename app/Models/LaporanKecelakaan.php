@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne; // TAMBAHKAN INI
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class LaporanKecelakaan extends Model
 {
@@ -20,9 +20,10 @@ class LaporanKecelakaan extends Model
         'date' => 'date',
         'tanggal_lahir' => 'date',
         'tanggal_masuk' => 'date',
+        'is_active' => 'boolean', // PERUBAHAN: Casting untuk kolom baru
     ];
 
-    // --- RELASI BARU UNTUK APPROVAL ---
+    // --- RELASI APPROVAL ---
     public function approvalStatus(): HasOne
     {
         return $this->hasOne(LaporanApprovalStatus::class);
@@ -32,7 +33,7 @@ class LaporanKecelakaan extends Model
     {
         return $this->hasMany(LaporanApprovalHistory::class);
     }
-    // --- AKHIR RELASI BARU ---
+    // --- AKHIR RELASI APPROVAL ---
 
     public function biayaPerawatan(): HasMany
     {

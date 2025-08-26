@@ -392,6 +392,10 @@
             .safety-icon-circle { width: 80px; height: 80px; font-size: 3.5em; }
             .accident-metrics-group { grid-template-columns: 1fr; }
         }
+
+        #weather-icon-wrapper {
+            margin-right: 15px;
+        }
     </style>
     </head>
 

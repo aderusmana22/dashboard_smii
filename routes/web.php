@@ -11,6 +11,7 @@ use App\Http\Controllers\QAD\ProductionController;
 use App\Http\Controllers\QAD\SalesController;
 use App\Http\Controllers\Role\PermissionController;
 use App\Http\Controllers\Role\RoleController;
+use App\Http\Controllers\SalesByBrandReports;
 use App\Http\Controllers\UserController;
 use Artesaos\SEOTools\Facades\SEOMeta;
 use Illuminate\Support\Facades\Route;
@@ -203,7 +204,7 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
     Route::get('/jobs/{job}/activity-logs', [ActivityLogController::class, 'showForJob'])->name('jobs.activity-logs.show');
 
     Route::get('/marsho-users', [MarshoUserController::class, 'index'])->name('marsho-users.index');
-Route::post('/marsho-users', [MarshoUserController::class, 'store'])->name('marsho-users.store');
+    Route::post('/marsho-users', [MarshoUserController::class, 'store'])->name('marsho-users.store');
 
     //export kanban
         Route::prefix('reports')->name('reports.')->group(function() {
@@ -213,6 +214,13 @@ Route::post('/marsho-users', [MarshoUserController::class, 'store'])->name('mars
         Route::get('/marsho-jobs/export', [ReportController::class, 'exportMarshoJobs'])->name('marsho-jobs.export');
     });
 
+    // Route to display the initial report page
+    Route::get('dashboard/sales-by-brand-report', [SalesByBrandReports::class, 'show'])->name('reports.sales.byBrand');
+
+    // Route for DataTables to fetch data via AJAX
+    Route::get('dashboard/sales-by-brand-report/data', [SalesByBrandReports::class, 'fetchData'])->name('reports.sales.byBrand.data');
+
+    Route::get('/reports/sales-by-brand-export', [SalesByBrandReports::class, 'exportExcel'])->name('reports.sales.byBrand.export');
 });
 
 

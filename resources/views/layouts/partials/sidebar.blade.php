@@ -79,7 +79,18 @@
                 <i class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>
                 Standard Budgets</a></li>
                 @endcan
-            </ul>
+
+                <li>
+    {{-- This link correctly points to your route --}}
+                    <a href="{{ route('reports.sales.byBrand') }}" 
+                    class="{{ request()->routeIs('reports.sales.byBrand') ? 'current' : '' }}">
+                        
+                        <i class="icon-tags"></i> {{-- Example Icon --}}
+                        <span>Sales By Brand</span>
+                        
+                    </a>
+                </li>
+                            </ul>
         </li>
         @endcan
             @can('view user management')

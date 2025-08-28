@@ -152,4 +152,4 @@ class SalesByBrandExport implements FromCollection, WithHeadings, WithMapping, W
         // Terapkan perataan ke range data yang baru (mulai dari baris 5)
         $sheet->getStyle("C5:F{$lastDataRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
     }
-}
+}       

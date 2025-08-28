@@ -8,92 +8,97 @@
 
     <!-- Sample menu definition -->
     <ul id="main-menu" class="sm sm-blue">
+
         @can('view dashboard')
-        <li class="{{ request()->is('dashboard/*') ? 'current' : '' }}"><a href="{{ route('dashboard') }}"
-                style="font-size: 18px;"><i data-feather="home" style="width: 18px; height: 18px;"><span
-                        class="path1"></span><span class="path2"></span></i>Dashboard</a>
-            <ul>
-                @can('view production dashboard')
-                <li><a href="{{ route('dashboard.dashboardProduction') }}"
-                        class="{{ request()->is('dashboard/dashboard-production') ? 'current' : '' }}"><i
-                            class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>Dashboard
-                        Production</a></li>
-                @endcan
-                @can('view sales dashboard')
-                <li><a href="{{ route('dashboard.dashboardSales') }}"
-                        class="{{ request()->is('dashboard/dashboard-sales') ? 'current' : '' }}"><i class="icon-Commit"><span
-                                class="path1"></span><span class="path2"></span></i>Dashboard Sales</a></li>
-                @endcan
-                @can('view warehouse dashboard')
-                <li><a href="{{ route('dashboard.dashboardWarehouse') }}"
-                        class="{{ request()->is('dashboard/dashboard-warehouse') ? 'current' : '' }}"><i class="icon-Commit"><span
-                                class="path1"></span><span class="path2"></span></i>Dashboard Warehouse</a></li>
-                @endcan
-            </ul>
-        </li>
+            <li class="{{ request()->is('dashboard/*') ? 'current' : '' }}"><a href="{{ route('dashboard') }}"
+                    style="font-size: 18px;"><i data-feather="home" style="width: 18px; height: 18px;"><span
+                            class="path1"></span><span class="path2"></span></i>Dashboard</a>
+                <ul>
+                    @can('view production dashboard')
+                        <li><a href="{{ route('dashboard.dashboardProduction') }}"
+                                class="{{ request()->is('dashboard/dashboard-production') ? 'current' : '' }}"><i
+                                    class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>Dashboard
+                                Production</a></li>
+                    @endcan
+                    @can('view sales dashboard')
+                        <li><a href="{{ route('dashboard.dashboardSales') }}"
+                                class="{{ request()->is('dashboard/dashboard-sales') ? 'current' : '' }}"><i
+                                    class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>Dashboard
+                                Sales</a></li>
+                    @endcan
+                    @can('view warehouse dashboard')
+                        <li><a href="{{ route('dashboard.dashboardWarehouse') }}"
+                                class="{{ request()->is('dashboard/dashboard-warehouse') ? 'current' : '' }}"><i
+                                    class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>Dashboard
+                                Warehouse</a></li>
+                    @endcan
+                </ul>
+            </li>
         @endcan
+
         @can('view data dashboard')
-        <li><a href="#" style="font-size: 18px;" class="{{ request()->is(['dashboard/inventory', 'dashboard/standard-production', 'dashboard/standard-warehouse']) ? 'current' : '' }}"><i
-                    data-feather="database" style="width: 18px; height: 18px;"></i>Data Dashboard</a>
-            <ul>
-                {{-- @can('view sales dashboard')
-                <li><a href="{{ route('dashboard.sales') }}"
-                        class="{{ request()->is('dashboard/sales') ? 'current' : '' }}"><i class="icon-Commit"><span
-                                class="path1"></span><span class="path2"></span></i>Sales Dashboard </a></li>
-                @endcan --}}
-                @can('view inventory dashboard')
-                <li><a href="{{ route('dashboard.inventory') }}"
-                        class="{{ request()->is('dashboard/inventory') ? 'current' : '' }}"><i
-                            class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>Inventory
-                        Dashboard</a></li>
-                @endcan
-                @can('view production dashboard')
-                <li><a href="{{ route('data.production') }}"
-                        class="{{ request()->is('data.production') ? 'current' : '' }}"><i
-                            class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>Data Production
-                        </a></li>
-                @endcan
-                @can('view standard production dashboard')
-                <li><a href="{{ route('dashboard.production.standard') }}"
-                        class="{{ request()->is('dashboard/standard-production/') ? 'current' : '' }}"><i
-                            class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>Standard
-                        Production</a></li>
-                @endcan
-                @can('view standard warehouse dashboard')
-                <li><a href="{{ route('dashboard.warehouseindex') }}"
-                        class="{{ request()->is('dashboard/standard-warehouse') ? 'current' : '' }}"><i
-                            class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>Standard
-                        Warehouse</a></li>
-                @endcan
-                
-                @can('view standard shipment dashboard')
-                <li><a href="{{ route('data.sales') }}"
-                        class="{{ request()->is('sales') ? 'current' : '' }}"><i
-                            class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>Data
-                        Sales</a></li>
-                @endcan
-                @can('view standard shipment dashboard')
-                <li><a href="{{ route('standard-budgets.index') }}"
-                class="{{ request()->is('standard-budgets.index') ? 'current' : '' }}">
+            <li><a href="#" style="font-size: 18px;"
+                    class="{{ request()->is(['dashboard/inventory', 'dashboard/standard-production', 'dashboard/standard-warehouse']) ? 'current' : '' }}"><i
+                        data-feather="database" style="width: 18px; height: 18px;"></i>Data Dashboard</a>
+                <ul>
+                    {{-- @can('view sales dashboard')
+                    <li><a href="{{ route('dashboard.sales') }}"
+                            class="{{ request()->is('dashboard/sales') ? 'current' : '' }}"><i class="icon-Commit"><span
+                                    class="path1"></span><span class="path2"></span></i>Sales Dashboard </a></li>
+                    @endcan --}}
+                    @can('view inventory dashboard')
+                        <li><a href="{{ route('dashboard.inventory') }}"
+                                class="{{ request()->is('dashboard/inventory') ? 'current' : '' }}"><i class="icon-Commit"><span
+                                        class="path1"></span><span class="path2"></span></i>Inventory
+                                Dashboard</a></li>
+                    @endcan
+                    @can('view production dashboard')
+                        <li><a href="{{ route('data.production') }}"
+                                class="{{ request()->is('data.production') ? 'current' : '' }}"><i class="icon-Commit"><span
+                                        class="path1"></span><span class="path2"></span></i>Data Production
+                            </a></li>
+                    @endcan
+                    @can('view standard production dashboard')
+                        <li><a href="{{ route('dashboard.production.standard') }}"
+                                class="{{ request()->is('dashboard/standard-production/') ? 'current' : '' }}"><i
+                                    class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>Standard
+                                Production</a></li>
+                    @endcan
+                    @can('view standard warehouse dashboard')
+                        <li><a href="{{ route('dashboard.warehouseindex') }}"
+                                class="{{ request()->is('dashboard/standard-warehouse') ? 'current' : '' }}"><i
+                                    class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>Standard
+                                Warehouse</a></li>
+                    @endcan
 
-                <i class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>
-                Standard Budgets</a></li>
-                @endcan
+                    @can('view standard shipment dashboard')
+                        <li><a href="{{ route('data.sales') }}" class="{{ request()->is('sales') ? 'current' : '' }}"><i
+                                    class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>Data
+                                Sales</a></li>
+                    @endcan
+                    @can('view standard shipment dashboard')
+                        <li><a href="{{ route('standard-budgets.index') }}"
+                                class="{{ request()->is('standard-budgets.index') ? 'current' : '' }}">
 
-                <li>
-    {{-- This link correctly points to your route --}}
-                    <a href="{{ route('reports.sales.byBrand') }}" 
-                    class="{{ request()->routeIs('reports.sales.byBrand') ? 'current' : '' }}">
-                        
-                        <i class="icon-tags"></i> {{-- Example Icon --}}
-                        <span>Sales By Brand</span>
-                        
-                    </a>
-                </li>
-                            </ul>
-        </li>
+                                <i class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>
+                                Standard Budgets</a></li>
+                    @endcan
+
+                    <li>
+                        {{-- This link correctly points to your route --}}
+                        <a href="{{ route('reports.sales.byBrand') }}"
+                            class="{{ request()->routeIs('reports.sales.byBrand') ? 'current' : '' }}">
+
+                            <i class="icon-tags"></i> {{-- Example Icon --}}
+                            <span>Sales By Brand</span>
+
+                        </a>
+                    </li>
+                </ul>
+            </li>
         @endcan
-            @can('view user management')
+
+        @can('view user management')
             <li
                 class="{{ request()->is('users*') || request()->is('department*') || request()->is('position*') || request()->is('level*') || request()->is('roles*') || request()->is('permissions*') || request()->is('get.master*') ? 'current' : '' }}">
                 <a href="#" style="font-size: 18px;">
@@ -107,9 +112,9 @@
                         </li>
                     @endcan
                     @can('view department')
-                                                <li>
+                        <li>
                             <a href="{{ route('department.index') }}"
-                            class="{{ request()->routeIs('department.index') ? 'current' : '' }}">
+                                class="{{ request()->routeIs('department.index') ? 'current' : '' }}">
                                 <i class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>
                                 Departments
                             </a>
@@ -117,8 +122,8 @@
                     @endcan
                     @can('view position')
                         <li><a href="{{ route('position.index') }}" class="{{ request()->is('position*') ? 'current' : '' }}"><i
-                                    class="icon-Commit"><span class="path1"></span><span
-                                        class="path2"></span></i>Positions</a></li>
+                                    class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>Positions</a>
+                        </li>
                     @endcan
                     @can('view level')
                         <li><a href="{{ route('level.index') }}" class="{{ request()->is('level*') ? 'current' : '' }}"><i
@@ -136,82 +141,85 @@
                                         class="path1"></span><span class="path2"></span></i>Permission</a></li>
                     @endcan
                     {{-- @can('get master data') --}}
-                        <li><a href="{{ route('get.master') }}" class="{{ request()->is('get.master*') ? 'current' : '' }}"><i
-                                    class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>Get Data
-                                Master </a></li>
+                    <li><a href="{{ route('get.master') }}" class="{{ request()->is('get.master*') ? 'current' : '' }}"><i
+                                class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>Get Data
+                            Master </a></li>
                     {{-- @endcan --}}
                 </ul>
             </li>
-            @endcan
-        </li>
-           <li
-                class="{{ request()->is('users*') || request()->is('department*') || request()->is('position*') || request()->is('level*') || request()->is('roles*') || request()->is('permissions*') || request()->is('get.master*') ? 'current' : '' }}">
-                <a href="#" style="font-size: 18px;">
-                    <i data-feather="users" style="width: 18px; height: 18px;"></i>
-                    Marsho JobBoard
-                </a>
-                <ul>
-                    <li>
-                        <a href="{{ route('jobs.index') }}" class="{{ request()->is('jobs*') ? 'current' : '' }}">
-                            <i class="icon-Layout-4-blocks"><span class="path1"></span><span class="path2"></span></i>
-                            Jobs Kanban
-                        </a>
-                    </li>
-
-                    <li>
-                        <a href="{{ route('areas.index') }}" class="{{ request()->is('areas*') ? 'current' : '' }}">
-                            <i class="icon-Map-pin"><span class="path1"></span><span class="path2"></span></i>
-                            Manage Areas
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('marsho-departments.index') }}" class="{{ request()->is('marsho-departments*') ? 'current' : '' }}">
-                            <i class="icon-Users"><span class="path1"></span><span class="path2"></span></i>
-                            Manage Departments
-                        </a>
-                    </li>
-                    <li>
-                        <a href="{{ route('marsho-users.index') }}" class="{{ request()->is('marsho-users*') ? 'current' : '' }}">
-                            <i class="icon-Users"><span class="path1"></span><span class="path2"></span></i>
-                            Manage Marsho Users
-                        </a>
-                    </li>
-
-                    <li>
-                        <a href="{{ route('activity-logs.index') }}" class="{{ request()->is('activity-logs*') ? 'current' : '' }}">
-                            <i class="icon-History"><span class="path1"></span><span class="path2"></span></i>
-                            Activity Logs
-                        </a>
-                    </li>
-
-                    <li>
-                        <a href="{{ route('reports.marsho-jobs.page') }}" class="{{ request()->is('reports/marsho-jobs*') ? 'current' : '' }}">
-                            <i class="icon-File_Export"><span class="path1"></span><span class="path2"></span></i>
-                            Marsho Jobs Export
-                        </a>
-                    </li>
-                </ul>
-            </li>
-        <li class="{{ request()->is('accidents-report*') || request()->is('dashboard/safety-board*') ? 'current' : '' }}">
+        @endcan
+   
+        <li class="{{ request()->is(['jobs*', 'areas*', 'marsho-departments*', 'marsho-users*', 'activity-logs*', 'reports/marsho-jobs*']) ? 'current' : '' }}">
     <a href="#" style="font-size: 18px;">
-        <i data-feather="shield" style="width: 18px; height: 18px;"></i>
-        Accident Report
+        <i data-feather="briefcase" style="width: 18px; height: 18px;"></i> Marsho JobBoard
     </a>
     <ul>
-        <li>
-            <a href="{{ route('accidents-report.index') }}" class="{{ request()->is('accidents-report*') ? 'current' : '' }}">
-                <i class="icon-File_Exclamation"><span class="path1"></span><span class="path2"></span></i>
-                Laporan Kecelakaan
-            </a>
-        </li>
-
-        <li>
-            <a href="{{ route('dashboard.safety-board.index') }}" class="{{ request()->is('dashboard/safety-board*') ? 'current' : '' }}">
-                <i class="icon-Display-board"><span class="path1"></span><span class="path2"></span></i>
-                Safety Board
-            </a>
-        </li>
+        <li><a href="{{ route('jobs.index') }}" class="{{ request()->is('jobs*') ? 'current' : '' }}"><i class="icon-Layout-4-blocks"><span class="path1"></span><span class="path2"></span></i>Jobs Kanban</a></li>
+        <li><a href="{{ route('areas.index') }}" class="{{ request()->is('areas*') ? 'current' : '' }}"><i class="icon-Map-pin"><span class="path1"></span><span class="path2"></span></i>Manage Areas</a></li>
+        <li><a href="{{ route('marsho-departments.index') }}" class="{{ request()->is('marsho-departments*') ? 'current' : '' }}"><i class="icon-Users"><span class="path1"></span><span class="path2"></span></i>Manage Departments</a></li>
+        <li><a href="{{ route('marsho-users.index') }}" class="{{ request()->is('marsho-users*') ? 'current' : '' }}"><i class="icon-Users"><span class="path1"></span><span class="path2"></span></i>Manage Marsho Users</a></li>
+        <li><a href="{{ route('activity-logs.index') }}" class="{{ request()->is('activity-logs*') ? 'current' : '' }}"><i class="icon-History"><span class="path1"></span><span class="path2"></span></i>Activity Logs</a></li>
+        <li><a href="{{ route('reports.marsho-jobs.page') }}" class="{{ request()->is('reports/marsho-jobs*') ? 'current' : '' }}"><i class="icon-File_Export"><span class="path1"></span><span class="path2"></span></i>Marsho Jobs Export</a></li>
     </ul>
 </li>
+        <li
+            class="{{ request()->is('accidents-report*') || request()->is('dashboard/safety-board*') ? 'current' : '' }}">
+            <a href="#" style="font-size: 18px;">
+                <i data-feather="shield" style="width: 18px; height: 18px;"></i>
+                Accident Report
+            </a>
+            <ul>
+                <li>
+                    <a href="{{ route('accidents-report.index') }}"
+                        class="{{ request()->is('accidents-report*') ? 'current' : '' }}">
+                        <i class="icon-File_Exclamation"><span class="path1"></span><span class="path2"></span></i>
+                        Laporan Kecelakaan
+                    </a>
+                </li>
+
+                <li>
+                    <a href="{{ route('dashboard.safety-board.index') }}"
+                        class="{{ request()->is('dashboard/safety-board*') ? 'current' : '' }}">
+                        <i class="icon-Display-board"><span class="path1"></span><span class="path2"></span></i>
+                        Safety Board
+                    </a>
+                </li>
+            </ul>
+        </li>
+
+        <li class="{{ request()->is('dashboard/ecommerce*') ? 'current' : '' }}">
+            <a href="#" style="font-size: 18px;">
+                {{-- Mengganti ikon menjadi keranjang belanja --}}
+                <i data-feather="shopping-cart" style="width: 18px; height: 18px;"></i>
+                E-Commerce
+            </a>
+            <ul>
+                <li>
+                    {{-- Mengarahkan link ke route 'dashboard.ecommerce' --}}
+                    <a href="{{ route('dashboard.ecommerce') }}"
+                        class="{{ request()->is('dashboard/ecommerce*') ? 'current' : '' }}">
+                        {{-- Anda bisa mengganti ikon ini sesuai dengan set ikon yang Anda gunakan --}}
+                        <i class="icon-Dashboard"><span class="path1"></span><span class="path2"></span></i>
+                        Dashboard
+                    </a>
+                </li>
+                {{-- Anda bisa menambahkan sub-menu lain di sini, contoh: --}}
+                {{--
+                <li>
+                    <a href="#">
+                        <i class="icon-Box"><span class="path1"></span><span class="path2"></span></i>
+                        Produk
+                    </a>
+                </li>
+                <li>
+                    <a href="#">
+                        <i class="icon-Cart"><span class="path1"></span><span class="path2"></span></i>
+                        Pesanan
+                    </a>
+                </li>
+                --}}
+            </ul>
+        </li>
+
     </ul>
 </nav>

@@ -1,10 +1,12 @@
 <x-app-layout>
     @section('title')
+        {{-- Judul halaman dinamis, tergantung mode create atau update --}}
         {{ isset($laporan) ? 'Revisi Laporan Kecelakaan' : 'Form Laporan Kecelakaan Baru' }}
     @endsection
 
     @php
-        // Flag untuk menentukan apakah ini mode revisi/update. Ini akan menjadi false saat membuat baru.
+        // Flag untuk menentukan apakah ini mode revisi/update.
+        // Ini akan menjadi false saat membuat baru dari controller ($laporan = null).
         $isUpdate = isset($laporan);
     @endphp
 
@@ -325,35 +327,86 @@
                             <textarea id="rekomendasi" name="rekomendasi" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" rows="6">{{ old('rekomendasi', $laporan->rekomendasi ?? '') }}</textarea>
                         </div>
 
-                        <!-- BAGIAN PERSETUJUAN & TANDA TANGAN BARU -->
+                        <!-- ================================================================== -->
+                        <!-- --- BAGIAN PERSETUJUAN YANG DIPERBAIKI --- -->
+                        <!-- ================================================================== -->
                         <h4 class="font-bold text-xl mt-8 pt-4 border-t mb-4">Persetujuan & Tanda Tangan</h4>
                         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-                            @php
-                                $approval_roles = [
-                                    'pembuat_laporan' => 'Pembuat Laporan',
-                                    'manager_hse' => 'Assisten/Manager HSE',
-                                    'manager_terkait' => 'Assisten/Manager Terkait',
-                                    'dept_head' => 'Dept Head QM HSE',
-                                    'gm' => 'GM'
-                                ];
-                            @endphp
 
-                            @foreach ($approval_roles as $key => $label)
+                            <!-- Pembuat Laporan (Menggunakan semua user) -->
                             <div class="border rounded-lg p-4 flex flex-col">
-                                <label for="{{ $key }}_id" class="block text-sm font-medium text-gray-700 mb-2 text-center">{{ $label }}</label>
-                                <select id="{{ $key }}_id" name="{{ $key }}_id" class="user-select w-full">
+                                <label for="pembuat_laporan_id" class="block text-sm font-medium text-gray-700 mb-2 text-center">Pembuat Laporan</label>
+                                <select id="pembuat_laporan_id" name="pembuat_laporan_id" class="user-select w-full">
                                     <option value=""></option>
-                                    @foreach ($users as $user)
+                                    @foreach ($allUsers as $user)
                                         <option value="{{ $user->id }}"
-                                            {{ old($key.'_id', $laporan->{$key.'_id'} ?? ($key == 'pembuat_laporan' ? Auth::id() : '')) == $user->id ? 'selected' : '' }}>
+                                            {{ old('pembuat_laporan_id', $laporan->pembuat_laporan_id ?? Auth::id()) == $user->id ? 'selected' : '' }}>
                                             {{ $user->name }}
                                         </option>
                                     @endforeach
                                 </select>
                             </div>
-                            @endforeach
+
+                            <!-- Assisten/Manager HSE (Menggunakan koleksi $hseManagers) -->
+                            <div class="border rounded-lg p-4 flex flex-col">
+                                <label for="manager_hse_id" class="block text-sm font-medium text-gray-700 mb-2 text-center">Assisten/Manager HSE</label>
+                                <select id="manager_hse_id" name="manager_hse_id" class="user-select w-full">
+                                    <option value=""></option>
+                                    @foreach ($hseManagers as $user)
+                                        <option value="{{ $user->id }}"
+                                            {{ old('manager_hse_id', $laporan->manager_hse_id ?? '') == $user->id ? 'selected' : '' }}>
+                                            {{ $user->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <!-- Assisten/Manager Terkait (Menggunakan semua user) -->
+                            <div class="border rounded-lg p-4 flex flex-col">
+                                <label for="manager_terkait_id" class="block text-sm font-medium text-gray-700 mb-2 text-center">Assisten/Manager Terkait</label>
+                                <select id="manager_terkait_id" name="manager_terkait_id" class="user-select w-full">
+                                    <option value=""></option>
+                                    @foreach ($allUsers as $user)
+                                        <option value="{{ $user->id }}"
+                                            {{ old('manager_terkait_id', $laporan->manager_terkait_id ?? '') == $user->id ? 'selected' : '' }}>
+                                            {{ $user->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <!-- Dept Head QM HSE (Menggunakan koleksi $deptHeads) -->
+                            <div class="border rounded-lg p-4 flex flex-col">
+                                <label for="dept_head_id" class="block text-sm font-medium text-gray-700 mb-2 text-center">Dept Head QM HSE</label>
+                                <select id="dept_head_id" name="dept_head_id" class="user-select w-full">
+                                    <option value=""></option>
+                                    @foreach ($deptHeads as $user)
+                                        <option value="{{ $user->id }}"
+                                            {{ old('dept_head_id', $laporan->dept_head_id ?? '') == $user->id ? 'selected' : '' }}>
+                                            {{ $user->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <!-- GM (Menggunakan koleksi $gms) -->
+                            <div class="border rounded-lg p-4 flex flex-col">
+                                <label for="gm_id" class="block text-sm font-medium text-gray-700 mb-2 text-center">GM</label>
+                                <select id="gm_id" name="gm_id" class="user-select w-full">
+                                    <option value=""></option>
+                                    @foreach ($gms as $user)
+                                        <option value="{{ $user->id }}"
+                                            {{ old('gm_id', $laporan->gm_id ?? '') == $user->id ? 'selected' : '' }}>
+                                            {{ $user->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
                         </div>
-                        <!-- AKHIR BAGIAN PERSETUJUAN -->
+                        <!-- ================================================================== -->
+                        <!-- --- AKHIR BAGIAN PERSETUJUAN --- -->
+                        <!-- ================================================================== -->
 
                         <button type="submit" class="w-full mt-8 py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                             {{ $isUpdate ? 'Kirim Ulang Laporan Revisi' : 'Submit Laporan' }}
@@ -366,48 +419,66 @@
 
     @push('scripts')
     <script src="{{ asset('js/tinymce/tinymce.min.js') }}"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <script>
-    const isUpdate = @json($isUpdate ?? false);
-    const biayaData = @json($isUpdate ? $laporan->biayaPerawatan : []);
-    const perbaikanData = @json($isUpdate ? $laporan->saranPerbaikan : []);
-    const apdData = @json($isUpdate ? $laporan->apd_data : []);
+    // ==================================================================
+    // --- PENGGUNAAN JQUERY DENGAN .noConflict() ---
+    // ==================================================================
+    var $j = jQuery.noConflict();
+
+    $j(document).ready(function() {
+        // Inisialisasi Select2 untuk semua dropdown persetujuan
+        $j('.user-select').select2({
+            placeholder: 'Cari & pilih pengguna',
+            allowClear: true
+        });
+
+        // --- LOGIKA PENGISIAN OTOMATIS YANG DISEMPURNAKAN ---
+        const isUpdate = @json($isUpdate);
+        if (!isUpdate) {
+            // Jika membuat laporan baru, coba pilih otomatis user jika hanya ada satu pilihan
+            // dalam koleksi yang sudah difilter dari controller.
+            @if($hseManagers->count() == 1)
+                $j('#manager_hse_id').val('{{ $hseManagers->first()->id }}').trigger('change');
+            @endif
+
+            @if($deptHeads->count() == 1)
+                $j('#dept_head_id').val('{{ $deptHeads->first()->id }}').trigger('change');
+            @endif
+
+            @if($gms->count() == 1)
+                $j('#gm_id').val('{{ $gms->first()->id }}').trigger('change');
+            @endif
+        }
+    });
+    // ==================================================================
+    // --- AKHIR KODE JQUERY ---
+    // ==================================================================
+
+
+    // Kode JavaScript murni (Vanilla JS) di bawah ini tidak perlu diubah.
+    const isUpdate = @json($isUpdate);
+    const biayaData = @json($isUpdate ? ($laporan->biayaPerawatan ?? []) : []);
+    const perbaikanData = @json($isUpdate ? ($laporan->saranPerbaikan ?? []) : []);
+    const apdData = @json($isUpdate ? ($laporan->apd_data ?? []) : []);
     const sebabUtamaKategori = @json($isUpdate ? $laporan->sebab_utama_kategori : null);
     const sebabUtamaDeskripsi = @json($isUpdate ? $laporan->sebab_utama_deskripsi : null);
 
     document.addEventListener('DOMContentLoaded', function () {
         if (typeof tinymce !== 'undefined') {
-
-            // ==================================================================
-            // --- KONFIGURASI TINYMCE BARU (UNGGAH SAAT SUBMIT FORM) ---
-            // ==================================================================
             tinymce.init({
                 selector: 'textarea#uraian_kejadian, textarea#analisa_masalah, textarea#tindakan_pencegahan, textarea#rekomendasi',
-
                 plugins: 'autolink lists link charmap preview anchor image media paste',
                 toolbar: 'undo redo | styles | bold italic | alignleft aligncenter alignright | bullist numlist outdent indent | link image media',
-
-                // Izinkan gambar ditempel sebagai data base64 ke dalam editor.
                 paste_data_images: true,
-
-                // Nonaktifkan unggahan otomatis. Gambar akan tetap sebagai base64 hingga form disubmit.
                 automatic_uploads: false,
-                
-                // Menentukan tipe file yang bisa dipilih dari file picker.
                 file_picker_types: 'image',
-
-                // Handler unggahan (images_upload_handler) DIHAPUS.
-                // Proses upload akan ditangani oleh controller di backend.
-
                 height: 350,
                 promotion: false,
                 license_key: 'gpl'
             });
-            // ==================================================================
-            // --- AKHIR KONFIGURASI ---
-            // ==================================================================
         }
 
         const allRadioSebab = document.querySelectorAll('input[name="sebab_utama"]');
@@ -423,8 +494,6 @@
             if (!lainRadioB.checked) lainInputB.value = ''; else lainInputB.focus();
         }
         allRadioSebab.forEach(radio => radio.addEventListener('change', handleSebabChange));
-
-        $('.user-select').select2({ placeholder: 'Cari & pilih pengguna', allowClear: true });
 
         const dateInput = document.getElementById('date');
         const dateDisplay = document.getElementById('date_display');

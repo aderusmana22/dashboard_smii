@@ -292,13 +292,32 @@ class LaporanKecelakaanController extends Controller
         }
     }
 
-    public function create()
+  public function create()
     {
-        $users = User::orderBy('name')->get(['id', 'name']);
+        // 1. Ambil daftar pengguna yang sudah difilter untuk setiap peran spesifik.
+        // Ini menggunakan scope `role()` yang disediakan oleh paket Spatie/Permission.
+        // Jauh lebih efisien daripada memfilter di Blade.
+        $gms = User::role('gm')->orderBy('name')->get();
+        $hseManagers = User::role('asmenHse')->orderBy('name')->get();
+        $deptHeads = User::role('DepHse')->orderBy('name')->get();
+
+        // 2. Ambil semua pengguna untuk dropdown yang tidak difilter
+        // (seperti 'Pembuat Laporan' dan 'Manager Terkait').
+        $allUsers = User::orderBy('name')->get();
+
+        // 3. Set $laporan ke null untuk menandakan ini adalah mode 'create'.
         $laporan = null;
-        return view('safetyboard.form', compact('users', 'laporan'));
+
+        // 4. Kirim semua koleksi yang dibutuhkan ke view.
+        return view('safetyboard.form', [
+            'gms' => $gms,
+            'hseManagers' => $hseManagers,
+            'deptHeads' => $deptHeads,
+            'allUsers' => $allUsers,
+            'laporan' => $laporan,
+        ]);
     }
-    
+
     public function show(LaporanKecelakaan $laporan)
     {
         $laporan->load('approvalStatus', 'approvalHistories.user', 'pembuatLaporan', 'revisedFrom');

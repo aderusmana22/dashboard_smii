@@ -193,302 +193,303 @@
                     <div class="p-6">
                         <div class="text-sm space-y-4">
 
-    <!-- 1. Kategori Kecelakaan -->
-    <div>
-        <!-- Baris Judul -->
-        <div class="flex">
-            <div class="w-52 font-bold">1. Kategori Kecelakaan</div>
-            <div class="flex-1"><span class="pr-2">:</span></div>
-        </div>
-        <!-- Opsi-opsi (di bawah judul, di-indentasi) -->
-        <div class="pl-5 pt-1 space-y-1">
-            <div class="flex items-center">
-                <span class="font-mono">(<span class="inline-flex justify-center w-4">@if($laporan->kategori_kecelakaan == 'Kerja')√@endif</span>)</span>
-                <span class="ml-2">Kerja</span>
-            </div>
-            <div class="flex items-center">
-                <span class="font-mono">(<span class="inline-flex justify-center w-4">@if($laporan->kategori_kecelakaan == 'Lalu Lintas')√@endif</span>)</span>
-                <span class="ml-2">Lalu Lintas</span>
-            </div>
-            <div class="flex items-center">
-                <span class="font-mono">(<span class="inline-flex justify-center w-4">@if($laporan->kategori_kecelakaan == 'Kebakaran')√@endif</span>)</span>
-                <span class="ml-2">Kebakaran</span>
-            </div>
-            <div class="flex items-center">
-                <span class="font-mono">(<span class="inline-flex justify-center w-4">@if($laporan->kategori_kecelakaan == 'Lain-lain')√@endif</span>)</span>
-                <span class="ml-2">Lain-lain</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- 2. Tanggal & Jam Kecelakaan -->
-    <div class="space-y-1">
-        <div class="flex">
-            <div class="w-52 font-bold">2. Tanggal Kecelakaan</div>
-            <div class="flex-1"><span class="pr-2">:</span>{{ optional($laporan->waktu_kecelakaan)->format('d-M-y') ?? '-' }}</div>
-        </div>
-        <div class="flex">
-            <div class="w-52 pl-5">Jam Kecelakaan</div>
-            <div class="flex-1"><span class="pr-2">:</span>{{ optional($laporan->waktu_kecelakaan)->format('H.i') ?? '-' }}</div>
-        </div>
-    </div>
-
-    <!-- 3. Lokasi Kecelakaan -->
-    <div class="space-y-1">
-        <div class="flex">
-            <div class="w-52 font-bold">3. Lokasi Kecelakaan</div>
-            <div class="flex-1"><span class="pr-2">:</span>{{ $laporan->lokasi_kecelakaan ?? '-' }}</div>
-        </div>
-        <div class="flex">
-            <div class="w-52 pl-5">Seksi / Departemen</div>
-            <div class="flex-1"><span class="pr-2">:</span>{{ $laporan->departemen ?? '-' }}</div>
-        </div>
-    </div>
-
-    <!-- 4. Nama Korban -->
-    <div class="space-y-1">
-        <div class="flex">
-            <div class="w-52 font-bold">4. Nama Korban</div>
-            <div class="flex-1"><span class="pr-2">:</span>{{ $laporan->nama_korban ?? '-' }}</div>
-        </div>
-        <div class="flex">
-            <div class="w-52 pl-5">NIK</div>
-            <div class="flex-1"><span class="pr-2">:</span>{{ $laporan->nik ?? '-' }}</div>
-        </div>
-        <div class="flex">
-            <div class="w-52 pl-5">Usia</div>
-            <div class="flex-1"><span class="pr-2">:</span>{{ $laporan->usia ?? '-' }}</div>
-        </div>
-        <div class="flex">
-            <div class="w-52 pl-5">Masa Kerja</div>
-            <div class="flex-1"><span class="pr-2">:</span>{{ $laporan->masa_kerja ?? '-' }}</div>
-        </div>
-        <div class="flex">
-            <div class="w-52 pl-5">Jabatan</div>
-            <div class="flex-1"><span class="pr-2">:</span>{{ $laporan->jabatan ?? '-' }}</div>
-        </div>
-    </div>
-
-    <!-- 5. Diberi Pertolongan (P3K) -->
-    <div class="space-y-1">
-        <!-- Baris Judul -->
-        <div class="flex">
-            <div class="w-52 font-bold">5. Diberi Pertolongan ( P3K)</div>
-            <div class="flex-1"><span class="pr-2">:</span></div>
-        </div>
-        <!-- Opsi-opsi (di bawah judul, di-indentasi) -->
-        <div class="pl-5 pt-1 space-y-1">
-            <div class="flex items-center">
-                <span class="font-mono">(<span class="inline-flex justify-center w-4">@if($laporan->pertolongan == 'Di Tempat Kejadian')√@endif</span>)</span>
-                <span class="ml-2">Di Tempat Kejadian</span>
-            </div>
-            <div class="flex items-center">
-                <span class="font-mono">(<span class="inline-flex justify-center w-4">@if($laporan->pertolongan == 'Di Klinik')√@endif</span>)</span>
-                <span class="ml-2">Di Klinik</span>
-            </div>
-            <div class="flex items-center">
-                <span class="font-mono">(<span class="inline-flex justify-center w-4">@if($laporan->pertolongan == 'Di Rumah Sakit')√@endif</span>)</span>
-                <span class="ml-2">Di Rumah Sakit</span>
-            </div>
-        </div>
-        <!-- Detail Tambahan (mengikuti format dua kolom) -->
-        <div class="flex pt-1">
-            <div class="w-52 pl-5">P3K dilakukan Oleh</div>
-            <div class="flex-1"><span class="pr-2">:</span>{{ $laporan->p3k_oleh ?? '-' }}</div>
-        </div>
-        <div class="flex">
-            <div class="w-52 pl-5">Jam</div>
-            <div class="flex-1"><span class="pr-2">:</span>{{ $laporan->jam_p3k ? \Carbon\Carbon::parse($laporan->jam_p3k)->format('H.i') : '-' }}</div>
-        </div>
-    </div>
-
-</div>  
-
-<div> <!-- Pembungkus untuk bagian 6 & 7, tambahkan kelas space-y-4 jika perlu -->
-
-    <!-- 6. Akibat Kecelakaan -->
-    <div>
-        <!-- Baris Judul -->
-        <div class="flex">
-            <div class="w-52 font-bold">6. Akibat Kecelakaan</div>
-            <div class="flex-1"><span class="pr-2">:</span></div>
-        </div>
-        <!-- Opsi-opsi (di bawah judul, di-indentasi) -->
-        <div class="pl-5 pt-1 space-y-1">
-            <div class="flex items-center">
-                <span class="font-mono">(<span class="inline-flex justify-center w-4">@if($laporan->akibat_kecelakaan == 'Sementara Total tak mampu bekerja')√@endif</span>)</span>
-                <span class="ml-2">Sementara Total tak mampu bekerja</span>
-            </div>
-            <div class="flex items-center">
-                <span class="font-mono">(<span class="inline-flex justify-center w-4">@if($laporan->akibat_kecelakaan == 'Sementara Sebagian tak mampu bekerja')√@endif</span>)</span>
-                <span class="ml-2">Sementara Sebagian tak mampu bekerja</span>
-            </div>
-            <div class="flex items-center">
-                <span class="font-mono">(<span class="inline-flex justify-center w-4">@if($laporan->akibat_kecelakaan == 'Tetap Sebagian tak mampu bekerja')√@endif</span>)</span>
-                <span class="ml-2">Tetap Sebagian tak mampu bekerja</span>
-            </div>
-            <div class="flex items-center">
-                <span class="font-mono">(<span class="inline-flex justify-center w-4">@if($laporan->akibat_kecelakaan == 'Tetap Total tak mampu bekerja')√@endif</span>)</span>
-                <span class="ml-2">Tetap Total tak mampu bekerja</span>
-            </div>
-            <div class="flex items-center">
-                <span class="font-mono">(<span class="inline-flex justify-center w-4">@if($laporan->akibat_kecelakaan == 'Meninggal')√@endif</span>)</span>
-                <span class="ml-2">Meninggal</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- 7. Jumlah waktu hilang -->
-    <div class="flex pt-4"> <!-- pt-4 untuk memberi jarak dari seksi sebelumnya -->
-        <div class="w-52 font-bold">7. Jumlah waktu hilang</div>
-        <div class="flex-1"><span class="pr-2">:</span>{{ $laporan->waktu_hilang ?? '-' }} jam</div>
-    </div>
-
-</div>    
-                  <!-- 8. Biaya Perawatan -->
-<div class="flex">
-    <!-- Kolom Kiri: Label -->
-    <div class="w-52 font-bold">8. Biaya perawatan</div>
-
-    <!-- Kolom Kanan: Menggunakan 'items-baseline' untuk perataan vertikal -->
-    <div class="flex flex-1 items-baseline">
-        <!-- Kolom Titik Dua -->
-        <div class="pr-2">:</div>
-        
-        <!-- Kolom Nilai Utama -->
-        <div class="flex-1">
-            <!-- Gunakan grid 3-kolom untuk perataan presisi -->
-            <div class="inline-grid grid-cols-[auto,auto,1fr] gap-x-2">
-
-                @forelse ($laporan->biayaPerawatan as $biaya)
-                    <!-- Baris Item Biaya -->
-                    
-                    <!-- Kolom 1 (Prefix): 'Rp'. Rata kanan. -->
-                    <div class="text-right">Rp</div>
-                    
-                    <!-- Kolom 2 (Angka): Angka. Rata kanan agar digit sejajar. -->
-                    <div class="text-right">{{ number_format($biaya->harga, 0, ',', '.') }}</div>
-
-                    <!-- Kolom 3 (Kategori): Mengambil sisa ruang. -->
-                    <div>({{ $biaya->kategori }})</div>
-
-                @empty
-                    <!-- Tampilkan strip jika tidak ada data, rentangkan di 3 kolom -->
-                    <div class="col-span-3">-</div>
-                @endempty
-
-                <!-- Tampilkan Total hanya jika ada LEBIH DARI SATU item biaya -->
-                @if ($laporan->biayaPerawatan->count() > 1)
-                    <!-- Garis Pemisah: Rentangkan di 3 kolom -->
-                    <div class="col-span-3 !my-1">
-                        <hr class="border-gray-400">
-                    </div>
-
-                    <!-- Baris Total -->
-                    <!-- Kolom 1 (Prefix): 'Total Rp'. Rata kanan. -->
-                    <div class="font-bold text-right">Total Rp</div>
-                    
-                    <!-- Kolom 2 (Angka): Angka total. Rata kanan. -->
-                    <div class="font-bold text-right">{{ number_format($laporan->biayaPerawatan->sum('harga'), 0, ',', '.') }}</div>
-
-                    <!-- Kolom 3 (Kosong) -->
-                    <div></div>
-                @endif
-            </div>
-        </div>
-    </div>
-</div>
-                            <div class="flex">
-                                <div class="w-1/3 font-bold">9. Alat Pelindung Diri (APD)</div>
-                                <div class="grid grid-cols-2 gap-x-8">
-                                    <div>
-                                        @php $apds = $laporan->apd_data ?? [];
-                                        $apd_labels = ['sarung_tangan' => 'Sarung Tangan', 'sepatu' => 'Sepatu Keselamatan', 'helm' => 'Helm', 'masker' => 'Masker', 'kacamata' => 'Kaca mata', 'celemek' => 'Celemek', 'kedok' => 'Kedok pelindung Muka', 'hairnet' => 'Hair Net']; @endphp
-                                        @foreach ($apd_labels as $key => $label) <div class="flex items-center">
-                                            @php renderCheck(array_key_exists($key, $apds), true) @endphp {{ $label }}
-                                            @if ($key === 'sarung_tangan' && isset($apds[$key]['keterangan'])) <span
-                                                class="text-gray-600 ml-1">...{{ Str::limit($apds[$key]['keterangan'], 20) }}</span>
-                                        @endif </div> @endforeach</div>
-                                    <div class="border-l pl-4"><strong>DIPAKAI</strong><br>
-                                        @foreach ($apd_labels as $key => $label) <div
-                                            class="grid grid-cols-12 items-center">
-                                            <div class="col-span-6 flex items-center">
-                                                @php renderCheck(isset($apds[$key]['dipakai']) && $apds[$key]['dipakai'] == 'ya', true) @endphp
-                                                Ya</div>
-                                            <div class="col-span-6 flex items-center">
-                                                @php renderCheck(isset($apds[$key]['dipakai']) && $apds[$key]['dipakai'] == 'tidak', true) @endphp
-                                                Tidak</div>
-                                        </div> @endforeach</div>
+                            <!-- 1. Kategori Kecelakaan -->
+                            <div>
+                                <div class="flex">
+                                    <div class="w-52 font-bold">1. Kategori Kecelakaan</div>
+                                    <div class="flex-1"><span class="pr-2">:</span></div>
+                                </div>
+                                <div class="pl-5 pt-1 space-y-1">
+                                    <div class="flex items-center">
+                                        <span class="font-mono">(<span class="inline-flex justify-center w-4">@if($laporan->kategori_kecelakaan == 'Kerja')√@endif</span>)</span>
+                                        <span class="ml-2">Kerja</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <span class="font-mono">(<span class="inline-flex justify-center w-4">@if($laporan->kategori_kecelakaan == 'Lalu Lintas')√@endif</span>)</span>
+                                        <span class="ml-2">Lalu Lintas</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <span class="font-mono">(<span class="inline-flex justify-center w-4">@if($laporan->kategori_kecelakaan == 'Kebakaran')√@endif</span>)</span>
+                                        <span class="ml-2">Kebakaran</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <span class="font-mono">(<span class="inline-flex justify-center w-4">@if($laporan->kategori_kecelakaan == 'Lain-lain')√@endif</span>)</span>
+                                        <span class="ml-2">Lain-lain</span>
+                                    </div>
                                 </div>
                             </div>
+
+                            <!-- 2. Tanggal & Jam Kecelakaan -->
+                            <div class="space-y-1">
+                                <div class="flex">
+                                    <div class="w-52 font-bold">2. Tanggal Kecelakaan</div>
+                                    <div class="flex-1"><span class="pr-2">:</span>{{ optional($laporan->waktu_kecelakaan)->format('d-M-y') ?? '-' }}</div>
+                                </div>
+                                <div class="flex">
+                                    <div class="w-52 pl-5">Jam Kecelakaan</div>
+                                    <div class="flex-1"><span class="pr-2">:</span>{{ optional($laporan->waktu_kecelakaan)->format('H.i') ?? '-' }}</div>
+                                </div>
+                            </div>
+
+                            <!-- 3. Lokasi Kecelakaan -->
+                            <div class="space-y-1">
+                                <div class="flex">
+                                    <div class="w-52 font-bold">3. Lokasi Kecelakaan</div>
+                                    <div class="flex-1"><span class="pr-2">:</span>{{ $laporan->lokasi_kecelakaan ?? '-' }}</div>
+                                </div>
+                                <div class="flex">
+                                    <div class="w-52 pl-5">Seksi / Departemen</div>
+                                    <div class="flex-1"><span class="pr-2">:</span>{{ $laporan->departemen ?? '-' }}</div>
+                                </div>
+                            </div>
+
+                            <!-- 4. Nama Korban -->
+                            <div class="space-y-1">
+                                <div class="flex">
+                                    <div class="w-52 font-bold">4. Nama Korban</div>
+                                    <div class="flex-1"><span class="pr-2">:</span>{{ $laporan->nama_korban ?? '-' }}</div>
+                                </div>
+                                <div class="flex">
+                                    <div class="w-52 pl-5">NIK</div>
+                                    <div class="flex-1"><span class="pr-2">:</span>{{ $laporan->nik ?? '-' }}</div>
+                                </div>
+                                <div class="flex">
+                                    <div class="w-52 pl-5">Usia</div>
+                                    <div class="flex-1"><span class="pr-2">:</span>{{ $laporan->usia ?? '-' }}</div>
+                                </div>
+                                <div class="flex">
+                                    <div class="w-52 pl-5">Masa Kerja</div>
+                                    <div class="flex-1"><span class="pr-2">:</span>{{ $laporan->masa_kerja ?? '-' }}</div>
+                                </div>
+                                <div class="flex">
+                                    <div class="w-52 pl-5">Jabatan</div>
+                                    <div class="flex-1"><span class="pr-2">:</span>{{ $laporan->jabatan ?? '-' }}</div>
+                                </div>
+                            </div>
+
+                            <!-- 5. Diberi Pertolongan (P3K) -->
+                            <div class="space-y-1">
+                                <div class="flex">
+                                    <div class="w-52 font-bold">5. Diberi Pertolongan ( P3K)</div>
+                                    <div class="flex-1"><span class="pr-2">:</span></div>
+                                </div>
+                                <div class="pl-5 pt-1 space-y-1">
+                                    <div class="flex items-center">
+                                        <span class="font-mono">(<span class="inline-flex justify-center w-4">@if($laporan->pertolongan == 'Di Tempat Kejadian')√@endif</span>)</span>
+                                        <span class="ml-2">Di Tempat Kejadian</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <span class="font-mono">(<span class="inline-flex justify-center w-4">@if($laporan->pertolongan == 'Di Klinik')√@endif</span>)</span>
+                                        <span class="ml-2">Di Klinik</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <span class="font-mono">(<span class="inline-flex justify-center w-4">@if($laporan->pertolongan == 'Di Rumah Sakit')√@endif</span>)</span>
+                                        <span class="ml-2">Di Rumah Sakit</span>
+                                    </div>
+                                </div>
+                                <div class="flex pt-1">
+                                    <div class="w-52 pl-5">P3K dilakukan Oleh</div>
+                                    <div class="flex-1"><span class="pr-2">:</span>{{ $laporan->p3k_oleh ?? '-' }}</div>
+                                </div>
+                                <div class="flex">
+                                    <div class="w-52 pl-5">Jam</div>
+                                    <div class="flex-1"><span class="pr-2">:</span>{{ $laporan->jam_p3k ? \Carbon\Carbon::parse($laporan->jam_p3k)->format('H.i') : '-' }}</div>
+                                </div>
+                            </div>
+
+                            <!-- 6. Akibat Kecelakaan -->
+                            <div>
+                                <div class="flex">
+                                    <div class="w-52 font-bold">6. Akibat Kecelakaan</div>
+                                    <div class="flex-1"><span class="pr-2">:</span></div>
+                                </div>
+                                <div class="pl-5 pt-1 space-y-1">
+                                    <div class="flex items-center">
+                                        <span class="font-mono">(<span class="inline-flex justify-center w-4">@if($laporan->akibat_kecelakaan == 'Sementara Total tak mampu bekerja')√@endif</span>)</span>
+                                        <span class="ml-2">Sementara Total tak mampu bekerja</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <span class="font-mono">(<span class="inline-flex justify-center w-4">@if($laporan->akibat_kecelakaan == 'Sementara Sebagian tak mampu bekerja')√@endif</span>)</span>
+                                        <span class="ml-2">Sementara Sebagian tak mampu bekerja</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <span class="font-mono">(<span class="inline-flex justify-center w-4">@if($laporan->akibat_kecelakaan == 'Tetap Sebagian tak mampu bekerja')√@endif</span>)</span>
+                                        <span class="ml-2">Tetap Sebagian tak mampu bekerja</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <span class="font-mono">(<span class="inline-flex justify-center w-4">@if($laporan->akibat_kecelakaan == 'Tetap Total tak mampu bekerja')√@endif</span>)</span>
+                                        <span class="ml-2">Tetap Total tak mampu bekerja</span>
+                                    </div>
+                                    <div class="flex items-center">
+                                        <span class="font-mono">(<span class="inline-flex justify-center w-4">@if($laporan->akibat_kecelakaan == 'Meninggal')√@endif</span>)</span>
+                                        <span class="ml-2">Meninggal</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 7. Jumlah waktu hilang -->
+                            <div class="flex">
+                                <div class="w-52 font-bold">7. Jumlah waktu hilang</div>
+                                <div class="flex-1"><span class="pr-2">:</span>{{ $laporan->waktu_hilang ?? '-' }} hari</div>
+                            </div>
+
+                            <!-- 8. Biaya Perawatan -->
+                            <div class="flex">
+                                <div class="w-52 font-bold">8. Biaya perawatan</div>
+                                <div class="flex flex-1 items-baseline">
+                                    <div class="pr-2">:</div>
+                                    <div class="flex-1">
+                                        <div class="inline-grid grid-cols-[auto,auto,1fr] gap-x-2">
+                                            @forelse ($laporan->biayaPerawatan as $biaya)
+                                                <div class="text-right">Rp</div>
+                                                <div class="text-right">{{ number_format($biaya->harga, 0, ',', '.') }}</div>
+                                                <div>({{ $biaya->kategori }})</div>
+                                            @empty
+                                                <div class="col-span-3">-</div>
+                                            @endforelse
+                                            @if ($laporan->biayaPerawatan->count() > 1)
+                                                <div class="col-span-3 !my-1"><hr class="border-gray-400"></div>
+                                                <div class="font-bold text-right">Total Rp</div>
+                                                <div class="font-bold text-right">{{ number_format($laporan->biayaPerawatan->sum('harga'), 0, ',', '.') }}</div>
+                                                <div></div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 9. Alat Pelindung Diri (APD) -->
+                            <div class="flex">
+                                <div class="w-52 font-bold">9. Alat Pelindung Diri (APD)</div>
+                                <div class="flex-1 grid grid-cols-2 gap-x-8">
+                                    <div>
+                                        @php
+                                            $apds = $laporan->apd_data ?? [];
+                                            $apd_labels = ['sarung_tangan' => 'Sarung Tangan', 'sepatu' => 'Sepatu Keselamatan', 'helm' => 'Helm', 'masker' => 'Masker', 'kacamata' => 'Kaca mata', 'celemek' => 'Celemek', 'kedok' => 'Kedok pelindung Muka', 'hairnet' => 'Hair Net'];
+                                        @endphp
+                                        @foreach ($apd_labels as $key => $label)
+                                            <div class="flex items-center">
+                                                <span class="font-mono">(<span class="inline-flex justify-center w-4">@if(isset($apds[$key]))√@endif</span>)</span>
+                                                <span class="ml-2">{{ $label }}</span>
+                                                @if ($key === 'sarung_tangan' && !empty($apds[$key]['keterangan']))
+                                                    <span class="text-gray-600 ml-1">({{ Str::limit($apds[$key]['keterangan'], 20) }})</span>
+                                                @endif
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                    <div class="border-l pl-4">
+                                        <strong>DIPAKAI</strong><br>
+                                        @foreach ($apd_labels as $key => $label)
+                                            <div class="grid grid-cols-12 items-center">
+                                                <div class="col-span-6 flex items-center">
+                                                    <span class="font-mono">(<span class="inline-flex justify-center w-4">@if(isset($apds[$key]['dipakai']) && $apds[$key]['dipakai'] == 'ya')√@endif</span>)</span>
+                                                    <span class="ml-2">Ya</span>
+                                                </div>
+                                                <div class="col-span-6 flex items-center">
+                                                    <span class="font-mono">(<span class="inline-flex justify-center w-4">@if(isset($apds[$key]['dipakai']) && $apds[$key]['dipakai'] == 'tidak')√@endif</span>)</span>
+                                                    <span class="ml-2">Tidak</span>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- 10. Sebab Kecelakaan -->
-<div>
-    <!-- Baris Judul -->
-    <div class="flex">
-        <div class="w-52 font-bold">10. Sebab Kecelakaan</div>
-        <div class="flex-1"><span class="pr-2">:</span></div>
-    </div>
-    
-    <!-- Opsi-opsi (di bawah judul, di-indentasi) -->
-    <div class="pl-5 pt-1 space-y-1">
-        <div class="flex items-center">
-            <span class="font-mono">(<span class="inline-flex justify-center w-4">
-                @if($laporan->sebab_utama_kategori == 'A')√@endif
-            </span>)</span>
-            <span class="ml-2">Tindakan berbahaya Orang Lain</span>
-        </div>
-        <div class="flex items-center">
-            <span class="font-mono">(<span class="inline-flex justify-center w-4">
-                @if($laporan->sebab_utama_kategori == 'B')√@endif
-            </span>)</span>
-            <span class="ml-2">Tindakan berbahaya diri sendiri.</span>
-        </div>
-        <div class="flex items-center">
-            <span class="font-mono">(<span class="inline-flex justify-center w-4">
-                @if($laporan->sebab_utama_kategori == 'C')√@endif
-            </span>)</span>
-            <span class="ml-2">Keadaan berbahaya</span>
-        </div>
-    </div>
-</div>
-                            <div class="pt-4"><strong class="font-bold">11. Uraian
-                                    Kejadian:</strong>
+                            <div>
+                                <div class="flex">
+                                    <div class="w-52 font-bold">10. Sebab Kecelakaan</div>
+                                    <div class="flex-1"><span class="pr-2">:</span></div>
+                                </div>
+                                <div class="pl-5 pt-1 space-y-1">
+                                    @php
+                                        $sebabKecelakaanOptions = ['Tindakan berbahaya Orang Lain', 'Tindakan berbahaya diri sendiri.', 'Keadaan berbahaya'];
+                                    @endphp
+                                    @foreach($sebabKecelakaanOptions as $option)
+                                    <div class="flex items-center">
+                                        <span class="font-mono">(<span class="inline-flex justify-center w-4">@if($laporan->sebab_kecelakaan == $option)√@endif</span>)</span>
+                                        <span class="ml-2">{{ $option }}</span>
+                                    </div>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <!-- 11. Uraian Kejadian -->
+                            <div class="pt-4">
+                                <strong class="font-bold">11. Uraian Kejadian:</strong>
                                 <div class="prose prose-sm max-w-none mt-1">{!! $laporan->uraian_kejadian !!}</div>
                             </div>
-                            <!-- Mengelompokkan bagian 12, 13, dan 14 dengan spasi yang konsisten -->
-<div class="space-y-1">
 
-    <!-- 12. Kategori Dampak -->
-    <div class="flex">
-        <div class="w-52 font-bold">12. Kategori Dampak</div>
-        <div class="flex-1">
-            <span class="pr-2">:</span>{{ $laporan->kategori_dampak ?? '-' }}
-        </div>
-    </div>
+                            <!-- 12, 13, 14 -->
+                            <div class="space-y-1">
+                                <div class="flex">
+                                    <div class="w-52 font-bold">12. Kategori Dampak</div>
+                                    <div class="flex-1"><span class="pr-2">:</span>{{ $laporan->kategori_dampak ?? '-' }}</div>
+                                </div>
+                                <div class="flex">
+                                    <div class="w-52 font-bold">13. Tipe Kecelakaan</div>
+                                    <div class="flex-1"><span class="pr-2">:</span>{{ $laporan->tipe_kecelakaan ?? '-' }}</div>
+                                </div>
+                                <div class="flex">
+                                    <div class="w-52 font-bold">14. Bagian badan yang terluka</div>
+                                    <div class="flex-1"><span class="pr-2">:</span>{{ $laporan->bagian_terluka ?? '-' }}</div>
+                                </div>
+                            </div>
 
-    <!-- 13. Tipe Kecelakaan -->
-    <div class="flex">
-        <div class="w-52 font-bold">13. Tipe Kecelakaan</div>
-        <div class="flex-1">
-            <span class="pr-2">:</span>{{ $laporan->tipe_kecelakaan ?? '-' }}
-        </div>
-    </div>
+                            <!-- 15. Analisa Sebab Utama (REVISED) -->
+                            <div class="pt-4 border-t-2 border-black">
+                                @php
+                                    $tindakanBerbahaya = [ 'Mengoperasikan tanpa wewenang', 'Mengoperasikan dengan kecepatan berlebihan', 'Alat penyelamat tidak berfungsi', 'Menggunakan alat yang rusak', 'Menggunakan alat / bahan tidak sesuai fungsinya.', 'Menggunakan alat secara tidak benar', 'Menggunakan alat pelindung diri tidak sesuai fungsinya.', 'Tidak menggunakan Alat Pelindung Diri yang diwajibkan', 'Pemuatan / pembongkaran / penempatan yang tidak sesuai', 'Salah mengangkat', 'Mengambil posisi salah', 'Menservis alat yang berputar', 'Bersendau gurau', 'Mengantuk, melamun' ];
+                                    $keadaanBerbahaya = [ 'Alat penyelamat yang kurang sempurna', 'Alat, mesin, atau bahan rusak', 'Sistem pemberi peringatan yang kurang sempurna', 'Bahaya kebakaran & peledakan', 'House keeping di bawah standard', 'Kondisi udara yang berbahaya terhadap gas, debu, dan uap', 'Kebisingan tinggi', 'Paparan / tekanan panas', 'Pencahayaan kurang' ];
+                                    $sebabUtamaA = collect($laporan->sebab_utama)->firstWhere('kategori', 'A');
+                                    $sebabUtamaB = collect($laporan->sebab_utama)->firstWhere('kategori', 'B');
+                                @endphp
+                                <strong class="font-bold">15. Analisa Sebab Utama Kecelakaan:</strong>
+                                <div class="pl-5 pt-1 space-y-2">
+                                    <div>
+                                        <p class="font-semibold">A. Tindakan Berbahaya (Unsafe Human Act):</p>
+                                        <div class="pl-4 space-y-1">
+                                            @foreach ($tindakanBerbahaya as $sebab)
+                                                <div class="flex items-center">
+                                                    <span class="font-mono">(<span class="inline-flex justify-center w-4">@if($sebabUtamaA && $sebabUtamaA['deskripsi'] == $sebab)√@endif</span>)</span>
+                                                    <span class="ml-2">{{ $sebab }}</span>
+                                                </div>
+                                            @endforeach
+                                            @php $isLainA = $sebabUtamaA && !in_array($sebabUtamaA['deskripsi'], $tindakanBerbahaya); @endphp
+                                            <div class="flex items-center">
+                                                <span class="font-mono">(<span class="inline-flex justify-center w-4">@if($isLainA)√@endif</span>)</span>
+                                                <span class="ml-2">Lain-lain: {{ $isLainA ? $sebabUtamaA['deskripsi'] : '' }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <p class="font-semibold">B. Keadaan Berbahaya (Unsafe Condition):</p>
+                                        <div class="pl-4 space-y-1">
+                                            @foreach ($keadaanBerbahaya as $sebab)
+                                                <div class="flex items-center">
+                                                    <span class="font-mono">(<span class="inline-flex justify-center w-4">@if($sebabUtamaB && $sebabUtamaB['deskripsi'] == $sebab)√@endif</span>)</span>
+                                                    <span class="ml-2">{{ $sebab }}</span>
+                                                </div>
+                                            @endforeach
+                                            @php $isLainB = $sebabUtamaB && !in_array($sebabUtamaB['deskripsi'], $keadaanBerbahaya); @endphp
+                                            <div class="flex items-center">
+                                                <span class="font-mono">(<span class="inline-flex justify-center w-4">@if($isLainB)√@endif</span>)</span>
+                                                <span class="ml-2">Lain-lain: {{ $isLainB ? $sebabUtamaB['deskripsi'] : '' }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
-    <!-- 14. Bagian badan yang terluka -->
-    <div class="flex">
-        <div class="w-52 font-bold">14. Bagian badan yang terluka</div>
-        <div class="flex-1">
-            <span class="pr-2">:</span>{{ $laporan->bagian_terluka ?? '-' }}
-        </div>
-    </div>
-    
-</div>
-                            <div class="pt-4 border-t-2 border-black"><strong class="font-bold">16. Analisa
-                                    Masalah:</strong>
+                            <!-- 16. Analisa Masalah -->
+                            <div class="pt-4 border-t-2 border-black">
+                                <strong class="font-bold">16. Analisa Masalah:</strong>
                                 <div class="prose prose-sm max-w-none mt-1">{!! $laporan->analisa_masalah !!}</div>
                             </div>
-                            <div class="pt-4 border-t-2 border-black"><strong class="font-bold">17. Saran Perbaikan,
-                                    PIC, Due Date:</strong>
+
+                            <!-- 17. Saran Perbaikan -->
+                            <div class="pt-4 border-t-2 border-black">
+                                <strong class="font-bold">17. Saran Perbaikan, PIC, Due Date:</strong>
                                 <table class="w-full border-collapse border border-black mt-2 text-xs">
                                     <thead>
                                         <tr class="border-b-2 border-black font-bold">
@@ -498,25 +499,30 @@
                                             <td class="p-1 text-center">Due Date</td>
                                         </tr>
                                     </thead>
-                                    <tbody>@forelse ($laporan->saranPerbaikan as $saran) <tr
-                                        class="border-b border-black">
-                                        <td class="border-r border-black p-1 text-center">{{ $loop->iteration }}
-                                        </td>
-                                        <td class="border-r border-black p-1">{{ $saran->tindakan }}</td>
-                                        <td class="border-r border-black p-1 text-center">{{ $saran->pic }}</td>
-                                        <td class="p-1 text-center">
-                                            {{ optional($saran->due_date)->format('d-M-y') }}</td>
-                                    </tr> @empty <tr>
-                                            <td colspan="4" class="p-2 text-center text-gray-500">Tidak ada saran
-                                                perbaikan.</td>
-                                        </tr> @endforelse</tbody>
+                                    <tbody>
+                                        @forelse ($laporan->saranPerbaikan as $saran)
+                                        <tr class="border-b border-black">
+                                            <td class="border-r border-black p-1 text-center">{{ $loop->iteration }}</td>
+                                            <td class="border-r border-black p-1">{{ $saran->tindakan }}</td>
+                                            <td class="border-r border-black p-1 text-center">{{ $saran->pic }}</td>
+                                            <td class="p-1 text-center">{{ optional($saran->due_date)->format('d-M-y') }}</td>
+                                        </tr>
+                                        @empty
+                                        <tr><td colspan="4" class="p-2 text-center text-gray-500">Tidak ada saran perbaikan.</td></tr>
+                                        @endforelse
+                                    </tbody>
                                 </table>
                             </div>
-                            <div class="pt-4 border-t-2 border-black"><strong class="font-bold">Tindakan
-                                    Pencegahan:</strong>
+
+                            <!-- Tindakan Pencegahan -->
+                            <div class="pt-4 border-t-2 border-black">
+                                <strong class="font-bold">Tindakan Pencegahan:</strong>
                                 <div class="prose prose-sm max-w-none mt-1">{!! $laporan->tindakan_pencegahan !!}</div>
                             </div>
-                            <div class="pt-4 border-t-2 border-black"><strong class="font-bold">Rekomendasi:</strong>
+
+                            <!-- Rekomendasi -->
+                            <div class="pt-4 border-t-2 border-black">
+                                <strong class="font-bold">Rekomendasi:</strong>
                                 <div class="prose prose-sm max-w-none mt-1">{!! $laporan->rekomendasi !!}</div>
                             </div>
                         </div>
@@ -525,36 +531,11 @@
                         @php
                             $approvedHistories = $laporan->approvalHistories->where('action', 'approved');
                             $signatories = [
-                                [
-                                    'title' => 'Dibuat Oleh',
-                                    'role' => 'Pembuat Laporan',
-                                    'user' => $laporan->pembuatLaporan,
-                                    'action_date' => $laporan->created_at
-                                ],
-                                [
-                                    'title' => 'Diketahui',
-                                    'role' => 'Manager HSE',
-                                    'user' => $laporan->managerHse,
-                                    'action_date' => optional($approvedHistories->firstWhere('user_id', $laporan->manager_hse_id))->created_at
-                                ],
-                                [
-                                    'title' => 'Diketahui',
-                                    'role' => 'Manager Terkait',
-                                    'user' => $laporan->managerTerkait,
-                                    'action_date' => optional($approvedHistories->firstWhere('user_id', $laporan->manager_terkait_id))->created_at
-                                ],
-                                [
-                                    'title' => 'Diketahui',
-                                    'role' => 'Dept Head',
-                                    'user' => $laporan->deptHead,
-                                    'action_date' => optional($approvedHistories->firstWhere('user_id', $laporan->dept_head_id))->created_at
-                                ],
-                                [
-                                    'title' => 'Disetujui',
-                                    'role' => 'General Manager',
-                                    'user' => $laporan->generalManager,
-                                    'action_date' => optional($approvedHistories->firstWhere('user_id', $laporan->gm_id))->created_at
-                                ],
+                                [ 'title' => 'Dibuat Oleh', 'role' => 'Pembuat Laporan', 'user' => $laporan->pembuatLaporan, 'action_date' => $laporan->created_at ],
+                                [ 'title' => 'Diketahui', 'role' => 'Ass. Manager HSE', 'user' => $laporan->managerHse, 'action_date' => optional($approvedHistories->firstWhere('user_id', $laporan->manager_hse_id))->created_at ],
+                                [ 'title' => 'Diketahui', 'role' => 'Manager Terkait', 'user' => $laporan->managerTerkait, 'action_date' => optional($approvedHistories->firstWhere('user_id', $laporan->manager_terkait_id))->created_at ],
+                                [ 'title' => 'Diketahui', 'role' => 'Dept Head QHSE', 'user' => $laporan->deptHead, 'action_date' => optional($approvedHistories->firstWhere('user_id', $laporan->dept_head_id))->created_at ],
+                                [ 'title' => 'Disetujui', 'role' => 'General Manager', 'user' => $laporan->generalManager, 'action_date' => optional($approvedHistories->firstWhere('user_id', $laporan->gm_id))->created_at ],
                             ];
                         @endphp
 
@@ -564,22 +545,17 @@
                             <div class="grid grid-cols-5 text-center mt-4 font-bold">
                                 <div class="col-span-1 border border-black p-1">{{ $signatories[0]['title'] }}</div>
                                 <div class="col-span-3 border-y border-r border-black p-1">Diketahui</div>
-                                <div class="col-span-1 border-y border-r border-black p-1">
-                                    {{ $signatories[4]['title'] }}</div>
+                                <div class="col-span-1 border-y border-r border-black p-1">{{ $signatories[4]['title'] }}</div>
                             </div>
 
                             <div class="grid grid-cols-5 text-center text-xs h-32">
                                 @foreach ($signatories as $signatory)
-                                    <div
-                                        class="border-b {{ $loop->first ? 'border-x' : 'border-r' }} border-black flex flex-col justify-center items-center p-2">
+                                    <div class="border-b {{ $loop->first ? 'border-x' : 'border-r' }} border-black flex flex-col justify-center items-center p-2">
                                         @if ($signatory['action_date'])
                                             <div class="text-center">
-                                                <p class="font-bold text-green-600">
-                                                    {{ $loop->first ? 'SUBMITTED' : 'APPROVED' }}</p>
-                                                <p class="text-gray-600 mt-1">
-                                                    {{ \Carbon\Carbon::parse($signatory['action_date'])->format('d M Y') }}</p>
-                                                <p class="text-gray-500 text-[10px]">
-                                                    {{ \Carbon\Carbon::parse($signatory['action_date'])->format('H:i:s') }}</p>
+                                                <p class="font-bold text-green-600">{{ $loop->first ? 'SUBMITTED' : 'APPROVED' }}</p>
+                                                <p class="text-gray-600 mt-1">{{ \Carbon\Carbon::parse($signatory['action_date'])->format('d M Y') }}</p>
+                                                <p class="text-gray-500 text-[10px]">{{ \Carbon\Carbon::parse($signatory['action_date'])->format('H:i:s') }}</p>
                                             </div>
                                         @else
                                             <div class="text-gray-400 italic">Menunggu...</div>
@@ -590,10 +566,8 @@
 
                             <div class="grid grid-cols-5 text-center font-bold text-xs">
                                 @foreach ($signatories as $signatory)
-                                    <div
-                                        class="border-b {{ $loop->first ? 'border-x' : 'border-r' }} border-black p-1 flex flex-col h-16 justify-center">
-                                        <span
-                                            class="font-bold underline">{{ optional($signatory['user'])->name ?? 'N/A' }}</span>
+                                    <div class="border-b {{ $loop->first ? 'border-x' : 'border-r' }} border-black p-1 flex flex-col h-16 justify-center">
+                                        <span class="font-bold underline">{{ optional($signatory['user'])->name ?? 'N/A' }}</span>
                                         <span class="font-normal">{{ $signatory['role'] }}</span>
                                     </div>
                                 @endforeach

@@ -12,6 +12,10 @@ class SaranPerbaikan extends Model
 
     protected $fillable = ['laporan_kecelakaan_id', 'tindakan', 'pic', 'due_date'];
 
+    protected $casts = [
+        'due_date' => 'date',
+    ];
+
     public function laporanKecelakaan(): BelongsTo
     {
         return $this->belongsTo(LaporanKecelakaan::class);

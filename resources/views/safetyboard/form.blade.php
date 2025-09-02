@@ -1,20 +1,15 @@
 <x-app-layout>
     @section('title')
-        {{-- Judul halaman dinamis, tergantung mode create atau update --}}
         {{ isset($laporan) ? 'Revisi Laporan Kecelakaan' : 'Form Laporan Kecelakaan Baru' }}
     @endsection
 
     @php
-        // Flag untuk menentukan apakah ini mode revisi/update.
-        // Ini akan menjadi false saat membuat baru dari controller ($laporan = null).
         $isUpdate = isset($laporan);
     @endphp
 
     @push('styles')
-        {{-- CDN untuk Select2 --}}
         <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
         <style>
-            /* Menyesuaikan tampilan Select2 agar cocok dengan Tailwind */
             .select2-container .select2-selection--single { height: 2.625rem !important; border: 1px solid #d1d5db !important; border-radius: 0.375rem !important; }
             .select2-container--default .select2-selection--single .select2-selection__rendered { line-height: 2.625rem !important; padding-left: 0.75rem !important; color: #1f2937; }
             .select2-container--default .select2-selection--single .select2-selection__arrow { height: 2.625rem !important; }
@@ -224,32 +219,61 @@
                             ];
                         @endphp
                         @foreach ($apds as $key => $label)
+                        @php
+                            $apdItemDataFromDb = $laporan->apd_data[$key] ?? [];
+                            $isApdChecked = old('apd_wajib_'.$key, $isUpdate && isset($laporan->apd_data[$key]));
+                        @endphp
                         <div class="border rounded-md p-3 mb-3 bg-gray-50">
                             <div class="flex items-center">
-                                <input class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" type="checkbox" id="apd_wajib_{{ $key }}" name="apd_wajib_{{ $key }}" onchange="toggleApdDetails('{{ $key }}')">
+                                <input class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" type="checkbox"
+                                       id="apd_wajib_{{ $key }}" name="apd_wajib_{{ $key }}"
+                                       onchange="toggleApdDetails(event, '{{ $key }}')"
+                                       {{ $isApdChecked ? 'checked' : '' }}>
                                 <label class="ml-2 block text-sm font-bold text-gray-900" for="apd_wajib_{{ $key }}">{{ $label }} Diwajibkan</label>
                             </div>
                             <div id="apd_details_{{ $key }}" class="apd-details hidden pl-6 mt-3">
                                 @if ($key == 'sarung_tangan')
                                 <div class="mb-2">
                                     <label for="apd_keterangan_{{ $key }}" class="text-sm font-medium text-gray-700">Keterangan (Jenis/Spesifikasi):</label>
-                                    <input type="text" id="apd_keterangan_{{ $key }}" name="apd_keterangan_{{ $key }}" class="mt-1 block w-full text-sm border-gray-300 rounded-md shadow-sm" disabled>
+                                    <input type="text" id="apd_keterangan_{{ $key }}" name="apd_keterangan_{{ $key }}"
+                                           class="mt-1 block w-full text-sm border-gray-300 rounded-md shadow-sm"
+                                           value="{{ old('apd_keterangan_'.$key, $apdItemDataFromDb['keterangan'] ?? '') }}">
                                 </div>
                                 @endif
                                 <div>
                                     <label class="text-sm font-medium text-gray-700">Apakah Dipakai oleh Korban?</label>
                                     <div class="flex items-center mt-1">
-                                        <input class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300" type="radio" name="apd_dipakai_{{ $key }}" id="apd_dipakai_{{ $key }}_ya" value="ya" disabled>
+                                        <input class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300" type="radio"
+                                               name="apd_dipakai_{{ $key }}" id="apd_dipakai_{{ $key }}_ya" value="ya"
+                                               {{ old('apd_dipakai_'.$key, $apdItemDataFromDb['dipakai'] ?? '') == 'ya' ? 'checked' : '' }}>
                                         <label class="ml-2 text-sm text-gray-900" for="apd_dipakai_{{ $key }}_ya">Ya</label>
                                     </div>
                                     <div class="flex items-center mt-1">
-                                        <input class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300" type="radio" name="apd_dipakai_{{ $key }}" id="apd_dipakai_{{ $key }}_tidak" value="tidak" disabled>
+                                        <input class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300" type="radio"
+                                               name="apd_dipakai_{{ $key }}" id="apd_dipakai_{{ $key }}_tidak" value="tidak"
+                                               {{ old('apd_dipakai_'.$key, $apdItemDataFromDb['dipakai'] ?? '') == 'tidak' ? 'checked' : '' }}>
                                         <label class="ml-2 text-sm text-gray-900" for="apd_dipakai_{{ $key }}_tidak">Tidak</label>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         @endforeach
+
+                        <h4 class="font-bold text-xl mt-8 pt-4 border-t mb-4">10. Sebab Kecelakaan</h4>
+                        <div class="border rounded-md p-4 mb-3 bg-gray-50 space-y-3">
+                            @php
+                                $sebabKecelakaanOptions = [ 'Tindakan berbahaya Orang Lain', 'Tindakan berbahaya diri sendiri.', 'Keadaan berbahaya' ];
+                                $selectedSebabKecelakaan = old('sebab_kecelakaan', $laporan->sebab_kecelakaan ?? '');
+                            @endphp
+                            @foreach($sebabKecelakaanOptions as $option)
+                                <div class="flex items-center">
+                                    <input class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                                        type="radio" name="sebab_kecelakaan" id="sebab_kecelakaan_{{ $loop->index }}"
+                                        value="{{ $option }}" {{ $selectedSebabKecelakaan == $option ? 'checked' : '' }}>
+                                    <label class="ml-3 text-sm text-gray-900" for="sebab_kecelakaan_{{ $loop->index }}">{{ $option }}</label>
+                                </div>
+                            @endforeach
+                        </div>
 
                         <h4 class="font-bold text-xl mt-8 pt-4 border-t mb-4">Analisa Sebab Utama Kecelakaan</h4>
                         @php
@@ -263,36 +287,78 @@
                             $keadaanBerbahaya = [
                                 'Alat penyelamat yang kurang sempurna', 'Alat, mesin, atau bahan rusak', 'Sistem pemberi peringatan yang kurang sempurna',
                                 'Bahaya kebakaran & peledakan', 'House keeping di bawah standard', 'Kondisi udara yang berbahaya terhadap gas, debu, dan uap',
-                                'Kebisingan tinggi', 'Paparan / tekanan panas', 'Pencahayaan kurang'
+                                'Kebisingan tinggi', 'Paparan / tekanan panas', 'Pencayaan kurang'
                             ];
+
+                            // --- Logika untuk mengambil data lama atau data dari laporan untuk DUA grup radio ---
+                            $selectedSebabA = old('sebab_utama_a');
+                            $lainDeskripsiA = old('sebab_a_lain_input');
+                            $selectedSebabB = old('sebab_utama_b');
+                            $lainDeskripsiB = old('sebab_b_lain_input');
+
+                            if (!$errors->any() && $isUpdate && !empty($laporan->sebab_utama)) {
+                                foreach ($laporan->sebab_utama as $item) {
+                                    $isStandardA = $item['kategori'] === 'A' && in_array($item['deskripsi'], $tindakanBerbahaya);
+                                    $isLainA = $item['kategori'] === 'A' && !$isStandardA;
+                                    $isStandardB = $item['kategori'] === 'B' && in_array($item['deskripsi'], $keadaanBerbahaya);
+                                    $isLainB = $item['kategori'] === 'B' && !$isStandardB;
+
+                                    if ($isStandardA) {
+                                        $selectedSebabA = "A - {$item['deskripsi']}";
+                                    } elseif ($isLainA) {
+                                        $selectedSebabA = 'A-lain';
+                                        $lainDeskripsiA = $item['deskripsi'];
+                                    }
+
+                                    if ($isStandardB) {
+                                        $selectedSebabB = "B - {$item['deskripsi']}";
+                                    } elseif ($isLainB) {
+                                        $selectedSebabB = 'B-lain';
+                                        $lainDeskripsiB = $item['deskripsi'];
+                                    }
+                                }
+                            }
                         @endphp
                         <div class="border rounded-md p-3 mb-3 bg-gray-50">
                             <p class="font-bold">A. Tindakan Berbahaya (Unsafe Human Act)</p>
                             @foreach ($tindakanBerbahaya as $index => $sebab)
-                            <div class="flex items-center mb-2">
-                                <input class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300" type="radio" name="sebab_utama" id="sebab_a_{{ $index }}" value="A - {{ $sebab }}">
-                                <label class="ml-2 text-sm text-gray-900" for="sebab_a_{{ $index }}">{{ $loop->iteration }}. {{ $sebab }}</label>
-                            </div>
+                                <div class="flex items-center mb-2">
+                                    <input class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300" type="radio"
+                                           name="sebab_utama_a" id="sebab_a_{{ $index }}" value="A - {{ $sebab }}"
+                                           {{ $selectedSebabA == "A - {$sebab}" ? 'checked' : '' }}>
+                                    <label class="ml-2 text-sm text-gray-900" for="sebab_a_{{ $index }}">{{ $loop->iteration }}. {{ $sebab }}</label>
+                                </div>
                             @endforeach
                             <div class="flex items-center">
-                                <input class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300" type="radio" name="sebab_utama" id="sebab_a_lain" value="on">
+                                <input class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300" type="radio"
+                                       name="sebab_utama_a" id="sebab_a_lain" value="A-lain"
+                                       {{ $selectedSebabA == 'A-lain' ? 'checked' : '' }}>
                                 <label class="ml-2 text-sm text-gray-900" for="sebab_a_lain">{{ count($tindakanBerbahaya) + 1 }}. Lain-lain, sebutkan:</label>
                             </div>
-                            <input type="text" id="sebab_a_lain_input" name="sebab_a_lain_input" class="mt-1 block w-full text-sm border-gray-300 rounded-md shadow-sm disabled:bg-gray-200" disabled>
+                            <input type="text" id="sebab_a_lain_input" name="sebab_a_lain_input"
+                                   class="mt-1 block w-full text-sm border-gray-300 rounded-md shadow-sm"
+                                   value="{{ $lainDeskripsiA }}">
                         </div>
+
                         <div class="border rounded-md p-3 mb-3 bg-gray-50">
                             <p class="font-bold">B. Keadaan Berbahaya (Unsafe Condition)</p>
                             @foreach ($keadaanBerbahaya as $index => $sebab)
-                            <div class="flex items-center mb-2">
-                                <input class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300" type="radio" name="sebab_utama" id="sebab_b_{{ $index }}" value="B - {{ $sebab }}">
-                                <label class="ml-2 text-sm text-gray-900" for="sebab_b_{{ $index }}">{{ $loop->iteration }}. {{ $sebab }}</label>
-                            </div>
+                                <div class="flex items-center mb-2">
+                                    <input class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300" type="radio"
+                                           name="sebab_utama_b" id="sebab_b_{{ $index }}" value="B - {{ $sebab }}"
+                                           {{ $selectedSebabB == "B - {$sebab}" ? 'checked' : '' }}>
+                                    <label class="ml-2 text-sm text-gray-900" for="sebab_b_{{ $index }}">{{ $loop->iteration }}. {{ $sebab }}</label>
+                                </div>
                             @endforeach
                             <div class="flex items-center">
-                                <input class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300" type="radio" name="sebab_utama" id="sebab_b_lain" value="on">
+                                <input class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300" type="radio"
+                                       name="sebab_utama_b" id="sebab_b_lain" value="B-lain"
+                                       {{ $selectedSebabB == 'B-lain' ? 'checked' : '' }}>
                                 <label class="ml-2 text-sm text-gray-900" for="sebab_b_lain">{{ count($keadaanBerbahaya) + 1 }}. Lain-lain, sebutkan:</label>
                             </div>
-                            <input type="text" id="sebab_b_lain_input" name="sebab_b_lain_input" class="mt-1 block w-full text-sm border-gray-300 rounded-md shadow-sm disabled:bg-gray-200" disabled>
+                            <input type="text" id="sebab_b_lain_input" name="sebab_b_lain_input"
+                                   class="mt-1 block w-full text-sm border-gray-300 rounded-md shadow-sm"
+                                   value="{{ $lainDeskripsiB }}">
                         </div>
 
                         <h4 class="font-bold text-xl mt-8 pt-4 border-t mb-4">Analisa Masalah</h4>
@@ -327,86 +393,54 @@
                             <textarea id="rekomendasi" name="rekomendasi" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" rows="6">{{ old('rekomendasi', $laporan->rekomendasi ?? '') }}</textarea>
                         </div>
 
-                        <!-- ================================================================== -->
-                        <!-- --- BAGIAN PERSETUJUAN YANG DIPERBAIKI --- -->
-                        <!-- ================================================================== -->
                         <h4 class="font-bold text-xl mt-8 pt-4 border-t mb-4">Persetujuan & Tanda Tangan</h4>
                         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-
-                            <!-- Pembuat Laporan (Menggunakan semua user) -->
                             <div class="border rounded-lg p-4 flex flex-col">
                                 <label for="pembuat_laporan_id" class="block text-sm font-medium text-gray-700 mb-2 text-center">Pembuat Laporan</label>
                                 <select id="pembuat_laporan_id" name="pembuat_laporan_id" class="user-select w-full">
                                     <option value=""></option>
                                     @foreach ($allUsers as $user)
-                                        <option value="{{ $user->id }}"
-                                            {{ old('pembuat_laporan_id', $laporan->pembuat_laporan_id ?? Auth::id()) == $user->id ? 'selected' : '' }}>
-                                            {{ $user->name }}
-                                        </option>
+                                        <option value="{{ $user->id }}" {{ old('pembuat_laporan_id', $laporan->pembuat_laporan_id ?? Auth::id()) == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
-
-                            <!-- Assisten/Manager HSE (Menggunakan koleksi $hseManagers) -->
                             <div class="border rounded-lg p-4 flex flex-col">
                                 <label for="manager_hse_id" class="block text-sm font-medium text-gray-700 mb-2 text-center">Assisten/Manager HSE</label>
                                 <select id="manager_hse_id" name="manager_hse_id" class="user-select w-full">
                                     <option value=""></option>
                                     @foreach ($hseManagers as $user)
-                                        <option value="{{ $user->id }}"
-                                            {{ old('manager_hse_id', $laporan->manager_hse_id ?? '') == $user->id ? 'selected' : '' }}>
-                                            {{ $user->name }}
-                                        </option>
+                                        <option value="{{ $user->id }}" {{ old('manager_hse_id', $laporan->manager_hse_id ?? '') == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
-
-                            <!-- Assisten/Manager Terkait (Menggunakan semua user) -->
                             <div class="border rounded-lg p-4 flex flex-col">
                                 <label for="manager_terkait_id" class="block text-sm font-medium text-gray-700 mb-2 text-center">Assisten/Manager Terkait</label>
                                 <select id="manager_terkait_id" name="manager_terkait_id" class="user-select w-full">
                                     <option value=""></option>
                                     @foreach ($allUsers as $user)
-                                        <option value="{{ $user->id }}"
-                                            {{ old('manager_terkait_id', $laporan->manager_terkait_id ?? '') == $user->id ? 'selected' : '' }}>
-                                            {{ $user->name }}
-                                        </option>
+                                        <option value="{{ $user->id }}" {{ old('manager_terkait_id', $laporan->manager_terkait_id ?? '') == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
-
-                            <!-- Dept Head QM HSE (Menggunakan koleksi $deptHeads) -->
                             <div class="border rounded-lg p-4 flex flex-col">
                                 <label for="dept_head_id" class="block text-sm font-medium text-gray-700 mb-2 text-center">Dept Head QM HSE</label>
                                 <select id="dept_head_id" name="dept_head_id" class="user-select w-full">
                                     <option value=""></option>
                                     @foreach ($deptHeads as $user)
-                                        <option value="{{ $user->id }}"
-                                            {{ old('dept_head_id', $laporan->dept_head_id ?? '') == $user->id ? 'selected' : '' }}>
-                                            {{ $user->name }}
-                                        </option>
+                                        <option value="{{ $user->id }}" {{ old('dept_head_id', $laporan->dept_head_id ?? '') == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
-
-                            <!-- GM (Menggunakan koleksi $gms) -->
                             <div class="border rounded-lg p-4 flex flex-col">
                                 <label for="gm_id" class="block text-sm font-medium text-gray-700 mb-2 text-center">GM</label>
                                 <select id="gm_id" name="gm_id" class="user-select w-full">
                                     <option value=""></option>
                                     @foreach ($gms as $user)
-                                        <option value="{{ $user->id }}"
-                                            {{ old('gm_id', $laporan->gm_id ?? '') == $user->id ? 'selected' : '' }}>
-                                            {{ $user->name }}
-                                        </option>
+                                        <option value="{{ $user->id }}" {{ old('gm_id', $laporan->gm_id ?? '') == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
                                     @endforeach
                                 </select>
                             </div>
-
                         </div>
-                        <!-- ================================================================== -->
-                        <!-- --- AKHIR BAGIAN PERSETUJUAN --- -->
-                        <!-- ================================================================== -->
 
                         <button type="submit" class="w-full mt-8 py-3 px-4 border border-transparent rounded-md shadow-sm text-lg font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                             {{ $isUpdate ? 'Kirim Ulang Laporan Revisi' : 'Submit Laporan' }}
@@ -423,48 +457,27 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <script>
-    // ==================================================================
-    // --- PENGGUNAAN JQUERY DENGAN .noConflict() ---
-    // ==================================================================
     var $j = jQuery.noConflict();
-
     $j(document).ready(function() {
-        // Inisialisasi Select2 untuk semua dropdown persetujuan
-        $j('.user-select').select2({
-            placeholder: 'Cari & pilih pengguna',
-            allowClear: true
-        });
+        $j('.user-select').select2({ placeholder: 'Cari & pilih pengguna', allowClear: true });
 
-        // --- LOGIKA PENGISIAN OTOMATIS YANG DISEMPURNAKAN ---
         const isUpdate = @json($isUpdate);
         if (!isUpdate) {
-            // Jika membuat laporan baru, coba pilih otomatis user jika hanya ada satu pilihan
-            // dalam koleksi yang sudah difilter dari controller.
             @if($hseManagers->count() == 1)
                 $j('#manager_hse_id').val('{{ $hseManagers->first()->id }}').trigger('change');
             @endif
-
             @if($deptHeads->count() == 1)
                 $j('#dept_head_id').val('{{ $deptHeads->first()->id }}').trigger('change');
             @endif
-
             @if($gms->count() == 1)
                 $j('#gm_id').val('{{ $gms->first()->id }}').trigger('change');
             @endif
         }
     });
-    // ==================================================================
-    // --- AKHIR KODE JQUERY ---
-    // ==================================================================
 
-
-    // Kode JavaScript murni (Vanilla JS) di bawah ini tidak perlu diubah.
     const isUpdate = @json($isUpdate);
-    const biayaData = @json($isUpdate ? ($laporan->biayaPerawatan ?? []) : []);
-    const perbaikanData = @json($isUpdate ? ($laporan->saranPerbaikan ?? []) : []);
-    const apdData = @json($isUpdate ? ($laporan->apd_data ?? []) : []);
-    const sebabUtamaKategori = @json($isUpdate ? $laporan->sebab_utama_kategori : null);
-    const sebabUtamaDeskripsi = @json($isUpdate ? $laporan->sebab_utama_deskripsi : null);
+    const biayaData = @json($isUpdate ? $laporan->biayaPerawatan ?? [] : []);
+    const perbaikanData = @json($isUpdate ? $laporan->saranPerbaikan ?? [] : []);
 
     document.addEventListener('DOMContentLoaded', function () {
         if (typeof tinymce !== 'undefined') {
@@ -472,72 +485,69 @@
                 selector: 'textarea#uraian_kejadian, textarea#analisa_masalah, textarea#tindakan_pencegahan, textarea#rekomendasi',
                 plugins: 'autolink lists link charmap preview anchor image media paste',
                 toolbar: 'undo redo | styles | bold italic | alignleft aligncenter alignright | bullist numlist outdent indent | link image media',
-                paste_data_images: true,
-                automatic_uploads: false,
-                file_picker_types: 'image',
-                height: 350,
-                promotion: false,
-                license_key: 'gpl'
+                paste_data_images: true, automatic_uploads: false, file_picker_types: 'image',
+                height: 350, promotion: false, license_key: 'gpl'
             });
         }
 
-        const allRadioSebab = document.querySelectorAll('input[name="sebab_utama"]');
+        // --- Inisialisasi dan Listener untuk Sebab Utama (Dua Grup Radio) ---
+        const radiosA = document.querySelectorAll('input[name="sebab_utama_a"]');
         const lainInputA = document.getElementById('sebab_a_lain_input');
-        const lainInputB = document.getElementById('sebab_b_lain_input');
         const lainRadioA = document.getElementById('sebab_a_lain');
-        const lainRadioB = document.getElementById('sebab_b_lain');
-
-        function handleSebabChange() {
+        radiosA.forEach(radio => radio.addEventListener('change', () => {
             lainInputA.disabled = !lainRadioA.checked;
-            if (!lainRadioA.checked) lainInputA.value = ''; else lainInputA.focus();
+            if (!lainRadioA.checked) lainInputA.value = '';
+        }));
+        lainInputA.disabled = !lainRadioA.checked; // Initial check
+
+        const radiosB = document.querySelectorAll('input[name="sebab_utama_b"]');
+        const lainInputB = document.getElementById('sebab_b_lain_input');
+        const lainRadioB = document.getElementById('sebab_b_lain');
+        radiosB.forEach(radio => radio.addEventListener('change', () => {
             lainInputB.disabled = !lainRadioB.checked;
-            if (!lainRadioB.checked) lainInputB.value = ''; else lainInputB.focus();
-        }
-        allRadioSebab.forEach(radio => radio.addEventListener('change', handleSebabChange));
+            if (!lainRadioB.checked) lainInputB.value = '';
+        }));
+        lainInputB.disabled = !lainRadioB.checked; // Initial check
+
+        // --- Inisialisasi untuk APD ---
+        document.querySelectorAll('input[id^="apd_wajib_"]').forEach(checkbox => {
+            const key = checkbox.id.replace('apd_wajib_', '');
+            toggleApdDetails(null, key);
+        });
 
         const dateInput = document.getElementById('date');
         const dateDisplay = document.getElementById('date_display');
         const initialDate = dateInput.value ? new Date(dateInput.value + 'T00:00:00') : new Date();
         dateDisplay.value = initialDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
-        if (!dateInput.value) {
-            dateInput.value = initialDate.toISOString().split('T')[0];
-        }
+        if (!dateInput.value) { dateInput.value = initialDate.toISOString().split('T')[0]; }
 
-        if (isUpdate) {
+        const hasErrors = @json($errors->any());
+        if (isUpdate && !hasErrors) {
             biayaData.forEach(item => tambahBiaya(item));
             perbaikanData.forEach(item => tambahSaranPerbaikan(item));
-            for (const key in apdData) {
-                const apd = apdData[key];
-                const checkbox = document.getElementById(`apd_wajib_${key}`);
-                if (checkbox) {
-                    checkbox.checked = true;
-                    toggleApdDetails(key);
-                    if (document.getElementById(`apd_keterangan_${key}`)) {
-                        document.getElementById(`apd_keterangan_${key}`).value = apd.keterangan || '';
-                    }
-                    if (apd.dipakai) {
-                        const radio = document.getElementById(`apd_dipakai_${key}_${apd.dipakai}`);
-                        if (radio) radio.checked = true;
-                    }
-                }
-            }
-            if (sebabUtamaKategori && sebabUtamaDeskripsi) {
-                const radioValue = `${sebabUtamaKategori} - ${sebabUtamaDeskripsi}`;
-                const targetRadio = document.querySelector(`input[name="sebab_utama"][value="${radioValue}"]`);
-                if (targetRadio) {
-                    targetRadio.checked = true;
-                } else {
-                    const lainRadio = document.getElementById(`sebab_${sebabUtamaKategori.toLowerCase()}_lain`);
-                    const lainInput = document.getElementById(`sebab_${sebabUtamaKategori.toLowerCase()}_lain_input`);
-                    if (lainRadio && lainInput) {
-                        lainRadio.checked = true;
-                        lainInput.value = sebabUtamaDeskripsi;
-                        lainInput.disabled = false;
-                    }
-                }
-            }
         }
     });
+
+    function toggleApdDetails(event, key) {
+        const checkbox = document.getElementById(`apd_wajib_${key}`);
+        const detailsDiv = document.getElementById(`apd_details_${key}`);
+        const keteranganInput = document.getElementById(`apd_keterangan_${key}`);
+        const radioButtons = document.getElementsByName(`apd_dipakai_${key}`);
+
+        if (checkbox.checked) {
+            detailsDiv.classList.remove('hidden');
+            if (keteranganInput) keteranganInput.disabled = false;
+            radioButtons.forEach(radio => radio.disabled = false);
+        } else {
+            detailsDiv.classList.add('hidden');
+            if (keteranganInput) keteranganInput.disabled = true;
+            radioButtons.forEach(radio => radio.disabled = true);
+            if (event && event.type === 'change') {
+                if (keteranganInput) keteranganInput.value = '';
+                radioButtons.forEach(radio => radio.checked = false);
+            }
+        }
+    }
 
     function hitungUsia() {
         const tgl = document.getElementById('tanggal_lahir').value;
@@ -574,22 +584,6 @@
         container.appendChild(newItem);
     }
     function hapusBiaya(id) { document.getElementById('biaya_item_' + id).remove(); }
-
-    function toggleApdDetails(key) {
-        const checkbox = document.getElementById(`apd_wajib_${key}`);
-        const detailsDiv = document.getElementById(`apd_details_${key}`);
-        const keteranganInput = document.getElementById(`apd_keterangan_${key}`);
-        const radioButtons = document.getElementsByName(`apd_dipakai_${key}`);
-        if (checkbox.checked) {
-            detailsDiv.classList.remove('hidden');
-            if (keteranganInput) { keteranganInput.disabled = false; }
-            radioButtons.forEach(radio => radio.disabled = false);
-        } else {
-            detailsDiv.classList.add('hidden');
-            if (keteranganInput) { keteranganInput.disabled = true; keteranganInput.value = ''; }
-            radioButtons.forEach(radio => { radio.disabled = true; radio.checked = false; });
-        }
-    }
 
     function tambahSaranPerbaikan(data = null) {
         const container = document.getElementById('perbaikan-container');

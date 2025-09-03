@@ -237,8 +237,9 @@
 
                     <!-- Footer -->
                     <tr>
-                        <td style="padding: 20px; text-align: center; font-size: 12px; color: #777777; background-color: #f7f7f7;">
-                            &copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.
+                        <td style="padding: 20px; text-align: center; font-size: 12px; color: #777777; background-color: #f7f7f7; line-height: 1.4;">
+                            <p style="margin: 0 0 5px 0; font-weight: bold;">PT Sinar Meadow International Indonesia</p>
+                            <p style="margin: 0;">Kawasan Industri Pulogadung 6 Blok III.S.16-18, Jl. Pulo Ayang No.1 No. 6, RW.9, Jatinegara, Kec. Cakung, Kota Jakarta Timur, Daerah Khusus Ibukota Jakarta 13920</p>
                         </td>
                     </tr>
                 </table>

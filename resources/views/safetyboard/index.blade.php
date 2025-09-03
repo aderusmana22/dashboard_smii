@@ -123,28 +123,14 @@
     </div>
 
     @push('scripts')
-    {{-- ========================================================================= --}}
-    {{--                  SOLUSI JQUERY SANDBOXING - URUTAN PENTING                --}}
-    {{-- ========================================================================= --}}
-
-    {{-- LANGKAH 1: Muat jQuery modern dari CDN untuk DataTables. --}}
     <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
-
-    {{-- LANGKAH 2: Muat plugin DataTables. Plugin ini akan menempel pada jQuery 3.7.0. --}}
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
     <script>
-        // LANGKAH 3: ISOLASI JQUERY MODERN
-        // Perintah `noConflict(true)` melepaskan KONTROL variabel global `$` DAN `jQuery`
-        // dan mengembalikannya ke versi LAMA milik template Anda. Referensi ke
-        // jQuery 3.7.0 disimpan aman di dalam variabel `dt_jQuery`.
         var dt_jQuery = jQuery.noConflict(true);
 
-        // LANGKAH 4: GUNAKAN JQUERY TERISOLASI UNTUK DATATABLES
-        // Semua kode di dalam blok ini akan menggunakan `dt_jQuery` yang modern dan aman.
         dt_jQuery(document).ready(function($) {
-            // Di dalam blok ini, '$' adalah alias yang aman untuk `dt_jQuery` (jQuery 3.7.0).
 
             $.ajaxSetup({
                 headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') }
@@ -174,31 +160,45 @@
                     }},
                     { data: 'nama_korban', name: 'nama_korban' },
                     { data: 'approval_status', name: 'approval_statuses.status', orderable: true, searchable: false, render: function(data, type, row) {
-                        const status = data ? data.status : 'draft';
+                        const status = row.approval_status ? row.approval_status.status : 'draft';
                         let colorClass = 'bg-gray-100 text-gray-800';
                         if (status === 'approved') colorClass = 'bg-green-100 text-green-800';
                         else if (status === 'rejected') colorClass = 'bg-red-100 text-red-800';
                         else if (status.startsWith('pending_')) colorClass = 'bg-yellow-100 text-yellow-800';
+                        else if (status === 'revised') colorClass = 'bg-blue-100 text-blue-800';
                         const statusText = status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                         return `<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${colorClass}">${statusText}</span>`;
                     }},
                     { data: 'lokasi_kecelakaan', name: 'lokasi_kecelakaan', render: function(data) {
                         return data && data.length > 30 ? data.substr(0, 30) + '...' : (data || '-');
                     }},
-                    { data: 'id', name: 'id', orderable: false, searchable: false, render: function(data, type, row) {
-                        let detailUrl = "{{ route('accidents-report.show', ':id') }}".replace(':id', data);
-                        let actions = `<a href="${detailUrl}" class="mr-3 text-indigo-600 hover:text-indigo-900">Detail</a>`;
-                        const approvalStatus = row.approval_status;
-                        const currentUserId = {{ Auth::id() }};
-                        if (approvalStatus && approvalStatus.current_approver_id == currentUserId) {
-                            let approveUrl = "{{ route('accidents-report.approve', ':id') }}".replace(':id', data);
-                            let rejectUrl = "{{ route('accidents-report.reject', ':id') }}".replace(':id', data);
-                            actions += `<button type="button" class="text-green-600 hover:text-green-900 approve-btn" data-url="${approveUrl}">Approve</button>
-                                <span class="mx-1 text-gray-300">|</span>
-                                <button type="button" class="text-red-600 hover:text-red-900 reject-btn" data-url="${rejectUrl}">Reject</button>`;
+                    { 
+                        data: 'nomor_form', // Menggunakan nomor_form sebagai data utama untuk kolom ini
+                        name: 'nomor_form', // Bisa menggunakan nomor_form untuk pengurutan jika diperlukan
+                        orderable: false, 
+                        searchable: false, 
+                        render: function(data, type, row) {
+                            // =================================================================
+                            // PERBAIKAN UTAMA DI SINI:
+                            // Semua URL sekarang dibuat menggunakan `data` (yaitu `row.nomor_form`).
+                            // Placeholder di route() diganti dengan `data`.
+                            // =================================================================
+                            let detailUrl = "{{ route('accidents-report.show', ':nomor_form') }}".replace(':nomor_form', data);
+                            let actions = `<a href="${detailUrl}" class="mr-3 text-indigo-600 hover:text-indigo-900">Detail</a>`;
+                            
+                            const approvalStatus = row.approval_status;
+                            const currentUserId = {{ Auth::id() }};
+                            
+                            if (approvalStatus && approvalStatus.current_approver_id == currentUserId) {
+                                let approveUrl = "{{ route('accidents-report.approve', ':nomor_form') }}".replace(':nomor_form', data);
+                                let rejectUrl = "{{ route('accidents-report.reject', ':nomor_form') }}".replace(':nomor_form', data);
+                                actions += `<button type="button" class="text-green-600 hover:text-green-900 approve-btn" data-url="${approveUrl}">Approve</button>
+                                            <span class="mx-1 text-gray-300">|</span>
+                                            <button type="button" class="text-red-600 hover:text-red-900 reject-btn" data-url="${rejectUrl}">Reject</button>`;
+                            }
+                            return actions;
                         }
-                        return actions;
-                    }}
+                    }
                 ]
             });
 
@@ -227,9 +227,6 @@
             });
         });
 
-        // Helper functions
-        // Kita gunakan `dt_jQuery` di sini untuk konsistensi, meskipun `jQuery` global
-        // (dari template) kemungkinan juga bisa berfungsi untuk selector sederhana.
         function showNotification(message, type = 'success') {
             const container = dt_jQuery('#notification-container');
             const typeClasses = type === 'success' 

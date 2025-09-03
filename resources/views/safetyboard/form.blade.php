@@ -186,7 +186,9 @@
                                 </div>
                                 <label for="jam_p3k" class="md:col-span-1 text-sm">Jam</label>
                                 <div class="md:col-span-3">
-                                    <input type="time" id="jam_p3k" name="jam_p3k" value="{{ old('jam_p3k', $laporan->jam_p3k ?? '') }}" class="w-full border-gray-300 rounded-md shadow-sm">
+                                    <input type="time" id="jam_p3k" name="jam_p3k"
+                                        value="{{ old('jam_p3k', ($isUpdate && $laporan->jam_p3k) ? \Carbon\Carbon::parse($laporan->jam_p3k)->format('H:i') : '') }}"
+                                        class="w-full border-gray-300 rounded-md shadow-sm">
                                 </div>
                             </div>
                         </div>
@@ -276,6 +278,7 @@
                         </div>
 
                         <h4 class="font-bold text-xl mt-8 pt-4 border-t mb-4">Analisa Sebab Utama Kecelakaan</h4>
+                        
                         @php
                             $tindakanBerbahaya = [
                                 'Mengoperasikan tanpa wewenang', 'Mengoperasikan dengan kecepatan berlebihan', 'Alat penyelamat tidak berfungsi',
@@ -290,35 +293,28 @@
                                 'Kebisingan tinggi', 'Paparan / tekanan panas', 'Pencayaan kurang'
                             ];
 
-                            // --- Logika untuk mengambil data lama atau data dari laporan untuk DUA grup radio ---
                             $selectedSebabA = old('sebab_utama_a');
-                            $lainDeskripsiA = old('sebab_a_lain_input');
                             $selectedSebabB = old('sebab_utama_b');
+                            $lainDeskripsiA = old('sebab_a_lain_input');
                             $lainDeskripsiB = old('sebab_b_lain_input');
 
                             if (!$errors->any() && $isUpdate && !empty($laporan->sebab_utama)) {
                                 foreach ($laporan->sebab_utama as $item) {
-                                    $isStandardA = $item['kategori'] === 'A' && in_array($item['deskripsi'], $tindakanBerbahaya);
-                                    $isLainA = $item['kategori'] === 'A' && !$isStandardA;
-                                    $isStandardB = $item['kategori'] === 'B' && in_array($item['deskripsi'], $keadaanBerbahaya);
-                                    $isLainB = $item['kategori'] === 'B' && !$isStandardB;
-
-                                    if ($isStandardA) {
-                                        $selectedSebabA = "A - {$item['deskripsi']}";
-                                    } elseif ($isLainA) {
-                                        $selectedSebabA = 'A-lain';
-                                        $lainDeskripsiA = $item['deskripsi'];
+                                    if (!is_array($item) || !isset($item['kategori']) || !isset($item['deskripsi'])) continue;
+                                    if ($item['kategori'] === 'A') {
+                                        $isStandardA = in_array($item['deskripsi'], $tindakanBerbahaya);
+                                        $selectedSebabA = $isStandardA ? "A - {$item['deskripsi']}" : 'A-lain';
+                                        if (!$isStandardA) $lainDeskripsiA = $item['deskripsi'];
                                     }
-
-                                    if ($isStandardB) {
-                                        $selectedSebabB = "B - {$item['deskripsi']}";
-                                    } elseif ($isLainB) {
-                                        $selectedSebabB = 'B-lain';
-                                        $lainDeskripsiB = $item['deskripsi'];
+                                    if ($item['kategori'] === 'B') {
+                                        $isStandardB = in_array($item['deskripsi'], $keadaanBerbahaya);
+                                        $selectedSebabB = $isStandardB ? "B - {$item['deskripsi']}" : 'B-lain';
+                                        if (!$isStandardB) $lainDeskripsiB = $item['deskripsi'];
                                     }
                                 }
                             }
                         @endphp
+                        
                         <div class="border rounded-md p-3 mb-3 bg-gray-50">
                             <p class="font-bold">A. Tindakan Berbahaya (Unsafe Human Act)</p>
                             @foreach ($tindakanBerbahaya as $index => $sebab)
@@ -489,27 +485,26 @@
                 height: 350, promotion: false, license_key: 'gpl'
             });
         }
+        
+        const allRadioSebabA = document.querySelectorAll('input[name="sebab_utama_a"]');
+        const allRadioSebabB = document.querySelectorAll('input[name="sebab_utama_b"]');
 
-        // --- Inisialisasi dan Listener untuk Sebab Utama (Dua Grup Radio) ---
-        const radiosA = document.querySelectorAll('input[name="sebab_utama_a"]');
-        const lainInputA = document.getElementById('sebab_a_lain_input');
-        const lainRadioA = document.getElementById('sebab_a_lain');
-        radiosA.forEach(radio => radio.addEventListener('change', () => {
+        function handleSebabChange() {
+            const lainRadioA = document.getElementById('sebab_a_lain');
+            const lainInputA = document.getElementById('sebab_a_lain_input');
             lainInputA.disabled = !lainRadioA.checked;
             if (!lainRadioA.checked) lainInputA.value = '';
-        }));
-        lainInputA.disabled = !lainRadioA.checked; // Initial check
 
-        const radiosB = document.querySelectorAll('input[name="sebab_utama_b"]');
-        const lainInputB = document.getElementById('sebab_b_lain_input');
-        const lainRadioB = document.getElementById('sebab_b_lain');
-        radiosB.forEach(radio => radio.addEventListener('change', () => {
+            const lainRadioB = document.getElementById('sebab_b_lain');
+            const lainInputB = document.getElementById('sebab_b_lain_input');
             lainInputB.disabled = !lainRadioB.checked;
             if (!lainRadioB.checked) lainInputB.value = '';
-        }));
-        lainInputB.disabled = !lainRadioB.checked; // Initial check
+        }
 
-        // --- Inisialisasi untuk APD ---
+        allRadioSebabA.forEach(radio => radio.addEventListener('change', handleSebabChange));
+        allRadioSebabB.forEach(radio => radio.addEventListener('change', handleSebabChange));
+        handleSebabChange(); 
+
         document.querySelectorAll('input[id^="apd_wajib_"]').forEach(checkbox => {
             const key = checkbox.id.replace('apd_wajib_', '');
             toggleApdDetails(null, key);
@@ -521,8 +516,7 @@
         dateDisplay.value = initialDate.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
         if (!dateInput.value) { dateInput.value = initialDate.toISOString().split('T')[0]; }
 
-        const hasErrors = @json($errors->any());
-        if (isUpdate && !hasErrors) {
+        if (isUpdate) {
             biayaData.forEach(item => tambahBiaya(item));
             perbaikanData.forEach(item => tambahSaranPerbaikan(item));
         }
@@ -580,24 +574,47 @@
         const newItem = document.createElement('div');
         newItem.className = 'flex space-x-2';
         newItem.id = 'biaya_item_' + biayaCount;
-        newItem.innerHTML = `<span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">Rp</span><input type="number" name="biaya_harga[]" class="flex-1 block w-full rounded-none border-gray-300" placeholder="Harga" value="${data ? data.harga : ''}"><input type="text" name="biaya_kategori[]" class="flex-1 block w-full border-gray-300" placeholder="Kategori" value="${data ? data.kategori : ''}"><button type="button" class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-r-md text-white bg-red-600 hover:bg-red-700" onclick="hapusBiaya(${biayaCount})">Hapus</button>`;
+        newItem.innerHTML = `<span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">Rp</span><input type="number" name="biaya_harga[]" class="flex-1 block w-full rounded-none border-gray-300" placeholder="Harga" value="${data && data.harga ? data.harga : ''}"><input type="text" name="biaya_kategori[]" class="flex-1 block w-full border-gray-300" placeholder="Kategori" value="${data && data.kategori ? data.kategori : ''}"><button type="button" class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-r-md text-white bg-red-600 hover:bg-red-700" onclick="hapusBiaya(${biayaCount})">Hapus</button>`;
         container.appendChild(newItem);
     }
     function hapusBiaya(id) { document.getElementById('biaya_item_' + id).remove(); }
-
+    
+    {{-- ================================================================= --}}
+    {{-- PERUBAHAN DI SINI: Memperbaiki fungsi tambahSaranPerbaikan         --}}
+    {{-- untuk memformat 'due_date' dengan benar.                          --}}
+    {{-- ================================================================= --}}
     function tambahSaranPerbaikan(data = null) {
         const container = document.getElementById('perbaikan-container');
         const newIndex = container.rows.length;
+
+        // Siapkan nilai-nilai, terutama format 'due_date'
+        const tindakanValue = data && data.tindakan ? data.tindakan : '';
+        const picValue = data && data.pic ? data.pic : '';
+        let dueDateValue = '';
+
+        // Cek jika data.due_date ada dan format dengan benar
+        if (data && data.due_date) {
+            // JavaScript Date object bisa mem-parsing string ISO 8601 dari JSON
+            const date = new Date(data.due_date);
+            // Format ke YYYY-MM-DD
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0'); // +1 karena bulan 0-indexed
+            const day = date.getDate().toString().padStart(2, '0');
+            dueDateValue = `${year}-${month}-${day}`;
+        }
+
         const newRow = container.insertRow(newIndex);
         newRow.id = 'perbaikan_item_' + newIndex;
+
         newRow.innerHTML = `
             <td class="px-6 py-4 text-sm text-center text-gray-500">${newIndex + 1}</td>
-            <td class="px-6 py-4"><input type="text" name="perbaikan_tindakan[]" class="w-full border-gray-300 rounded-md shadow-sm" placeholder="Uraian tindakan perbaikan" value="${data ? data.tindakan : ''}"></td>
-            <td class="px-6 py-4"><input type="text" name="perbaikan_pic[]" class="w-full border-gray-300 rounded-md shadow-sm" placeholder="Nama PIC" value="${data ? data.pic : ''}"></td>
-            <td class="px-6 py-4"><input type="date" name="perbaikan_due_date[]" class="w-full border-gray-300 rounded-md shadow-sm" value="${data ? data.due_date : ''}"></td>
+            <td class="px-6 py-4"><input type="text" name="perbaikan_tindakan[]" class="w-full border-gray-300 rounded-md shadow-sm" placeholder="Uraian tindakan perbaikan" value="${tindakanValue}"></td>
+            <td class="px-6 py-4"><input type="text" name="perbaikan_pic[]" class="w-full border-gray-300 rounded-md shadow-sm" placeholder="Nama PIC" value="${picValue}"></td>
+            <td class="px-6 py-4"><input type="date" name="perbaikan_due_date[]" class="w-full border-gray-300 rounded-md shadow-sm" value="${dueDateValue}"></td>
             <td class="px-6 py-4 text-center text-sm font-medium"><button type="button" class="text-red-600 hover:text-red-900" onclick="hapusSaranPerbaikan('perbaikan_item_${newIndex}')">Hapus</button></td>
         `;
     }
+
     function hapusSaranPerbaikan(rowId) { document.getElementById(rowId).remove(); updateNomorSaran(); }
     function updateNomorSaran() {
         const rows = document.getElementById('perbaikan-container').rows;

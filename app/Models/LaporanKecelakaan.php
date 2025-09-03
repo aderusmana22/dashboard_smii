@@ -14,53 +14,14 @@ class LaporanKecelakaan extends Model
 
     protected $guarded = ['id'];
 
-        protected $fillable = [
-        'nomor_form',
-        'date',
-        'kategori_kecelakaan',
-        'kategori_dampak',
-        'waktu_kecelakaan',
-        'lokasi_kecelakaan',
-        'tipe_kecelakaan',
-        'bagian_terluka',
-        'uraian_kejadian',
-        'nama_korban',
-        'nik',
-        'tanggal_lahir',
-        'usia',
-        'tanggal_masuk',
-        'masa_kerja',
-        'jabatan',
-        'departemen',
-        'pertolongan',
-        'p3k_oleh',
-        'jam_p3k',
-        'akibat_kecelakaan',
-        'waktu_hilang',
-        'apd_data',
-        'sebab_kecelakaan',      // Kolom baru dari migrasi
-        'sebab_utama',           // Kolom JSON baru
-        'analisa_masalah',
-        'tindakan_pencegahan',
-        'rekomendasi',
-        'pembuat_laporan_id',
-        'manager_hse_id',
-        'manager_terkait_id',
-        'dept_head_id',
-        'gm_id',
-        'is_active',
-        'revision_number',
-        'revised_from_id'
-    ];
-
-
-protected $casts = [
-        'date' => 'date',
+    protected $casts = [
         'waktu_kecelakaan' => 'datetime',
+        'sebab_utama' => 'array', 
+        'apd_data' => 'array',
+        'date' => 'date',
         'tanggal_lahir' => 'date',
         'tanggal_masuk' => 'date',
-        'apd_data' => 'array',
-        'sebab_utama' => 'array', // <-- INI YANG PALING PENTING UNTUK MEMPERBAIKI ERROR
+        'is_active' => 'boolean', // PERUBAHAN: Casting untuk kolom baru
     ];
 
     // --- RELASI APPROVAL ---

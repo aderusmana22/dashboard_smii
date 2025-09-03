@@ -26,6 +26,9 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\HSE\SafetyBoardController; 
 use App\Http\Controllers\LaporanKecelakaanController; 
 use App\Http\Controllers\EditorImageController;
+use App\Http\Controllers\DashboardEcommerceController;
+use App\Http\Controllers\Ecommerce\ProductController;
+use App\Http\Controllers\EmailApprovalController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -142,28 +145,33 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
     });
 
 
-    Route::prefix('accidents-report')->name('accidents-report.')->group(function () {
-        
-        // Halaman utama yang akan menampilkan tabel DataTables
-        Route::get('/', [LaporanKecelakaanController::class, 'index'])->name('index');
+Route::prefix('accidents-report')->name('accidents-report.')->group(function () {
+    
+    // Halaman utama yang akan menampilkan tabel DataTables
+    Route::get('/', [LaporanKecelakaanController::class, 'index'])->name('index');
 
-        // Endpoint khusus untuk DataTables mengambil data via AJAX (Server-Side)
-        Route::get('/data', [LaporanKecelakaanController::class, 'getData'])->name('data');
+    // Endpoint khusus untuk DataTables mengambil data via AJAX (Server-Side)
+    Route::get('/data', [LaporanKecelakaanController::class, 'getData'])->name('data');
 
-        // Rute untuk membuat laporan baru
-        Route::get('/create', [LaporanKecelakaanController::class, 'create'])->name('create');
-        Route::post('/', [LaporanKecelakaanController::class, 'store'])->name('store');
+    // Rute untuk membuat laporan baru
+    Route::get('/create', [LaporanKecelakaanController::class, 'create'])->name('create');
+    Route::post('/', [LaporanKecelakaanController::class, 'store'])->name('store');
 
-        // Rute untuk melihat detail laporan
-        Route::get('/{laporan}', [LaporanKecelakaanController::class, 'show'])->name('show');
+    // =================================================================
+    // PERUBAHAN: Menggunakan {laporan:nomor_form} untuk semua rute
+    // yang memerlukan model LaporanKecelakaan.
+    // =================================================================
 
-        // Rute untuk merevisi laporan yang ditolak
-        Route::get('/{laporan}/revise', [LaporanKecelakaanController::class, 'revise'])->name('revise');
+    // Rute untuk melihat detail laporan
+    Route::get('/{laporan:nomor_form}', [LaporanKecelakaanController::class, 'show'])->name('show');
 
-        // Rute untuk aksi persetujuan dan penolakan (akan dipanggil via AJAX)
-        Route::post('/{laporan}/approve', [LaporanKecelakaanController::class, 'approve'])->name('approve');
-        Route::post('/{laporan}/reject', [LaporanKecelakaanController::class, 'reject'])->name('reject');
-    });
+    // Rute untuk merevisi laporan yang ditolak
+    Route::get('/{laporan:nomor_form}/revise', [LaporanKecelakaanController::class, 'revise'])->name('revise');
+
+    // Rute untuk aksi persetujuan dan penolakan (akan dipanggil via AJAX)
+    Route::post('/{laporan:nomor_form}/approve', [LaporanKecelakaanController::class, 'approve'])->name('approve');
+    Route::post('/{laporan:nomor_form}/reject', [LaporanKecelakaanController::class, 'reject'])->name('reject');
+});
 
     Route::post('editor/upload-image', [EditorImageController::class, 'store'])->name('editor.upload.image');
 
@@ -221,8 +229,28 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
     Route::get('dashboard/sales-by-brand-report/data', [SalesByBrandReports::class, 'fetchData'])->name('reports.sales.byBrand.data');
 
     Route::get('/reports/sales-by-brand-export', [SalesByBrandReports::class, 'exportExcel'])->name('reports.sales.byBrand.export');
+
+    Route::get('/ecommerce', [DashboardEcommerceController::class, 'index'])->name('dashboard.ecommerce');
+    Route::get('/ecommerce/products', [ProductController::class, 'index'])
+        ->middleware(['auth'])->name('ecommerce.products.index');
+
+
+    Route::prefix('testing')->name('testing.')->group(function () {
+        Route::get('/email/request', [\App\Http\Controllers\DevTestingController::class, 'previewEmailRequest'])->name('email.request');
+        Route::get('/email/success', [\App\Http\Controllers\DevTestingController::class, 'previewSuccess'])->name('email.success');
+        Route::get('/email/invalid', [\App\Http\Controllers\DevTestingController::class, 'previewInvalid'])->name('email.invalid');
+        Route::get('/email/reject-form', [\App\Http\Controllers\DevTestingController::class, 'previewRejectForm'])->name('email.reject_form');
+    });
+
+
 });
 
+// approval email
+Route::group(['as' => 'email-approval.', 'prefix' => 'email-approval'], function () {
+    Route::get('/approve/{token}', [EmailApprovalController::class, 'approve'])->name('approve');
+    Route::get('/reject/{token}', [EmailApprovalController::class, 'showRejectForm'])->name('show-reject-form');
+    Route::post('/reject', [EmailApprovalController::class, 'reject'])->name('reject');
+});
 
 
 /*Dashboard Route Get Filter*/

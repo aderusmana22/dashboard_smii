@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use App\Models\LaporanApprovalStatus;
-use App\Jobs\SendApprovalEmailJob; // Tambahkan ini
+use App\Jobs\SendApprovalEmailJob;
 
 class LaporanKecelakaanController extends Controller
 {
@@ -29,46 +29,86 @@ class LaporanKecelakaanController extends Controller
 
     public function getData(Request $request)
     {
+        // =================================================================
+        // LOGIKA BARU YANG TANGGUH: Mengambil revisi tertinggi dari setiap grup laporan.
+        // Ini adalah perbaikan utama untuk masalah tampilan Anda.
+        // =================================================================
+        $laporanTable = (new LaporanKecelakaan)->getTable();
         $approvalStatusTable = (new LaporanApprovalStatus)->getTable();
-        $query = LaporanKecelakaan::where('laporan_kecelakaans.is_active', true)
-            ->with(['approvalStatus', 'pembuatLaporan'])
-            ->leftJoin($approvalStatusTable, 'laporan_kecelakaans.id', '=', $approvalStatusTable . '.laporan_kecelakaan_id')
-            ->select('laporan_kecelakaans.*');
+
+        // Langkah 1: Buat subquery untuk menemukan revision_number tertinggi untuk setiap nomor form dasar.
+        // `SUBSTRING_INDEX` digunakan untuk mengekstrak 'HSE-2025-2' dari 'HSE-2025-2-REV1'.
+        $latestRevisionsSubquery = LaporanKecelakaan::select(
+                DB::raw('SUBSTRING_INDEX(nomor_form, "-REV", 1) as base_form'),
+                DB::raw('MAX(revision_number) as max_revision')
+            )
+            ->groupBy('base_form');
+
+        // Langkah 2: Buat query utama yang menggabungkan (join) tabel laporan dengan hasil subquery di atas.
+        // Ini akan menyaring hanya laporan yang cocok dengan nomor form dasar DAN revision_number tertinggi.
+        $query = LaporanKecelakaan::query()
+            ->joinSub($latestRevisionsSubquery, 'latest_revs', function ($join) use ($laporanTable) {
+                $join->on(DB::raw('SUBSTRING_INDEX(nomor_form, "-REV", 1)'), '=', 'latest_revs.base_form')
+                     ->on("{$laporanTable}.revision_number", '=', 'latest_revs.max_revision');
+            })
+            ->leftJoin($approvalStatusTable, "{$laporanTable}.id", '=', "{$approvalStatusTable}.laporan_kecelakaan_id")
+            ->select("{$laporanTable}.*");
+
+        // Filter diterapkan pada hasil yang sudah benar (hanya versi terakhir)
         if ($request->filled('nomor_form')) {
-            $query->where('laporan_kecelakaans.nomor_form', 'like', '%' . $request->nomor_form . '%');
+            $query->where("{$laporanTable}.nomor_form", 'like', '%' . $request->nomor_form . '%');
         }
         if ($request->filled('nama_korban')) {
-            $query->where('laporan_kecelakaans.nama_korban', 'like', '%' . $request->nama_korban . '%');
+            $query->where("{$laporanTable}.nama_korban", 'like', '%' . $request->nama_korban . '%');
         }
         if ($request->filled('status')) {
-            $query->where($approvalStatusTable . '.status', $request->status);
+            $query->where("{$approvalStatusTable}.status", $request->status);
         }
         if ($request->filled('date_start')) {
-            $query->whereDate('laporan_kecelakaans.date', '>=', $request->date_start);
+            $query->whereDate("{$laporanTable}.date", '>=', $request->date_start);
         }
         if ($request->filled('date_end')) {
-            $query->whereDate('laporan_kecelakaans.date', '<=', $request->date_end);
+            $query->whereDate("{$laporanTable}.date", '<=', $request->date_end);
         }
-        $totalFiltered = $query->count();
-        $totalData = LaporanKecelakaan::where('is_active', true)->count();
+
+        // Hitung total data
+        $totalDataQuery = LaporanKecelakaan::query()
+            ->joinSub($latestRevisionsSubquery, 'latest_revs', function ($join) {
+                $join->on(DB::raw('SUBSTRING_INDEX(nomor_form, "-REV", 1)'), '=', 'latest_revs.base_form')
+                     ->on('revision_number', '=', 'latest_revs.max_revision');
+            });
+        
+        $totalData = (clone $totalDataQuery)->count();
+        $totalFiltered = (clone $query)->count();
+
+        // Pengurutan
         if ($request->has('order')) {
             $orderColumnIndex = $request->input('order.0.column');
             $orderColumnName = $request->input('columns.' . $orderColumnIndex . '.name');
             $orderDirection = $request->input('order.0.dir');
             if ($orderColumnName) {
-                if ($orderColumnName === 'approval_statuses.status') {
-                    $query->orderBy($approvalStatusTable . '.status', $orderDirection);
-                } else {
-                    $query->orderBy($orderColumnName, $orderDirection);
+                $columnMapping = [
+                    'nomor_form' => "{$laporanTable}.nomor_form",
+                    'date' => "{$laporanTable}.date",
+                    'nama_korban' => "{$laporanTable}.nama_korban",
+                    'approval_statuses.status' => "{$approvalStatusTable}.status",
+                    'lokasi_kecelakaan' => "{$laporanTable}.lokasi_kecelakaan",
+                ];
+                if (isset($columnMapping[$orderColumnName])) {
+                    $query->orderBy($columnMapping[$orderColumnName], $orderDirection);
                 }
             }
         } else {
-            $query->latest('laporan_kecelakaans.created_at');
+            $query->latest("{$laporanTable}.created_at");
         }
+
+        // Pagination
         if ($request->filled('length') && $request->length != -1) {
             $query->skip($request->input('start'))->take($request->input('length'));
         }
-        $laporan = $query->get();
+
+        $laporan = $query->with('approvalStatus')->get();
+        
         return response()->json([
             "draw"            => intval($request->input('draw')),
             "recordsTotal"    => intval($totalData),
@@ -140,17 +180,28 @@ class LaporanKecelakaanController extends Controller
             $laporan = new LaporanKecelakaan($validatedData);
 
             if ($request->has('revised_from_id')) {
-                $originalReport = LaporanKecelakaan::with('approvalStatus')->findOrFail($request->input('revised_from_id'));
-                $originalReport->is_active = false;
-                $originalReport->save();
-                if ($originalReport->approvalStatus) {
-                    $originalReport->approvalStatus->update(['status' => 'revised']);
-                }
+                $originalReport = LaporanKecelakaan::findOrFail($request->input('revised_from_id'));
+                
                 $baseNomorForm = explode('-REV', $originalReport->nomor_form)[0];
-                $newRevisionNumber = $originalReport->revision_number + 1;
+
+                // PERBAIKAN PENCEGAHAN: Nonaktifkan SEMUA versi lama dan update statusnya.
+                $allOldVersions = LaporanKecelakaan::where(DB::raw('SUBSTRING_INDEX(nomor_form, "-REV", 1)'), $baseNomorForm)->get();
+                foreach ($allOldVersions as $oldVersion) {
+                    $oldVersion->is_active = false;
+                    $oldVersion->save();
+                    if ($oldVersion->approvalStatus) {
+                        $oldVersion->approvalStatus->update(['status' => 'revised']);
+                    }
+                }
+                
+                $latestRevision = LaporanKecelakaan::where(DB::raw('SUBSTRING_INDEX(nomor_form, "-REV", 1)'), $baseNomorForm)->max('revision_number');
+                $newRevisionNumber = ($latestRevision ?? 0) + 1;
+
                 $laporan->nomor_form = $baseNomorForm . '-REV' . $newRevisionNumber;
                 $laporan->revision_number = $newRevisionNumber;
                 $laporan->revised_from_id = $originalReport->id;
+                $laporan->is_active = true;
+
             } else {
                 $year = date('Y');
                 $latestReportCount = LaporanKecelakaan::whereYear('created_at', $year)
@@ -181,18 +232,15 @@ class LaporanKecelakaanController extends Controller
 
             DB::commit();
 
-            // --- TAMBAHAN: Kirim email ke approver pertama ---
             try {
                 $firstApprover = User::find($firstApproverId);
                 if ($firstApprover) {
-                    // Load relasi yang mungkin dibutuhkan di email
                     $laporan->load('pembuatLaporan'); 
                     SendApprovalEmailJob::dispatch($laporan, $firstApprover);
                 }
             } catch(\Exception $e) {
                 Log::error('Gagal mengirim email persetujuan awal: ' . $e->getMessage());
             }
-            // --- AKHIR TAMBAHAN ---
 
             return redirect()->route('accidents-report.index')->with('success', 'Laporan kecelakaan berhasil disimpan dan diajukan.');
 
@@ -229,7 +277,6 @@ class LaporanKecelakaanController extends Controller
                 $nextStatus = 'pending_' . str_replace('_id', '', $nextApproverField);
                 $status->update(['status' => $nextStatus, 'current_approver_id' => $nextApproverId]);
 
-                // --- TAMBAHAN: Kirim email ke approver selanjutnya setelah commit berhasil ---
                 DB::afterCommit(function () use ($laporan, $nextApproverId) {
                     try {
                         $nextApprover = User::find($nextApproverId);
@@ -241,7 +288,6 @@ class LaporanKecelakaanController extends Controller
                          Log::error('Gagal mengirim email persetujuan lanjutan: ' . $e->getMessage());
                     }
                 });
-                // --- AKHIR TAMBAHAN ---
             }
             DB::commit();
             return response()->json(['success' => true, 'message' => 'Laporan berhasil disetujui.']);
@@ -304,6 +350,19 @@ class LaporanKecelakaanController extends Controller
 
     public function show(LaporanKecelakaan $laporan)
     {
+        // =================================================================
+        // PERUBAHAN DI SINI: Redirect jika pengguna mengakses revisi lama.
+        // =================================================================
+        $baseNomorForm = explode('-REV', $laporan->nomor_form)[0];
+        $latestVersion = LaporanKecelakaan::where(DB::raw('SUBSTRING_INDEX(nomor_form, "-REV", 1)'), $baseNomorForm)
+                                            ->orderBy('revision_number', 'desc')
+                                            ->first();
+
+        // Jika laporan yang diakses BUKAN versi terbaru, arahkan ke URL versi terbaru.
+        if ($latestVersion && $laporan->id !== $latestVersion->id) {
+            return redirect()->route('accidents-report.show', $latestVersion->nomor_form);
+        }
+
         $laporan->load('approvalStatus', 'approvalHistories.user', 'pembuatLaporan', 'revisedFrom');
         $currentApproverField = $this->getCurrentApproverField($laporan);
         return view('safetyboard.show', compact('laporan', 'currentApproverField'));
@@ -311,17 +370,43 @@ class LaporanKecelakaanController extends Controller
 
     public function revise(LaporanKecelakaan $laporan)
     {
+        // =================================================================
+        // PERUBAHAN DI SINI: Logika keamanan dan pengalihan yang lebih kuat.
+        // =================================================================
+        $baseNomorForm = explode('-REV', $laporan->nomor_form)[0];
+        $latestVersion = LaporanKecelakaan::where(DB::raw('SUBSTRING_INDEX(nomor_form, "-REV", 1)'), $baseNomorForm)
+                                            ->orderBy('revision_number', 'desc')
+                                            ->first();
+
+        // 1. Jika pengguna mencoba merevisi versi LAMA, arahkan mereka untuk merevisi versi TERBARU.
+        if ($latestVersion && $laporan->id !== $latestVersion->id) {
+            return redirect()->route('accidents-report.revise', $latestVersion->nomor_form)
+                             ->with('info', 'Anda diarahkan untuk merevisi versi terbaru dari laporan ini.');
+        }
+
+        // 2. Periksa wewenang (hanya pembuat laporan yang bisa merevisi)
         if ($laporan->pembuat_laporan_id !== Auth::id()) {
             return redirect()->route('accidents-report.index')->with('error', 'Anda tidak berwenang merevisi laporan ini.');
         }
+
+        // 3. Periksa status (hanya laporan yang ditolak yang bisa direvisi)
         if ($laporan->approvalStatus?->status !== 'rejected') {
-            return redirect()->route('accidents-report.index')->with('error', 'Hanya laporan yang ditolak yang dapat direvisi.');
+            return redirect()->route('accidents-report.show', $laporan->nomor_form)->with('error', 'Hanya laporan yang ditolak yang dapat direvisi.');
         }
+
+        // Jika semua lolos, lanjutkan ke form revisi
         $laporan->load('biayaPerawatan', 'saranPerbaikan');
-        $users = User::orderBy('name')->get(['id', 'name']);
+        $gms = User::role('gm')->orderBy('name')->get();
+        $hseManagers = User::role('asmenHse')->orderBy('name')->get();
+        $deptHeads = User::role('DepHse')->orderBy('name')->get();
+        $allUsers = User::orderBy('name')->get();
+
         return view('safetyboard.form', [
             'laporan' => $laporan,
-            'users' => $users,
+            'gms' => $gms,
+            'hseManagers' => $hseManagers,
+            'deptHeads' => $deptHeads,
+            'allUsers' => $allUsers,
             'isRevision' => true
         ]);
     }
@@ -379,7 +464,7 @@ class LaporanKecelakaanController extends Controller
     {
         if (!empty($data['biaya_harga'])) {
             foreach ($data['biaya_harga'] as $index => $harga) {
-                if (!empty($harga) && !empty($data['biaya_kategori'][$index])) {
+                if (!empty($harga) && isset($data['biaya_kategori'][$index])) {
                     $laporan->biayaPerawatan()->create(['harga' => $harga, 'kategori' => $data['biaya_kategori'][$index]]);
                 }
             }
@@ -424,14 +509,18 @@ class LaporanKecelakaanController extends Controller
         $sebabB = $request->input('sebab_utama_b');
 
         if ($sebabA) {
-            $deskripsi = ($sebabA === 'A-lain') ? $request->input('sebab_a_lain_input') : (str_starts_with($sebabA, 'A - ') ? substr($sebabA, 4) : '');
+            $deskripsi = ($sebabA === 'A-lain')
+                ? $request->input('sebab_a_lain_input')
+                : (str_starts_with($sebabA, 'A - ') ? substr($sebabA, 4) : '');
             if (!empty($deskripsi)) {
                 $results[] = ['kategori' => 'A', 'deskripsi' => $deskripsi];
             }
         }
 
         if ($sebabB) {
-            $deskripsi = ($sebabB === 'B-lain') ? $request->input('sebab_b_lain_input') : (str_starts_with($sebabB, 'B - ') ? substr($sebabB, 4) : '');
+            $deskripsi = ($sebabB === 'B-lain')
+                ? $request->input('sebab_b_lain_input')
+                : (str_starts_with($sebabB, 'B - ') ? substr($sebabB, 4) : '');
             if (!empty($deskripsi)) {
                 $results[] = ['kategori' => 'B', 'deskripsi' => $deskripsi];
             }

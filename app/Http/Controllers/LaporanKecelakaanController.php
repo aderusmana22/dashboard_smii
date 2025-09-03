@@ -7,11 +7,11 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use App\Models\LaporanApprovalStatus;
+use App\Jobs\SendApprovalEmailJob; // Tambahkan ini
 
 class LaporanKecelakaanController extends Controller
 {
@@ -103,7 +103,6 @@ class LaporanKecelakaanController extends Controller
             'akibat_kecelakaan' => 'required|string|max:255',
             'waktu_hilang' => 'nullable|integer|min:0',
             'sebab_kecelakaan' => 'nullable|string|max:255',
-            // Validasi untuk dua grup radio button terpisah
             'sebab_utama_a' => 'nullable|string',
             'sebab_a_lain_input' => 'nullable|string',
             'sebab_utama_b' => 'nullable|string',
@@ -181,6 +180,20 @@ class LaporanKecelakaanController extends Controller
             ]);
 
             DB::commit();
+
+            // --- TAMBAHAN: Kirim email ke approver pertama ---
+            try {
+                $firstApprover = User::find($firstApproverId);
+                if ($firstApprover) {
+                    // Load relasi yang mungkin dibutuhkan di email
+                    $laporan->load('pembuatLaporan'); 
+                    SendApprovalEmailJob::dispatch($laporan, $firstApprover);
+                }
+            } catch(\Exception $e) {
+                Log::error('Gagal mengirim email persetujuan awal: ' . $e->getMessage());
+            }
+            // --- AKHIR TAMBAHAN ---
+
             return redirect()->route('accidents-report.index')->with('success', 'Laporan kecelakaan berhasil disimpan dan diajukan.');
 
         } catch (\Exception $e) {
@@ -215,6 +228,20 @@ class LaporanKecelakaanController extends Controller
                 $nextApproverId = $laporan->{$nextApproverField};
                 $nextStatus = 'pending_' . str_replace('_id', '', $nextApproverField);
                 $status->update(['status' => $nextStatus, 'current_approver_id' => $nextApproverId]);
+
+                // --- TAMBAHAN: Kirim email ke approver selanjutnya setelah commit berhasil ---
+                DB::afterCommit(function () use ($laporan, $nextApproverId) {
+                    try {
+                        $nextApprover = User::find($nextApproverId);
+                        if ($nextApprover) {
+                            $laporan->load('pembuatLaporan');
+                            SendApprovalEmailJob::dispatch($laporan, $nextApprover);
+                        }
+                    } catch(\Exception $e) {
+                         Log::error('Gagal mengirim email persetujuan lanjutan: ' . $e->getMessage());
+                    }
+                });
+                // --- AKHIR TAMBAHAN ---
             }
             DB::commit();
             return response()->json(['success' => true, 'message' => 'Laporan berhasil disetujui.']);
@@ -301,6 +328,7 @@ class LaporanKecelakaanController extends Controller
 
     private function prosesGambarEditor(string $content): string
     {
+        if (empty($content)) return '';
         $dom = new \DOMDocument();
         @$dom->loadHtml(mb_convert_encoding($content, 'HTML-ENTITIES', 'UTF-8'), LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
         $images = $dom->getElementsByTagName('img');
@@ -389,33 +417,21 @@ class LaporanKecelakaanController extends Controller
         return $apdData;
     }
 
-private function prosesSebabUtama(Request $request): ?array
+    private function prosesSebabUtama(Request $request): ?array
     {
         $results = [];
         $sebabA = $request->input('sebab_utama_a');
         $sebabB = $request->input('sebab_utama_b');
 
-        // Proses Kategori A
         if ($sebabA) {
-            $deskripsi = '';
-            if ($sebabA === 'A-lain') {
-                $deskripsi = $request->input('sebab_a_lain_input');
-            } elseif (str_starts_with($sebabA, 'A - ')) {
-                $deskripsi = substr($sebabA, 4);
-            }
+            $deskripsi = ($sebabA === 'A-lain') ? $request->input('sebab_a_lain_input') : (str_starts_with($sebabA, 'A - ') ? substr($sebabA, 4) : '');
             if (!empty($deskripsi)) {
                 $results[] = ['kategori' => 'A', 'deskripsi' => $deskripsi];
             }
         }
 
-        // Proses Kategori B
         if ($sebabB) {
-            $deskripsi = '';
-            if ($sebabB === 'B-lain') {
-                $deskripsi = $request->input('sebab_b_lain_input');
-            } elseif (str_starts_with($sebabB, 'B - ')) {
-                $deskripsi = substr($sebabB, 4);
-            }
+            $deskripsi = ($sebabB === 'B-lain') ? $request->input('sebab_b_lain_input') : (str_starts_with($sebabB, 'B - ') ? substr($sebabB, 4) : '');
             if (!empty($deskripsi)) {
                 $results[] = ['kategori' => 'B', 'deskripsi' => $deskripsi];
             }

@@ -187,7 +187,7 @@
             </ul>
         </li>
 
-        <li class="{{ request()->is('dashboard/ecommerce*') ? 'current' : '' }}">
+        <li class="{{ request()->is('ecommerce*') ? 'current' : '' }}">
             <a href="#" style="font-size: 18px;">
                 {{-- Mengganti ikon menjadi keranjang belanja --}}
                 <i data-feather="shopping-cart" style="width: 18px; height: 18px;"></i>
@@ -203,21 +203,28 @@
                         Dashboard
                     </a>
                 </li>
-                {{-- Anda bisa menambahkan sub-menu lain di sini, contoh: --}}
-                {{--
-                <li>
-                    <a href="#">
-                        <i class="icon-Box"><span class="path1"></span><span class="path2"></span></i>
-                        Produk
-                    </a>
-                </li>
-                <li>
-                    <a href="#">
-                        <i class="icon-Cart"><span class="path1"></span><span class="path2"></span></i>
-                        Pesanan
-                    </a>
-                </li>
-                --}}
+        <li>
+            <a href="{{ route('ecommerce.products.index') }}" class="{{ request()->is('dashboard/ecommerce/products*') ? 'current' : '' }}">
+                <i class="icon-Box"></i>
+                Produk
+            </a>
+        </li>
+         <li>
+            <a href="{{ route('ecommerce.sales.index') }}" class="{{ request()->is('dashboard/ecommerce/sales*') ? 'current' : '' }}">
+                {{-- Ganti 'icon-Chart-line' jika perlu --}}
+                <i class="icon-Chart-line"></i>
+                Penjualan
+            </a>
+        </li>
+
+        {{-- (TAMBAHAN) Link Navigasi Konfigurasi --}}
+        <li>
+            <a href="{{ route('ecommerce.settings.index') }}" class="{{ request()->is('dashboard/ecommerce/settings*') ? 'current' : '' }}">
+                {{-- Ganti 'icon-Gear' jika perlu --}}
+                <i class="icon-Gear"></i>
+                Konfigurasi
+            </a>
+        </li>
             </ul>
         </li>
 

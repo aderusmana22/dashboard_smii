@@ -116,11 +116,11 @@
                                 @csrf
                                 <h3 class="text-lg font-bold text-gray-900">Tolak Laporan Kecelakaan</h3>
                                 <div class="mt-4">
-                                    <label for="rejection_reason" class="block text-sm font-medium text-gray-700">Alasan
+                                    <label for="rejection_reason" class="block text-sm font-medium ">Alasan
                                         Penolakan</label>
                                     <textarea id="rejection_reason" name="rejection_reason" rows="4" required
                                         minlength="10"
-                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"></textarea>
+                                        class="mt-1 block w-full rounded-md border-gray-300 text-black shadow-sm"></textarea>
                                 </div>
                                 <div class="mt-6 flex justify-end gap-x-3">
                                     <button @click="rejectModalOpen = false" type="button"
@@ -182,7 +182,6 @@
                                 {{ $laporan->revision_number ?? 0 }}</span></div>
                         <div class="grid grid-cols-3"><span>Date</span> <span class="col-span-2">:
                                 {{ optional($laporan->date)->format('d F Y') ?? '1 Desember 2015' }}</span></div>
-                        <div class="grid grid-cols-3"><span>Page</span> <span class="col-span-2">: 1 of 3</span></div>
                     </div>
                 </div>
 

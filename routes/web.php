@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\Ecommerce\EcommerceSalesController;
 use App\Http\Controllers\LevelController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PositionController;
@@ -29,6 +30,7 @@ use App\Http\Controllers\EditorImageController;
 use App\Http\Controllers\DashboardEcommerceController;
 use App\Http\Controllers\Ecommerce\ProductController;
 use App\Http\Controllers\EmailApprovalController;
+use App\Http\Controllers\Ecommerce\EcommerceSettingsController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -233,7 +235,10 @@ Route::prefix('accidents-report')->name('accidents-report.')->group(function () 
     Route::get('/ecommerce', [DashboardEcommerceController::class, 'index'])->name('dashboard.ecommerce');
     Route::get('/ecommerce/products', [ProductController::class, 'index'])
         ->middleware(['auth'])->name('ecommerce.products.index');
-
+    // Rute untuk Halaman Data Penjualan E-Commerce
+    Route::get('/ecommerce/sales', [EcommerceSalesController::class, 'index'])->name('ecommerce.sales.index');
+    Route::get('/ecommerce/settings', [EcommerceSettingsController::class, 'index'])->name('ecommerce.settings.index');
+    Route::post('/ecommerce/settings', [EcommerceSettingsController::class, 'update'])->name('ecommerce.settings.update');
 
     Route::prefix('testing')->name('testing.')->group(function () {
         Route::get('/email/request', [\App\Http\Controllers\DevTestingController::class, 'previewEmailRequest'])->name('email.request');

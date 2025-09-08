@@ -9,7 +9,7 @@
 <body style="background-image: url('{{ asset('frontend/assets/images/logo/pic.jpg') }}'); background-size: cover; background-position: center; background-repeat: no-repeat; min-height: 100vh;">
     <div class="w-full min-h-screen flex items-center justify-center bg-black bg-opacity-50 py-8">
         <div class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-lg mx-4">
-            <h1 class="text-2xl font-bold text-gray-800 mb-2">Reject Report</h1>
+            <h1 class="text-2xl font-bold text-gray-800 mb-2 text-center">Reject Report</h1>
             <p class="text-gray-600 mb-6">Please provide a clear reason why this report is being rejected.</p>
             
             @if($errors->any())

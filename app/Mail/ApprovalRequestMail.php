@@ -89,7 +89,7 @@ class ApprovalRequestMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Permintaan Persetujuan Laporan Kecelakaan #' . $this->laporan->nomor_form,
+            subject: 'Approval Laporan kecelakaan kerja - ' . $this->laporan->nomor_form,
         );
     }
 

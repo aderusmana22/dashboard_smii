@@ -16,8 +16,8 @@
             <p class="text-gray-600 mt-2">{{ $message }}</p>
             <p class="text-gray-500 mt-6 text-sm">Please try again or contact an administrator if the problem persists.</p>
             <div class="mt-6">
-                <a href="{{ url('/') }}" style="display: inline-block; padding: 10px 20px; background-color: #2563eb; color: #ffffff; text-decoration: none; font-weight: bold; border-radius: 5px; transition: background-color 0.3s;" onmouseover="this.style.backgroundColor='#1d4ed8'" onmouseout="this.style.backgroundColor='#2563eb'">
-                    Go to Dashboard
+                <a href="{{ url('accidents-report') }}" style="display: inline-block; padding: 10px 20px; background-color: #2563eb; color: #ffffff; text-decoration: none; font-weight: bold; border-radius: 5px; transition: background-color 0.3s;" onmouseover="this.style.backgroundColor='#1d4ed8'" onmouseout="this.style.backgroundColor='#2563eb'">
+                    Go to Accident Reports
                 </a>
             </div>
         </div>

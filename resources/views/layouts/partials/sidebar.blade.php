@@ -166,14 +166,14 @@
             class="{{ request()->is('accidents-report*') || request()->is('dashboard/safety-board*') ? 'current' : '' }}">
             <a href="#" style="font-size: 18px;">
                 <i data-feather="shield" style="width: 18px; height: 18px;"></i>
-                Accident Report
+                Accident Reports
             </a>
             <ul>
                 <li>
                     <a href="{{ route('accidents-report.index') }}"
                         class="{{ request()->is('accidents-report*') ? 'current' : '' }}">
                         <i class="icon-File_Exclamation"><span class="path1"></span><span class="path2"></span></i>
-                        Laporan Kecelakaan
+                        Accident Report
                     </a>
                 </li>
 

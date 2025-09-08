@@ -1,34 +1,3 @@
-@php
-    /**
-     * Fungsi helper ini mem-parsing string HTML dari editor dan menerapkan gaya inline
-     * pada semua tag <img> untuk memastikan kompatibilitas email.
-     * @param string|null $htmlContent Konten HTML mentah.
-     * @return string Konten HTML yang sudah diberi gaya.
-     */
-    function style_editor_images($htmlContent) {
-        if (empty(trim($htmlContent))) {
-            return '';
-        }
-
-        $dom = new \DOMDocument();
-        // Menggunakan @ untuk menekan error dari HTML yang mungkin tidak valid & memastikan encoding UTF-8
-        @$dom->loadHtml(mb_convert_encoding($htmlContent, 'HTML-ENTITIES', 'UTF-8'), LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
-
-        $images = $dom->getElementsByTagName('img');
-        foreach ($images as $img) {
-            // Terapkan gaya inline langsung ke elemen gambar
-            $img->setAttribute('style', 'max-height: 200px; width: auto; height: auto; display: block; margin: 10px auto;');
-        }
-        
-        return $dom->saveHTML();
-    }
-
-    // Proses semua field yang berisi HTML dari editor
-    $uraian_kejadian_styled = style_editor_images($laporan->uraian_kejadian);
-    $analisa_masalah_styled = style_editor_images($laporan->analisa_masalah);
-    $tindakan_pencegahan_styled = style_editor_images($laporan->tindakan_pencegahan);
-    $rekomendasi_styled = style_editor_images($laporan->rekomendasi);
-@endphp
 <!DOCTYPE html>
 <html lang="en">
 <head>

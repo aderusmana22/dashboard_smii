@@ -4,6 +4,15 @@
     @endsection
     <style>
         /* --- STRUKTUR DASAR --- */
+
+        html {
+            -ms-overflow-style: none;  /* Internet Explorer 10+ */
+            scrollbar-width: none;  /* Firefox, Safari 18.2+, Chromium 121+ */
+        }
+        html::-webkit-scrollbar { 
+            display: none;  /* Older Safari and Chromium */
+        }
+
         html, body {
             height: 100%;
             margin: 0;

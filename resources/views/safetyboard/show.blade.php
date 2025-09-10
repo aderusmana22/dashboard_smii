@@ -1,6 +1,7 @@
 <x-app-layout>
-    {{-- Alpine.js diperlukan untuk modal penolakan agar interaktif --}}
+    {{-- Alpine.js untuk modal dan SweetAlert2 untuk notifikasi konfirmasi --}}
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <x-slot name="header">
         <div class="flex flex-col md:flex-row justify-between items-center gap-4">
@@ -70,7 +71,70 @@
             margin-right: auto !important;
             display: block !important;
         }
+
+        /* CSS untuk Dark Mode */
+        .dark-skin .bg-white {
+            background-color: rgb(31 41 55 / 1);
+        }
+
+        .dark-skin .bg-gray-50 {
+            background-color: rgb(55 65 81 / 1);
+        }
+
+        .dark-skin .bg-gray-100 {
+            background-color: rgb(55 65 81 / 1);
+        }
+
+        .dark-skin .divide-gray-200> :not([hidden])~ :not([hidden]) {
+            border-color: rgb(55 65 81 / 1);
+        }
+
+        .dark-skin .text-gray-900 {
+            color: rgb(249 250 251 / 1);
+        }
+
+        .dark-skin .text-gray-800 {
+            color: rgb(229 231 235 / 1);
+        }
+
+        .dark-skin .text-gray-700 {
+            color: rgb(209 213 219 / 1);
+        }
+
+        .dark-skin .text-gray-500 {
+            color: rgb(209 213 219 / 1);
+        }
+
+        .dark-skin .border-gray-300 {
+            border-color: rgb(75 85 99 / 1);
+        }
+
+        .dark-skin .text-indigo-600 {
+            color: #818cf8;
+        }
+
+        .dark-skin .text-indigo-600:hover {
+            color: #a5b4fc;
+        }
+
+        .dark-skin .text-red-600 {
+            color: #f87171;
+        }
+
+        .dark-skin .text-red-600:hover {
+            color: #fca5a5;
+        }
+
+        .dark-skin .modal-cancel-button {
+            background-color: rgb(75 85 99 / 1);
+            color: rgb(229 231 235 / 1);
+        }
+
+        .dark-skin .modal-cancel-button:hover {
+            background-color: rgb(107 114 128 / 1);
+        }
     </style>
+
 
     <div class="py-12 print:py-0">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
@@ -95,8 +159,7 @@
                                     <strong>{{ Str::title(str_replace(['_', '_id'], ' ', $currentApproverField)) }}</strong>.
                                 </p>
                                 <div class="mt-4 flex gap-x-3">
-                                    <form action="{{ route('accidents-report.approve', $laporan) }}" method="POST"
-                                        onsubmit="return confirm('Apakah Anda yakin ingin menyetujui laporan ini?');">
+                                    <form id="approve-form" action="{{ route('accidents-report.approve', $laporan) }}" method="POST">
                                         @csrf
                                         <button type="submit"
                                             class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">Setujui</button>
@@ -137,7 +200,7 @@
                     <div class="bg-white shadow-sm sm:rounded-lg border-l-4 border-red-500">
                         <div class="p-6">
                             <h3 class="text-lg font-bold text-gray-900">Tindakan Revisi Diperlukan</h3>
-                            <div class="mt-2 text-gray-600">
+                            <div class="mt-2">
                                 <p>Laporan ditolak dengan alasan:</p>
                                 <blockquote class="mt-2 border-l-4 bg-gray-50 p-4 italic">
                                     "{{ $laporan->approvalStatus->rejection_reason }}"</blockquote>
@@ -628,4 +691,34 @@
 
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const approveForm = document.getElementById('approve-form');
+
+            if (approveForm) {
+                approveForm.addEventListener('submit', function (event) {
+                    // Mencegah form untuk langsung submit
+                    event.preventDefault();
+
+                    Swal.fire({
+                        title: 'Anda yakin?',
+                        text: "Anda akan menyetujui laporan ini. Tindakan ini tidak dapat diurungkan.",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#16a34a', // Warna hijau
+                        cancelButtonColor: '#6b7280', // Warna abu-abu
+                        confirmButtonText: 'Ya, Setujui Laporan!',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        // Jika pengguna mengklik "Ya, Setujui"
+                        if (result.isConfirmed) {
+                            // Submit form secara manual
+                            approveForm.submit();
+                        }
+                    });
+                });
+            }
+        });
+    </script>
 </x-app-layout>

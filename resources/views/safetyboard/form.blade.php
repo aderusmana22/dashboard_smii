@@ -7,16 +7,68 @@
         $isUpdate = isset($laporan);
     @endphp
 
-    @push('styles')
-        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-        <style>
-            .select2-container .select2-selection--single { height: 2.625rem !important; border: 1px solid #d1d5db !important; border-radius: 0.375rem !important; }
-            .select2-container--default .select2-selection--single .select2-selection__rendered { line-height: 2.625rem !important; padding-left: 0.75rem !important; color: #1f2937; }
-            .select2-container--default .select2-selection--single .select2-selection__arrow { height: 2.625rem !important; }
-            .select2-dropdown { border: 1px solid #d1d5db !important; border-radius: 0.375rem !important; }
-            .select2-search__field { border: 1px solid #d1d5db !important; }
-        </style>
-    @endpush
+    <style>
+        .dark-skin .bg-white {
+            background-color: rgb(31 41 55 / 1);
+        }
+
+        .dark-skin .bg-gray-50 {
+            background-color: rgb(55 65 81 / 1);
+        }
+
+        .dark-skin .bg-gray-100 {
+            background-color: rgb(55 65 81 / 1);
+        }
+
+        .dark-skin .divide-gray-200> :not([hidden])~ :not([hidden]) {
+            border-color: rgb(55 65 81 / 1);
+        }
+
+        .dark-skin .text-gray-900 {
+            color: rgb(249 250 251 / 1);
+        }
+
+        .dark-skin .text-gray-800 {
+            color: rgb(229 231 235 / 1);
+        }
+
+        .dark-skin .text-gray-700 {
+            color: rgb(209 213 219 / 1);
+        }
+
+        .dark-skin .text-gray-500 {
+            color: rgb(209 213 219 / 1);
+        }
+
+        .dark-skin .border-gray-300 {
+            border-color: rgb(75 85 99 / 1);
+        }
+
+        .dark-skin .text-indigo-600 {
+            color: #818cf8;
+        }
+
+        .dark-skin .text-indigo-600:hover {
+            color: #a5b4fc;
+        }
+
+        .dark-skin .text-red-600 {
+            color: #f87171;
+        }
+
+        .dark-skin .text-red-600:hover {
+            color: #fca5a5;
+        }
+
+        .dark-skin .modal-cancel-button {
+            background-color: rgb(75 85 99 / 1);
+            color: rgb(229 231 235 / 1);
+        }
+
+        .dark-skin .modal-cancel-button:hover {
+            background-color: rgb(107 114 128 / 1);
+        }
+    </style>
 
     <div class="py-10">
         <div class="container mx-auto px-4">
@@ -72,13 +124,13 @@
                                     <div class="grid grid-cols-3 items-center">
                                         <label for="nomor_form" class="col-span-1 text-sm">Nomor:</label>
                                         <div class="col-span-2">
-                                            <input type="text" id="nomor_form" name="nomor_form" value="Akan digenerate otomatis" readonly class="w-full border-gray-300 rounded-md shadow-sm bg-gray-100 text-gray-500 text-sm">
+                                            <input type="text" id="nomor_form" name="nomor_form" value="Akan digenerate otomatis" readonly class="bg-white w-full border-gray-300 rounded-md shadow-sm text-gray-500 text-sm">
                                         </div>
                                     </div>
                                     <div class="grid grid-cols-3 items-center">
                                         <label for="date_display" class="col-span-1 text-sm">Date:</label>
                                         <div class="col-span-2">
-                                            <input type="text" id="date_display" readonly class="w-full bg-gray-100 border-transparent rounded-md px-2 text-sm">
+                                            <input type="text" id="date_display" readonly class="bg-white w-full border-transparent rounded-md px-2 text-sm">
                                             <input type="hidden" id="date" name="date" value="{{ old('date', ($isUpdate && $laporan->date) ? $laporan->date->format('Y-m-d') : '') }}">
                                         </div>
                                     </div>
@@ -91,7 +143,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                             <div>
                                 <label for="kategori_kecelakaan" class="block text-sm font-medium text-gray-700">Kategori Kecelakaan</label>
-                                <select id="kategori_kecelakaan" name="kategori_kecelakaan" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                <select id="kategori_kecelakaan" name="kategori_kecelakaan" class="bg-white mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                                     <option value="Kerja" {{ old('kategori_kecelakaan', $laporan->kategori_kecelakaan ?? '') == 'Kerja' ? 'selected' : '' }}>Kerja</option>
                                     <option value="Lalu Lintas" {{ old('kategori_kecelakaan', $laporan->kategori_kecelakaan ?? '') == 'Lalu Lintas' ? 'selected' : '' }}>Lalu Lintas</option>
                                     <option value="Kebakaran" {{ old('kategori_kecelakaan', $laporan->kategori_kecelakaan ?? '') == 'Kebakaran' ? 'selected' : '' }}>Kebakaran</option>
@@ -100,7 +152,7 @@
                             </div>
                             <div>
                                 <label for="kategori_dampak" class="block text-sm font-medium text-gray-700">Kategori Dampak</label>
-                                <select id="kategori_dampak" name="kategori_dampak" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                <select id="kategori_dampak" name="kategori_dampak" class="bg-white mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                                     <option value="Ringan" {{ old('kategori_dampak', $laporan->kategori_dampak ?? '') == 'Ringan' ? 'selected' : '' }}>Ringan (Minor)</option>
                                     <option value="Sedang" {{ old('kategori_dampak', $laporan->kategori_dampak ?? '') == 'Sedang' ? 'selected' : '' }}>Sedang (Moderate)</option>
                                     <option value="Berat" {{ old('kategori_dampak', $laporan->kategori_dampak ?? '') == 'Berat' ? 'selected' : '' }}>Berat (Major)</option>
@@ -110,69 +162,69 @@
                         </div>
                         <div class="mb-4">
                             <label for="waktu_kecelakaan" class="block text-sm font-medium text-gray-700">Tanggal & Jam Kecelakaan</label>
-                            <input type="datetime-local" id="waktu_kecelakaan" name="waktu_kecelakaan" value="{{ old('waktu_kecelakaan', ($isUpdate && $laporan->waktu_kecelakaan) ? $laporan->waktu_kecelakaan->format('Y-m-d\TH:i') : '') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                            <input type="datetime-local" id="waktu_kecelakaan" name="waktu_kecelakaan" value="{{ old('waktu_kecelakaan', ($isUpdate && $laporan->waktu_kecelakaan) ? $laporan->waktu_kecelakaan->format('Y-m-d\TH:i') : '') }}" class="bg-white mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                         </div>
                         <div class="mb-4">
                             <label for="lokasi_kecelakaan" class="block text-sm font-medium text-gray-700">Lokasi Kecelakaan</label>
-                            <input type="text" id="lokasi_kecelakaan" name="lokasi_kecelakaan" value="{{ old('lokasi_kecelakaan', $laporan->lokasi_kecelakaan ?? '') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                            <input type="text" id="lokasi_kecelakaan" name="lokasi_kecelakaan" value="{{ old('lokasi_kecelakaan', $laporan->lokasi_kecelakaan ?? '') }}" class="bg-white mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                             <div>
                                 <label for="tipe_kecelakaan" class="block text-sm font-medium text-gray-700">Tipe Kecelakaan</label>
-                                <input type="text" id="tipe_kecelakaan" name="tipe_kecelakaan" value="{{ old('tipe_kecelakaan', $laporan->tipe_kecelakaan ?? '') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" placeholder="cth: Terpeleset, Terjatuh">
+                                <input type="text" id="tipe_kecelakaan" name="tipe_kecelakaan" value="{{ old('tipe_kecelakaan', $laporan->tipe_kecelakaan ?? '') }}" class="bg-white mt-1 block w-full border-gray-300 rounded-md shadow-sm" placeholder="cth: Terpeleset, Terjatuh">
                             </div>
                             <div>
                                 <label for="bagian_terluka" class="block text-sm font-medium text-gray-700">Bagian yang Terluka</label>
-                                <input type="text" id="bagian_terluka" name="bagian_terluka" value="{{ old('bagian_terluka', $laporan->bagian_terluka ?? '') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" placeholder="cth: Tangan Kanan">
+                                <input type="text" id="bagian_terluka" name="bagian_terluka" value="{{ old('bagian_terluka', $laporan->bagian_terluka ?? '') }}" class="bg-white mt-1 block w-full border-gray-300 rounded-md shadow-sm" placeholder="cth: Tangan Kanan">
                             </div>
                         </div>
                         <div class="mb-4">
                             <label for="uraian_kejadian" class="block text-sm font-medium text-gray-700">Uraian Kejadian</label>
-                            <textarea id="uraian_kejadian" name="uraian_kejadian" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" rows="8">{{ old('uraian_kejadian', $laporan->uraian_kejadian ?? '') }}</textarea>
+                            <textarea id="uraian_kejadian" name="uraian_kejadian" class="bg-white mt-1 block w-full border-gray-300 rounded-md shadow-sm" rows="8">{{ old('uraian_kejadian', $laporan->uraian_kejadian ?? '') }}</textarea>
                         </div>
 
                         <h4 class="font-bold text-xl mt-8 pt-4 border-t mb-4">Data Korban</h4>
                         <div class="mb-4">
                             <label for="nama_korban" class="block text-sm font-medium text-gray-700">Nama Korban</label>
-                            <input type="text" id="nama_korban" name="nama_korban" value="{{ old('nama_korban', $laporan->nama_korban ?? '') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                            <input type="text" id="nama_korban" name="nama_korban" value="{{ old('nama_korban', $laporan->nama_korban ?? '') }}" class="bg-white mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                             <div>
                                 <label for="nik" class="block text-sm font-medium text-gray-700">NIK</label>
-                                <input type="text" id="nik" name="nik" value="{{ old('nik', $laporan->nik ?? '') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                                <input type="text" id="nik" name="nik" value="{{ old('nik', $laporan->nik ?? '') }}" class="bg-white mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                             </div>
                             <div>
                                 <label for="tanggal_lahir" class="block text-sm font-medium text-gray-700">Tanggal Lahir</label>
-                                <input type="date" id="tanggal_lahir" name="tanggal_lahir" value="{{ old('tanggal_lahir', ($isUpdate && $laporan->tanggal_lahir) ? $laporan->tanggal_lahir->format('Y-m-d') : '') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" onchange="hitungUsia()">
+                                <input type="date" id="tanggal_lahir" name="tanggal_lahir" value="{{ old('tanggal_lahir', ($isUpdate && $laporan->tanggal_lahir) ? $laporan->tanggal_lahir->format('Y-m-d') : '') }}" class="bg-white mt-1 block w-full border-gray-300 rounded-md shadow-sm" onchange="hitungUsia()">
                             </div>
                         </div>
                         <div class="mb-4">
                             <label for="usia" class="block text-sm font-medium text-gray-700">Usia</label>
-                            <input type="text" id="usia" name="usia" value="{{ old('usia', $laporan->usia ?? '') }}" readonly class="mt-1 block w-1/4 bg-gray-100 border-transparent rounded-md px-2">
+                            <input type="text" id="usia" name="usia" value="{{ old('usia', $laporan->usia ?? '') }}" readonly class="bg-white mt-1 block w-1/4 border-transparent rounded-md px-2">
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
                             <div>
                                 <label for="tanggal_masuk" class="block text-sm font-medium text-gray-700">Tanggal Masuk Kerja</label>
-                                <input type="date" id="tanggal_masuk" name="tanggal_masuk" value="{{ old('tanggal_masuk', ($isUpdate && $laporan->tanggal_masuk) ? $laporan->tanggal_masuk->format('Y-m-d') : '') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm" onchange="hitungMasaKerja()">
+                                <input type="date" id="tanggal_masuk" name="tanggal_masuk" value="{{ old('tanggal_masuk', ($isUpdate && $laporan->tanggal_masuk) ? $laporan->tanggal_masuk->format('Y-m-d') : '') }}" class="bg-white mt-1 block w-full border-gray-300 rounded-md shadow-sm" onchange="hitungMasaKerja()">
                             </div>
                             <div>
                                 <label for="masa_kerja" class="block text-sm font-medium text-gray-700">Masa Kerja</label>
-                                <input type="text" id="masa_kerja" name="masa_kerja" value="{{ old('masa_kerja', $laporan->masa_kerja ?? '') }}" readonly class="mt-1 block w-full bg-gray-100 border-transparent rounded-md px-2">
+                                <input type="text" id="masa_kerja" name="masa_kerja" value="{{ old('masa_kerja', $laporan->masa_kerja ?? '') }}" readonly class="bg-white mt-1 block w-full border-transparent rounded-md px-2">
                             </div>
                         </div>
                         <div class="mb-4">
                             <label for="jabatan" class="block text-sm font-medium text-gray-700">Jabatan</label>
-                            <input type="text" id="jabatan" name="jabatan" value="{{ old('jabatan', $laporan->jabatan ?? '') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                            <input type="text" id="jabatan" name="jabatan" value="{{ old('jabatan', $laporan->jabatan ?? '') }}" class="bg-white mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                         </div>
                         <div class="mb-4">
                             <label for="departemen" class="block text-sm font-medium text-gray-700">Seksi / Departemen</label>
-                            <input type="text" id="departemen" name="departemen" value="{{ old('departemen', $laporan->departemen ?? '') }}" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                            <input type="text" id="departemen" name="departemen" value="{{ old('departemen', $laporan->departemen ?? '') }}" class="bg-white mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                         </div>
 
                         <h4 class="font-bold text-xl mt-8 pt-4 border-t mb-4">Tindakan Pertolongan & Akibat</h4>
                         <div class="mb-4">
                             <label for="pertolongan" class="block text-sm font-medium text-gray-700">Diberikan pertolongan (P3K)</label>
-                            <select id="pertolongan" name="pertolongan" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                            <select id="pertolongan" name="pertolongan" class="bg-white mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                                 <option value="Di Tempat Kejadian" {{ old('pertolongan', $laporan->pertolongan ?? '') == 'Di Tempat Kejadian' ? 'selected' : '' }}>Di Tempat Kejadian</option>
                                 <option value="Di Klinik" {{ old('pertolongan', $laporan->pertolongan ?? '') == 'Di Klinik' ? 'selected' : '' }}>Di Klinik</option>
                                 <option value="Di Rumah Sakit" {{ old('pertolongan', $laporan->pertolongan ?? '') == 'Di Rumah Sakit' ? 'selected' : '' }}>Di Rumah Sakit</option>
@@ -182,19 +234,19 @@
                             <label for="p3k_oleh" class="md:col-span-3 text-sm font-medium text-gray-700">P3K dilakukan Oleh</label>
                             <div class="md:col-span-9 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
                                 <div class="md:col-span-8">
-                                    <input type="text" id="p3k_oleh" name="p3k_oleh" value="{{ old('p3k_oleh', $laporan->p3k_oleh ?? '') }}" class="w-full border-gray-300 rounded-md shadow-sm">
+                                    <input type="text" id="p3k_oleh" name="p3k_oleh" value="{{ old('p3k_oleh', $laporan->p3k_oleh ?? '') }}" class="bg-white w-full border-gray-300 rounded-md shadow-sm">
                                 </div>
                                 <label for="jam_p3k" class="md:col-span-1 text-sm">Jam</label>
                                 <div class="md:col-span-3">
                                     <input type="time" id="jam_p3k" name="jam_p3k"
                                         value="{{ old('jam_p3k', ($isUpdate && $laporan->jam_p3k) ? \Carbon\Carbon::parse($laporan->jam_p3k)->format('H:i') : '') }}"
-                                        class="w-full border-gray-300 rounded-md shadow-sm">
+                                        class="bg-white w-full border-gray-300 rounded-md shadow-sm">
                                 </div>
                             </div>
                         </div>
                         <div class="mb-4">
                             <label for="akibat_kecelakaan" class="block text-sm font-medium text-gray-700">Akibat Kecelakaan</label>
-                            <select id="akibat_kecelakaan" name="akibat_kecelakaan" class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+                            <select id="akibat_kecelakaan" name="akibat_kecelakaan" class="bg-white mt-1 block w-full border-gray-300 rounded-md shadow-sm">
                                 <option value="Sementara Total tak mampu bekerja" {{ old('akibat_kecelakaan', $laporan->akibat_kecelakaan ?? '') == 'Sementara Total tak mampu bekerja' ? 'selected' : '' }}>Sementara Total tak mampu bekerja</option>
                                 <option value="Sementara Sebagian tak mampu bekerja" {{ old('akibat_kecelakaan', $laporan->akibat_kecelakaan ?? '') == 'Sementara Sebagian tak mampu bekerja' ? 'selected' : '' }}>Sementara Sebagian tak mampu bekerja</option>
                                 <option value="Tetap Sebagian tak mampu bekerja" {{ old('akibat_kecelakaan', $laporan->akibat_kecelakaan ?? '') == 'Tetap Sebagian tak mampu bekerja' ? 'selected' : '' }}>Tetap Sebagian tak mampu bekerja</option>
@@ -204,7 +256,7 @@
                         </div>
                         <div class="mb-4">
                             <label for="waktu_hilang" class="block text-sm font-medium text-gray-700">Jumlah waktu hilang (hari)</label>
-                            <input type="number" id="waktu_hilang" name="waktu_hilang" value="{{ old('waktu_hilang', $laporan->waktu_hilang ?? '') }}" class="mt-1 block w-1/4 border-gray-300 rounded-md shadow-sm">
+                            <input type="number" id="waktu_hilang" name="waktu_hilang" value="{{ old('waktu_hilang', $laporan->waktu_hilang ?? '') }}" class="bg-white mt-1 block w-1/4 border-gray-300 rounded-md shadow-sm">
                         </div>
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700">Biaya Perawatan</label>
@@ -238,7 +290,7 @@
                                 <div class="mb-2">
                                     <label for="apd_keterangan_{{ $key }}" class="text-sm font-medium text-gray-700">Keterangan (Jenis/Spesifikasi):</label>
                                     <input type="text" id="apd_keterangan_{{ $key }}" name="apd_keterangan_{{ $key }}"
-                                           class="mt-1 block w-full text-sm border-gray-300 rounded-md shadow-sm"
+                                           class="bg-white mt-1 block w-full text-sm border-gray-300 rounded-md shadow-sm"
                                            value="{{ old('apd_keterangan_'.$key, $apdItemDataFromDb['keterangan'] ?? '') }}">
                                 </div>
                                 @endif
@@ -261,7 +313,7 @@
                         </div>
                         @endforeach
 
-                        <h4 class="font-bold text-xl mt-8 pt-4 border-t mb-4">10. Sebab Kecelakaan</h4>
+                        <h4 class="font-bold text-xl mt-8 pt-4 border-t mb-4">Sebab Kecelakaan</h4>
                         <div class="border rounded-md p-4 mb-3 bg-gray-50 space-y-3">
                             @php
                                 $sebabKecelakaanOptions = [ 'Tindakan berbahaya Orang Lain', 'Tindakan berbahaya diri sendiri.', 'Keadaan berbahaya' ];
@@ -332,7 +384,7 @@
                                 <label class="ml-2 text-sm text-gray-900" for="sebab_a_lain">{{ count($tindakanBerbahaya) + 1 }}. Lain-lain, sebutkan:</label>
                             </div>
                             <input type="text" id="sebab_a_lain_input" name="sebab_a_lain_input"
-                                   class="mt-1 block w-full text-sm border-gray-300 rounded-md shadow-sm"
+                                   class="bg-white mt-1 block w-full text-sm border-gray-300 rounded-md shadow-sm"
                                    value="{{ $lainDeskripsiA }}">
                         </div>
 
@@ -353,7 +405,7 @@
                                 <label class="ml-2 text-sm text-gray-900" for="sebab_b_lain">{{ count($keadaanBerbahaya) + 1 }}. Lain-lain, sebutkan:</label>
                             </div>
                             <input type="text" id="sebab_b_lain_input" name="sebab_b_lain_input"
-                                   class="mt-1 block w-full text-sm border-gray-300 rounded-md shadow-sm"
+                                   class="bg-white mt-1 block w-full text-sm border-gray-300 rounded-md shadow-sm"
                                    value="{{ $lainDeskripsiB }}">
                         </div>
 
@@ -476,15 +528,59 @@
     const perbaikanData = @json($isUpdate ? $laporan->saranPerbaikan ?? [] : []);
 
     document.addEventListener('DOMContentLoaded', function () {
+   // Definisikan selector di luar agar bisa digunakan kembali
+const tinymceSelector = 'textarea#uraian_kejadian, textarea#analisa_masalah, textarea#tindakan_pencegahan, textarea#rekomendasi';
+
+/**
+ * Fungsi ini menghapus editor TinyMCE yang ada, lalu menginisialisasinya kembali
+ * dengan tema yang sesuai dari localStorage.
+ */
+
+function initializeOrReloadTinyMCE() {
+    // Langkah 1: Langsung hapus semua instance editor yang cocok dengan selector.
+    // Ini lebih andal daripada mencoba memeriksanya terlebih dahulu.
+    tinymce.remove(tinymceSelector);
+
+    // Langkah 2: Gunakan setTimeout untuk memastikan proses penghapusan selesai
+    // sebelum kita melakukan inisialisasi ulang.
+    setTimeout(() => {
+        // --- VERIFIKASI DENGAN CONSOLE.LOG ---
+        const darkModeValue = localStorage.getItem('darkMode');
+
+        const isDarkMode = darkModeValue === 'true';
+
+        const tinymceSkin = isDarkMode ? 'oxide-dark' : 'oxide';
+        const tinymceContentCss = isDarkMode ? 'dark' : 'default';
+
+
         if (typeof tinymce !== 'undefined') {
             tinymce.init({
-                selector: 'textarea#uraian_kejadian, textarea#analisa_masalah, textarea#tindakan_pencegahan, textarea#rekomendasi',
+                selector: tinymceSelector,
+                
+                skin: tinymceSkin,
+                content_css: tinymceContentCss,
+
                 plugins: 'autolink lists link charmap preview anchor image media paste',
                 toolbar: 'undo redo | styles | bold italic | alignleft aligncenter alignright | bullist numlist outdent indent | link image media',
-                paste_data_images: true, automatic_uploads: false, file_picker_types: 'image',
-                height: 350, promotion: false, license_key: 'gpl'
+                paste_data_images: true,
+                automatic_uploads: false,
+                file_picker_types: 'image',
+                height: 350,
+                promotion: false,
+                license_key: 'gpl'
             });
         }
+    }, 0); // Jeda 0 milidetik sudah cukup
+}
+
+// Panggil fungsi untuk inisialisasi pertama kali saat halaman dimuat
+initializeOrReloadTinyMCE();
+
+// Tambahkan listener yang akan memanggil fungsi di atas setiap kali tema berubah.
+// Ini membuat editor bereaksi secara dinamis.
+window.addEventListener('themeChanged', function() {
+    initializeOrReloadTinyMCE();
+});
         
         const allRadioSebabA = document.querySelectorAll('input[name="sebab_utama_a"]');
         const allRadioSebabB = document.querySelectorAll('input[name="sebab_utama_b"]');
@@ -574,7 +670,7 @@
         const newItem = document.createElement('div');
         newItem.className = 'flex space-x-2';
         newItem.id = 'biaya_item_' + biayaCount;
-        newItem.innerHTML = `<span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">Rp</span><input type="number" name="biaya_harga[]" class="flex-1 block w-full rounded-none border-gray-300" placeholder="Harga" value="${data && data.harga ? data.harga : ''}"><input type="text" name="biaya_kategori[]" class="flex-1 block w-full border-gray-300" placeholder="Kategori" value="${data && data.kategori ? data.kategori : ''}"><button type="button" class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-r-md text-white bg-red-600 hover:bg-red-700" onclick="hapusBiaya(${biayaCount})">Hapus</button>`;
+        newItem.innerHTML = `<span class="bg-white inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">Rp</span><input type="number" name="biaya_harga[]" class="bg-white flex-1 block w-full rounded-none border-gray-300" placeholder="Harga" value="${data && data.harga ? data.harga : ''}"><input type="text" name="biaya_kategori[]" class="bg-white flex-1 block w-full border-gray-300" placeholder="Kategori" value="${data && data.kategori ? data.kategori : ''}"><button type="button" class="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-r-md text-white bg-red-600 hover:bg-red-700" onclick="hapusBiaya(${biayaCount})">Hapus</button>`;
         container.appendChild(newItem);
     }
     function hapusBiaya(id) { document.getElementById('biaya_item_' + id).remove(); }
@@ -608,9 +704,9 @@
 
         newRow.innerHTML = `
             <td class="px-6 py-4 text-sm text-center text-gray-500">${newIndex + 1}</td>
-            <td class="px-6 py-4"><input type="text" name="perbaikan_tindakan[]" class="w-full border-gray-300 rounded-md shadow-sm" placeholder="Uraian tindakan perbaikan" value="${tindakanValue}"></td>
-            <td class="px-6 py-4"><input type="text" name="perbaikan_pic[]" class="w-full border-gray-300 rounded-md shadow-sm" placeholder="Nama PIC" value="${picValue}"></td>
-            <td class="px-6 py-4"><input type="date" name="perbaikan_due_date[]" class="w-full border-gray-300 rounded-md shadow-sm" value="${dueDateValue}"></td>
+            <td class="px-6 py-4"><input type="text" name="perbaikan_tindakan[]" class="bg-white w-full border-gray-300 rounded-md shadow-sm" placeholder="Uraian tindakan perbaikan" value="${tindakanValue}"></td>
+            <td class="px-6 py-4"><input type="text" name="perbaikan_pic[]" class="bg-white w-full border-gray-300 rounded-md shadow-sm" placeholder="Nama PIC" value="${picValue}"></td>
+            <td class="px-6 py-4"><input type="date" name="perbaikan_due_date[]" class="bg-white w-full border-gray-300 rounded-md shadow-sm" value="${dueDateValue}"></td>
             <td class="px-6 py-4 text-center text-sm font-medium"><button type="button" class="text-red-600 hover:text-red-900" onclick="hapusSaranPerbaikan('perbaikan_item_${newIndex}')">Hapus</button></td>
         `;
     }

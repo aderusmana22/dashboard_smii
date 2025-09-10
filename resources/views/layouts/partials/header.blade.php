@@ -309,6 +309,8 @@
                 }
                 // Simpan status mode gelap ke localStorage
                 localStorage.setItem('darkMode', darkModeOn);
+
+                window.dispatchEvent(new CustomEvent('themeChanged')); 
             };
 
             // Muat status mode gelap dari localStorage saat halaman dimuat

@@ -242,12 +242,17 @@ class LaporanKecelakaanController extends Controller
                 Log::error('Gagal mengirim email persetujuan awal: ' . $e->getMessage());
             }
 
-            return redirect()->route('accidents-report.index')->with('success', 'Laporan kecelakaan berhasil disimpan dan diajukan.');
+            // --- PERUBAHAN DI SINI ---
+            // Menghapus ->with('success', '...') agar tidak ada flash message
+            return redirect()->route('accidents-report.index');
 
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Gagal menyimpan laporan kecelakaan: ' . $e->getMessage() . ' di file ' . $e->getFile() . ' baris ' . $e->getLine());
-            return back()->withInput()->with('error', 'Terjadi kesalahan saat menyimpan data. Error: ' . $e->getMessage());
+            
+            // --- PERUBAHAN DI SINI ---
+            // Menghapus ->with('error', '...') agar tidak ada flash message
+            return back()->withInput();
         }
     }
 
@@ -255,13 +260,19 @@ class LaporanKecelakaanController extends Controller
     {
         $status = $laporan->approvalStatus;
         if (!$status || $status->current_approver_id !== Auth::id()) {
-            return response()->json(['success' => false, 'message' => 'Anda tidak memiliki wewenang untuk aksi ini.'], 403);
+            return view('safetyboard.partials.feedback', [
+                'type' => 'error',
+                'message' => 'Anda tidak memiliki wewenang untuk melakukan tindakan ini.'
+            ]);
         }
         DB::beginTransaction();
         try {
             $currentApproverField = $this->getCurrentApproverField($laporan);
             if ($currentApproverField === null) {
-                return response()->json(['success' => false, 'message' => 'Status laporan tidak valid untuk persetujuan.'], 400);
+                  return view('safetyboard.partials.feedback', [
+                    'type' => 'error',
+                    'message' => 'Status laporan tidak valid untuk persetujuan.'
+                ]);
             }
             $currentIndex = array_search($currentApproverField, $this->approvalOrder);
             $laporan->approvalHistories()->create([
@@ -290,11 +301,22 @@ class LaporanKecelakaanController extends Controller
                 });
             }
             DB::commit();
-            return response()->json(['success' => true, 'message' => 'Laporan berhasil disetujui.']);
+            
+            // Kode ini sudah benar untuk AJAX. Pesan akan dihandle oleh JavaScript.
+            // Jika Anda benar-benar ingin menghapus pesan, ganti menjadi:
+            // return response()->json(['success' => true]);
+             return view('safetyboard.partials.feedback', [
+                'type' => 'success',
+                'message' => 'Laporan berhasil disetujui. Proses persetujuan akan dilanjutkan ke tahap berikutnya.'
+            ]);
+
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Gagal menyetujui laporan: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Terjadi kesalahan saat menyetujui laporan.'], 500);
+             return view('safetyboard.partials.feedback', [
+                'type' => 'error',
+                'message' => 'Terjadi kesalahan internal saat mencoba menyetujui laporan. Silakan coba lagi.'
+            ]);
         }
     }
 
@@ -304,11 +326,17 @@ class LaporanKecelakaanController extends Controller
             'rejection_reason' => 'required|string|min:10'
         ]);
         if ($validator->fails()) {
-            return response()->json(['success' => false, 'message' => 'Validasi gagal.', 'errors' => $validator->errors()], 422);
+            return view('safetyboard.partials.feedback', [
+                'type' => 'error',
+                'message' => 'Validasi gagal: Alasan penolakan wajib diisi dan minimal 10 karakter.'
+            ]);
         }
         $status = $laporan->approvalStatus;
         if (!$status || $status->current_approver_id !== Auth::id()) {
-            return response()->json(['success' => false, 'message' => 'Anda tidak memiliki wewenang untuk aksi ini.'], 403);
+              return view('safetyboard.partials.feedback', [
+                'type' => 'error',
+                'message' => 'Anda tidak memiliki wewenang untuk melakukan tindakan ini.'
+            ]);
         }
         DB::beginTransaction();
         try {
@@ -324,11 +352,22 @@ class LaporanKecelakaanController extends Controller
                 'notes' => 'Menolak laporan sebagai ' . $this->getRoleName($currentApproverField) . '. Alasan: ' . $request->rejection_reason,
             ]);
             DB::commit();
-            return response()->json(['success' => true, 'message' => 'Laporan telah ditolak.']);
+
+            // Kode ini sudah benar untuk AJAX.
+            // Jika Anda ingin menghapus pesan, ganti menjadi:
+            // return response()->json(['success' => true]);
+            return view('safetyboard.partials.feedback', [
+                'type' => 'success',
+                'message' => 'Laporan telah berhasil ditolak. Pembuat laporan akan diberi notifikasi untuk revisi.'
+            ]);
+
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Gagal menolak laporan: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Terjadi kesalahan saat menolak laporan.'], 500);
+             return view('safetyboard.partials.feedback', [
+                'type' => 'error',
+                'message' => 'Terjadi kesalahan internal saat mencoba menolak laporan. Silakan coba lagi.'
+            ]);
         }
     }
 
@@ -380,18 +419,23 @@ class LaporanKecelakaanController extends Controller
 
         // 1. Jika pengguna mencoba merevisi versi LAMA, arahkan mereka untuk merevisi versi TERBARU.
         if ($latestVersion && $laporan->id !== $latestVersion->id) {
-            return redirect()->route('accidents-report.revise', $latestVersion->nomor_form)
-                             ->with('info', 'Anda diarahkan untuk merevisi versi terbaru dari laporan ini.');
+            // --- PERUBAHAN DI SINI ---
+            // Menghapus ->with('info', '...')
+            return redirect()->route('accidents-report.revise', $latestVersion->nomor_form);
         }
 
         // 2. Periksa wewenang (hanya pembuat laporan yang bisa merevisi)
         if ($laporan->pembuat_laporan_id !== Auth::id()) {
-            return redirect()->route('accidents-report.index')->with('error', 'Anda tidak berwenang merevisi laporan ini.');
+            // --- PERUBAHAN DI SINI ---
+            // Menghapus ->with('error', '...')
+            return redirect()->route('accidents-report.index');
         }
 
         // 3. Periksa status (hanya laporan yang ditolak yang bisa direvisi)
         if ($laporan->approvalStatus?->status !== 'rejected') {
-            return redirect()->route('accidents-report.show', $laporan->nomor_form)->with('error', 'Hanya laporan yang ditolak yang dapat direvisi.');
+            // --- PERUBAHAN DI SINI ---
+            // Menghapus ->with('error', '...')
+            return redirect()->route('accidents-report.show', $laporan->nomor_form);
         }
 
         // Jika semua lolos, lanjutkan ke form revisi

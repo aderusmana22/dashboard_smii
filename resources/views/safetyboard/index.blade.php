@@ -1,24 +1,30 @@
 <x-app-layout>
-    <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
+    {{-- Awalnya ada tag <html> di sini, ini tidak diperlukan dalam komponen Blade --}}
     @section('title')
         Daftar Laporan Kecelakaan
     @endsection
 
-    @push('styles')
-        <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
-        <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <style>
-            .dark .page-item.disabled .page-link,
-            .dark .page-item .page-link {
-                background-color: transparent;
-            }
-
-            .dark .dataTables_info {
-                color: #9ca3af;
-            }
-        </style>
-    @endpush
+    {{-- Kode CSS untuk dark mode tetap sama --}}
+    <style>
+        .dark-skin .bg-white { background-color: rgb(31 41 55 / 1); }
+        .dark-skin .bg-gray-50 { background-color: rgb(55 65 81 / 1); }
+        .dark-skin .bg-gray-100 { background-color: rgb(55 65 81 / 1); }
+        .dark-skin .divide-gray-200> :not([hidden])~ :not([hidden]) { border-color: rgb(55 65 81 / 1); }
+        .dark-skin .text-gray-900 { color: rgb(249 250 251 / 1); }
+        .dark-skin .text-gray-800 { color: rgb(229 231 235 / 1); }
+        .dark-skin .text-gray-700 { color: rgb(209 213 219 / 1); }
+        .dark-skin .text-gray-500 { color: rgb(209 213 219 / 1); }
+        .dark-skin .border-gray-300 { border-color: rgb(75 85 99 / 1); }
+        .dark-skin .text-indigo-600 { color: #818cf8; }
+        .dark-skin .text-indigo-600:hover { color: #a5b4fc; }
+        .dark-skin .text-red-600 { color: #f87171; }
+        .dark-skin .text-red-600:hover { color: #fca5a5; }
+        .dark-skin .modal-cancel-button { background-color: rgb(75 85 99 / 1); color: rgb(229 231 235 / 1); }
+        .dark-skin .modal-cancel-button:hover { background-color: rgb(107 114 128 / 1); }
+    </style>
 
     <div class="py-10">
         <div class="mx-auto max-w-9xl sm:px-6 lg:px-8">
@@ -41,25 +47,21 @@
             <div id="notification-container" class="mb-4"></div>
 
             <div class="mb-6 bg-white shadow-sm sm:rounded-lg">
-                <div class="p-6 bg-white border-b border-gray-200">
+                <div class="p-6 bg-white border-gray-200">
                     <h3 class="mb-4 text-lg font-semibold text-gray-700">Filter Laporan</h3>
                     <form id="search-form" class="flex flex-col gap-4 md:flex-row md:items-end">
+                        {{-- Bagian form filter tetap sama --}}
                         <div class="flex-1 min-w-0">
-                            <label for="search_nomor_form" class="block text-sm font-medium text-gray-700">No.
-                                Form</label>
-                            <input type="text" name="nomor_form" id="search_nomor_form"
-                                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                            <label for="search_nomor_form" class="block text-sm font-medium text-gray-700">No. Form</label>
+                            <input type="text" name="nomor_form" id="search_nomor_form" class="bg-white block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                         </div>
                         <div class="flex-1 min-w-0">
-                            <label for="search_nama_korban" class="block text-sm font-medium text-gray-700">Nama
-                                Korban</label>
-                            <input type="text" name="nama_korban" id="search_nama_korban"
-                                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                            <label for="search_nama_korban" class="block text-sm font-medium text-gray-700">Nama Korban</label>
+                            <input type="text" name="nama_korban" id="search_nama_korban" class="bg-white block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                         </div>
                         <div class="flex-1 min-w-0">
                             <label for="search_status" class="block text-sm font-medium text-gray-700">Status</label>
-                            <select name="status" id="search_status"
-                                class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                            <select name="status" id="search_status" class="bg-white block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
                                 <option value="">Semua Status</option>
                                 <option value="pending_manager_hse">Pending Manager HSE</option>
                                 <option value="pending_manager_terkait">Pending Manager Terkait</option>
@@ -71,28 +73,23 @@
                             </select>
                         </div>
                         <div class="flex-1 min-w-0">
-                            <label for="search_date_start" class="block text-sm font-medium text-gray-700">Rentang
-                                Tanggal</label>
+                            <label for="search_date_start" class="block text-sm font-medium text-gray-700">Rentang Tanggal</label>
                             <div class="flex items-center mt-1 space-x-2">
-                                <input type="date" name="date_start" id="search_date_start"
-                                    class="block w-full border-gray-300 rounded-md shadow-sm">
+                                <input type="date" name="date_start" id="search_date_start" class="bg-white block w-full border-gray-300 rounded-md shadow-sm">
                                 <span class="text-gray-500">-</span>
-                                <input type="date" name="date_end" id="search_date_end"
-                                    class="block w-full border-gray-300 rounded-md shadow-sm">
+                                <input type="date" name="date_end" id="search_date_end" class="bg-white block w-full border-gray-300 rounded-md shadow-sm">
                             </div>
                         </div>
                         <div class="flex items-center gap-2">
-                            <button type="button" id="reset-button"
-                                class="w-full px-4 py-2 text-white bg-gray-600 rounded-md md:w-auto hover:bg-gray-700">Reset</button>
-                            <button type="submit"
-                                class="w-full px-4 py-2 text-white bg-indigo-600 rounded-md md:w-auto hover:bg-indigo-700">Cari</button>
+                            <button type="button" id="reset-button" class="w-full px-4 py-2 text-white bg-gray-600 rounded-md md:w-auto hover:bg-gray-700">Reset</button>
+                            <button type="submit" class="w-full px-4 py-2 text-white bg-indigo-600 rounded-md md:w-auto hover:bg-indigo-700">Cari</button>
                         </div>
                     </form>
                 </div>
             </div>
 
             <div class="overflow-hidden bg-white shadow-sm sm:rounded-lg">
-                <div class="p-6 bg-white border-b border-gray-200">
+                <div class="p-6 bg-white border-gray-200">
                     <div class="overflow-x-auto">
                         <table id="reports-table" class="w-full table-bordered table-striped" style="width:100%">
                             <thead>
@@ -113,38 +110,7 @@
         </div>
     </div>
 
-    <div id="rejectModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog"
-        aria-modal="true">
-        <div class="flex items-end justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" aria-hidden="true"></div>
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div
-                class="inline-block w-full max-w-lg overflow-hidden text-left align-bottom transition-all transform bg-white rounded-lg shadow-xl sm:my-8 sm:align-middle">
-                <form id="rejectForm" action="" method="POST">
-                    @csrf
-                    <div class="px-4 pt-5 pb-4 bg-white sm:p-6 sm:pb-4">
-                        <h3 class="text-lg font-medium leading-6 text-gray-900" id="modal-title">Tolak Laporan
-                            Kecelakaan</h3>
-                        <div class="mt-2">
-                            <label for="rejection_reason" class="block text-sm font-medium text-gray-700">Alasan
-                                Penolakan (Wajib diisi)</label>
-                            <textarea id="rejection_reason" name="rejection_reason" rows="4"
-                                class="block w-full mt-1 border border-gray-300 rounded-md shadow-sm" required
-                                minlength="10"></textarea>
-                        </div>
-                    </div>
-                    <div class="px-4 py-3 bg-gray-50 sm:px-6 sm:flex sm:flex-row-reverse">
-                        <button type="submit"
-                            class="inline-flex justify-center w-full px-4 py-2 text-base font-medium text-white bg-red-600 border border-transparent rounded-md shadow-sm hover:bg-red-700 sm:ml-3 sm:w-auto sm:text-sm">Tolak
-                            Laporan</button>
-                        <button type="button"
-                            class="inline-flex justify-center w-full px-4 py-2 mt-3 text-base font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 sm:mt-0 sm:w-auto sm:text-sm"
-                            onclick="closeRejectModal()">Batal</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+    <!-- MODAL REJECT DIHAPUS DARI SINI -->
 
     @push('scripts')
         <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
@@ -207,51 +173,24 @@
                             name: 'nomor_form',
                             orderable: false,
                             searchable: false,
+                            // --- PERUBAHAN UTAMA DI SINI ---
                             render: function (data, type, row) {
                                 let detailUrl = "{{ route('accidents-report.show', ':nomor_form') }}".replace(':nomor_form', data);
-                                let actions = `<a href="${detailUrl}" class="mr-3 text-indigo-600 hover:text-indigo-900">Detail</a>`;
-
-                                const approvalStatus = row.approval_status;
-                                const currentUserId = {{ Auth::id() }};
-
-                                if (approvalStatus && approvalStatus.current_approver_id == currentUserId) {
-                                    let approveUrl = "{{ route('accidents-report.approve', ':nomor_form') }}".replace(':nomor_form', data);
-                                    let rejectUrl = "{{ route('accidents-report.reject', ':nomor_form') }}".replace(':nomor_form', data);
-                                    actions += `<button type="button" class="text-green-600 hover:text-green-900 approve-btn" data-url="${approveUrl}">Approve</button>
-                                                <span class="mx-1 text-gray-300">|</span>
-                                                <button type="button" class="text-red-600 hover:text-red-900 reject-btn" data-url="${rejectUrl}">Reject</button>`;
-                                }
-                                return actions;
+                                // Hanya mengembalikan link Detail dan menghapus semua logika approve/reject
+                                return `<a href="${detailUrl}" class="text-indigo-600 hover:text-indigo-900">Detail</a>`;
                             }
                         }
                     ]
                 });
 
+                // Event handler untuk form pencarian dan reset tetap ada
                 $('#search-form').on('submit', function (e) { e.preventDefault(); table.draw(); });
                 $('#reset-button').on('click', function () { $('#search-form')[0].reset(); table.draw(); });
-                $('#reports-table tbody').on('click', '.approve-btn', function () {
-                    if (!confirm('Anda yakin ingin menyetujui laporan ini?')) return;
-                    $.ajax({
-                        url: $(this).data('url'), type: 'POST',
-                        success: function (response) { showNotification(response.message, 'success'); table.ajax.reload(null, false); },
-                        error: function (xhr) { showNotification(xhr.responseJSON?.message || 'Terjadi kesalahan.', 'error'); }
-                    });
-                });
-                $('#reports-table tbody').on('click', '.reject-btn', function () { openRejectModal($(this).data('url')); });
-                $('#rejectForm').on('submit', function (e) {
-                    e.preventDefault();
-                    $.ajax({
-                        url: $(this).attr('action'), type: 'POST', data: $(this).serialize(),
-                        success: function (response) { showNotification(response.message, 'success'); closeRejectModal(); table.ajax.reload(null, false); },
-                        error: function (xhr) {
-                            let errorMsg = xhr.responseJSON?.message || 'Gagal menolak laporan.';
-                            if (xhr.responseJSON?.errors?.rejection_reason) { errorMsg += '<br>' + xhr.responseJSON.errors.rejection_reason.join('<br>'); }
-                            showNotification(errorMsg, 'error');
-                        }
-                    });
-                });
+                
+                // --- SEMUA EVENT HANDLER UNTUK APPROVE & REJECT DIHAPUS ---
             });
 
+            // Fungsi notifikasi tetap ada karena mungkin masih berguna
             function showNotification(message, type = 'success') {
                 const container = dt_jQuery('#notification-container');
                 const typeClasses = type === 'success'
@@ -262,17 +201,8 @@
                 setTimeout(() => { container.fadeOut(() => container.empty()); }, 5000);
             }
 
-            function openRejectModal(actionUrl) {
-                const modal = dt_jQuery('#rejectModal');
-                const form = dt_jQuery('#rejectForm');
-                form.attr('action', actionUrl);
-                form[0].reset();
-                modal.removeClass('hidden');
-            }
+            // --- FUNGSI UNTUK MODAL REJECT (openRejectModal & closeRejectModal) DIHAPUS ---
 
-            function closeRejectModal() {
-                dt_jQuery('#rejectModal').addClass('hidden');
-            }
         </script>
     @endpush
 </x-app-layout>

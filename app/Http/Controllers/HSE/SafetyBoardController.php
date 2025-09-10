@@ -3,7 +3,8 @@
 namespace App\Http\Controllers\HSE;
 
 use App\Http\Controllers\Controller;
-use App\Models\SafetyBoard; // <-- Import model yang sudah dibuat
+use App\Models\SafetyBoard;
+use App\Models\LaporanKecelakaan; // <-- Import model LaporanKecelakaan
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -29,41 +30,51 @@ class SafetyBoardController extends Controller
      */
     public function getSafetyData($forHtml = false)
     {
-        // --- Mengambil data dinamis dari database ---
-        // Mengambil record paling baru dari tabel safety_boards.
+        // --- Mengambil data statis dari database safety_boards ---
         $safetyData = SafetyBoard::latest()->first();
 
-        // --- Menyiapkan nilai default jika data di database kosong ---
-        // Jika $safetyData ada DAN kolom last_accident_date tidak null, gunakan tanggal tsb.
-        // Jika tidak, gunakan tanggal hari ini agar kalkulasi hari tanpa kecelakaan menjadi 0.
-        $last_accident_date = $safetyData && $safetyData->last_accident_date ? $safetyData->last_accident_date : Carbon::now();
+        // =================================================================
+        // PERUBAHAN UTAMA: Mengambil data dinamis dari LaporanKecelakaan
+        // =================================================================
 
-        // Jika $safetyData ada, gunakan rekornya. Jika tidak, default ke 0.
+        // 1. Mengambil tanggal kecelakaan terakhir dari laporan original (bukan revisi).
+        //    Diurutkan berdasarkan 'date' (tanggal kejadian) secara descending.
+        $latestAccident = LaporanKecelakaan::whereNull('revised_from_id')
+                                            ->orderBy('date', 'desc')
+                                            ->first();
+
+        // 2. Menghitung jumlah kecelakaan (hanya laporan original) di bulan ini.
+        //    Ini secara otomatis mengabaikan revisi (-REV1, -REV2, dst.).
+        $accidents_this_month = LaporanKecelakaan::whereNull('revised_from_id')
+                                                 ->whereYear('date', Carbon::now()->year)
+                                                 ->whereMonth('date', Carbon::now()->month)
+                                                 ->count();
+
+        // --- Menyiapkan nilai ---
+        // Jika $latestAccident ada, gunakan tanggalnya.
+        // Jika tidak (belum ada kecelakaan sama sekali), gunakan tanggal hari ini agar kalkulasi menjadi 0.
+        $last_accident_date_object = $latestAccident ? Carbon::parse($latestAccident->date) : Carbon::now();
+
+        // Mengambil data rekor hari dari tabel safety_boards (data ini tetap dikelola manual atau via DB lain)
         $record_days_without_accident = $safetyData ? $safetyData->record_days_without_accident : 0;
 
-        // Jika $safetyData ada DAN marquee_text tidak kosong, pecah string menjadi array.
-        // Jika tidak, sediakan array dengan satu pesan default.
+        // Mengambil data marquee dari tabel safety_boards
         $marquee_texts = $safetyData && $safetyData->marquee_text
             ? explode('***', $safetyData->marquee_text)
             : ['Selamat Bekerja dengan Aman! Utamakan Keselamatan.'];
-
-        // Data ini bisa dikembangkan lebih lanjut untuk diambil dari database jika diperlukan.
-        $accidents_this_month = 0;
         // --------------------------------------------------------------------------------
 
         $today = Carbon::now();
 
-        // 1. Kalkulasi: TOTAL HARI TANPA KECELAKAAN
-        // Dihitung dari selisih hari antara tanggal kecelakaan terakhir dari DB dan hari ini.
-        $total_days_without_accident = $last_accident_date->diffInDays($today);
+        // 1. Kalkulasi: TOTAL HARI TANPA KECELAKAAN (sekarang dinamis)
+        // Dihitung dari selisih hari antara tanggal kecelakaan terakhir dari LaporanKecelakaan dan hari ini.
+        $total_days_without_accident = $last_accident_date_object->diffInDays($today);
 
         // 2. Kalkulasi: TOTAL HARI KERJA SAMPAI BULAN INI
-        // Dihitung dari 1 Januari tahun ini sampai hari ini.
         $start_of_year = Carbon::now()->startOfYear();
-        $total_working_days_until_this_month = $start_of_year->diffInDays($today) + 1; // +1 untuk ikutkan hari ini
+        $total_working_days_until_this_month = $start_of_year->diffInDays($today) + 1;
 
         // 3. Kalkulasi: TARGET HARI KERJA TAHUN INI
-        // Dihitung dari jumlah total hari dalam tahun berjalan (memperhitungkan tahun kabisat).
         $target_working_days_this_year = Carbon::now()->endOfYear()->dayOfYear;
 
         // Mengambil data cuaca dari API eksternal
@@ -74,14 +85,14 @@ class SafetyBoardController extends Controller
             'total_days_without_accident_until_this_month' => $total_days_without_accident,
             'total_working_days_until_this_month' => $total_working_days_until_this_month,
             'target_working_days_this_year' => $target_working_days_this_year,
-            'accidents_this_month' => $accidents_this_month,
-            'last_accident_date' => $last_accident_date->format('d M Y'),
+            'accidents_this_month' => $accidents_this_month, // <-- Data dinamis
+            'last_accident_date' => $latestAccident ? $last_accident_date_object->format('d M Y') : 'N/A', // <-- Tampilkan N/A jika belum ada
             'record_days_without_accident' => $record_days_without_accident,
             'current_time' => $today->format('d F Y H:i:s'),
             'current_temperature' => $weatherData['temperature'],
             'weather_condition' => $weatherData['condition'],
             'weather_icon_url' => $weatherData['icon_url'],
-            'marquee_texts' => $marquee_texts, // <-- Data marquee dinamis
+            'marquee_texts' => $marquee_texts,
         ];
 
         // Mengembalikan data sebagai array untuk Blade atau sebagai JSON untuk API

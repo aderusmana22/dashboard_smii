@@ -3,6 +3,24 @@
         Daftar Produk
     @endsection
 
+        <style>
+        .dark-skin .bg-white { background-color: rgb(31 41 55 / 1); }
+        .dark-skin .bg-gray-50 { background-color: rgb(55 65 81 / 1); }
+        .dark-skin .bg-gray-100 { background-color: rgb(55 65 81 / 1); }
+        .dark-skin .divide-gray-200> :not([hidden])~ :not([hidden]) { border-color: rgb(55 65 81 / 1); }
+        .dark-skin .text-gray-900 { color: rgb(249 250 251 / 1); }
+        .dark-skin .text-gray-800 { color: rgb(229 231 235 / 1); }
+        .dark-skin .text-gray-700 { color: rgb(209 213 219 / 1); }
+        .dark-skin .text-gray-500 { color: rgb(209 213 219 / 1); }
+        .dark-skin .border-gray-300 { border-color: rgb(75 85 99 / 1); }
+        .dark-skin .text-indigo-600 { color: #818cf8; }
+        .dark-skin .text-indigo-600:hover { color: #a5b4fc; }
+        .dark-skin .text-red-600 { color: #f87171; }
+        .dark-skin .text-red-600:hover { color: #fca5a5; }
+        .dark-skin .modal-cancel-button { background-color: rgb(75 85 99 / 1); color: rgb(229 231 235 / 1); }
+        .dark-skin .modal-cancel-button:hover { background-color: rgb(107 114 128 / 1); }
+    </style>
+
     <div class="py-12">
         <div class="max-w-9xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">

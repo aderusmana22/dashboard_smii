@@ -3,6 +3,26 @@
         Dashboard E-Commerce
     @endsection
 
+        {{-- Kode CSS untuk dark mode tetap sama --}}
+    <style>
+        .dark-skin .bg-white { background-color: rgb(31 41 55 / 1); }
+        .dark-skin .bg-gray-50 { background-color: rgb(55 65 81 / 1); }
+        .dark-skin .bg-gray-100 { background-color: rgb(55 65 81 / 1); }
+        .dark-skin .divide-gray-200> :not([hidden])~ :not([hidden]) { border-color: rgb(55 65 81 / 1); }
+        .dark-skin .text-gray-900 { color: rgb(249 250 251 / 1); }
+        .dark-skin .text-gray-800 { color: rgb(229 231 235 / 1); }
+        .dark-skin .text-gray-700 { color: rgb(209 213 219 / 1); }
+        .dark-skin .text-gray-500 { color: rgb(209 213 219 / 1); }
+        .dark-skin .border-gray-300 { border-color: rgb(75 85 99 / 1); }
+        .dark-skin .text-indigo-600 { color: #818cf8; }
+        .dark-skin .text-indigo-600:hover { color: #a5b4fc; }
+        .dark-skin .text-red-600 { color: #f87171; }
+        .dark-skin .text-red-600:hover { color: #fca5a5; }
+        .dark-skin .modal-cancel-button { background-color: rgb(75 85 99 / 1); color: rgb(229 231 235 / 1); }
+        .dark-skin .modal-cancel-button:hover { background-color: rgb(107 114 128 / 1); }
+    </style>
+
+
     {{-- Script Alpine.js untuk fungsionalitas interaktif --}}
     <script src="//unpkg.com/alpinejs" defer></script>
 
@@ -10,38 +30,39 @@
         <div class="max-w-9xl mx-auto sm:px-6 lg:px-8">
             <!-- Bagian Atas: Yang Perlu Dilakukan (Dengan Modal Alpine.js) -->
             <div
-                x-data="{ openModal: false, modalTitle: '', modalData: [] }"
+                {{-- [MODIFIED] Menggunakan satu state untuk mengontrol modal mana yang terbuka --}}
+                x-data="{ openModal: '' }"
                 class="bg-white overflow-hidden shadow-sm sm:rounded-lg"
             >
-                <div class="p-6 bg-white border-b border-gray-200">
+                <div class="p-6 bg-white border-gray-200">
                     <h2 class="text-2xl font-bold mb-1">Yang Perlu Dilakukan</h2>
                     <p class="text-gray-500 mb-6">Hal-hal yang perlu kamu tangani</p>
                     <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 text-center gap-y-8">
-                        <!-- Tombol Pemicu Modal -->
-                        <button @click="modalTitle = 'Belum Bayar'; openModal = true" class="px-4 text-center"><p class="text-3xl font-bold text-blue-600">0</p><p class="text-sm text-gray-600 mt-1">Belum Bayar</p></button>
-                        <button @click="modalTitle = 'Pengiriman Perlu Diproses'; openModal = true" class="px-4 lg:border-l lg:border-gray-200 text-center"><p class="text-3xl font-bold text-blue-600">0</p><p class="text-sm text-gray-600 mt-1">Pengiriman Perlu Diproses</p></button>
-                        <button @click="modalTitle = 'Pengiriman Telah Diproses'; openModal = true" class="px-4 lg:border-l lg:border-gray-200 md:border-l text-center"><p class="text-3xl font-bold text-blue-600">0</p><p class="text-sm text-gray-600 mt-1">Pengiriman Telah Diproses</p></button>
-                        <button @click="modalTitle = 'Menunggu Respon Pengembalian'; openModal = true" class="px-4 lg:border-l lg:border-gray-200 text-center"><p class="text-3xl font-bold text-blue-600">0</p><p class="text-sm text-gray-600 mt-1">Menunggu Respon Pengembalian</p></button>
-                        <button @click="modalTitle = 'Menunggu Respon Pembatalan'; openModal = true" class="px-4 lg:border-l lg:border-gray-200 md:border-l text-center"><p class="text-3xl font-bold text-blue-600">0</p><p class="text-sm text-gray-600 mt-1">Menunggu Respon Pembatalan</p></button>
-                        <button @click="modalTitle = 'Produk Diblokir'; openModal = true" class="px-4 lg:border-l lg:border-gray-200 text-center"><p class="text-3xl font-bold text-blue-600">0</p><p class="text-sm text-gray-600 mt-1">Produk Diblokir</p></button>
-                        <button @click="modalTitle = 'Produk Habis'; openModal = true" class="px-4 lg:border-l lg:border-gray-200 md:border-l text-center"><p class="text-3xl font-bold text-blue-600">0</p><p class="text-sm text-gray-600 mt-1">Produk Habis</p></button>
+                        {{-- [MODIFIED] Setiap tombol kini mengatur state 'openModal' ke nilai yang unik --}}
+                        <button @click="openModal = 'belumBayar'" class="px-4 text-center"><p class="text-3xl font-bold text-blue-600">0</p><p class="text-sm text-gray-600 mt-1">Belum Bayar</p></button>
+                        <button @click="openModal = 'perluDiproses'" class="px-4 lg:border-l lg:border-gray-200 text-center"><p class="text-3xl font-bold text-blue-600">0</p><p class="text-sm text-gray-600 mt-1">Pengiriman Perlu Diproses</p></button>
+                        <button @click="openModal = 'telahDiproses'" class="px-4 lg:border-l lg:border-gray-200 md:border-l text-center"><p class="text-3xl font-bold text-blue-600">0</p><p class="text-sm text-gray-600 mt-1">Pengiriman Telah Diproses</p></button>
+                        <button @click="openModal = 'responPengembalian'" class="px-4 lg:border-l lg:border-gray-200 text-center"><p class="text-3xl font-bold text-blue-600">0</p><p class="text-sm text-gray-600 mt-1">Menunggu Respon Pengembalian</p></button>
+                        <button @click="openModal = 'responPembatalan'" class="px-4 lg:border-l lg:border-gray-200 md:border-l text-center"><p class="text-3xl font-bold text-blue-600">0</p><p class="text-sm text-gray-600 mt-1">Menunggu Respon Pembatalan</p></button>
+                        <button @click="openModal = 'produkDiblokir'" class="px-4 lg:border-l lg:border-gray-200 text-center"><p class="text-3xl font-bold text-blue-600">0</p><p class="text-sm text-gray-600 mt-1">Produk Diblokir</p></button>
+                        <button @click="openModal = 'produkHabis'" class="px-4 lg:border-l lg:border-gray-200 md:border-l text-center"><p class="text-3xl font-bold text-blue-600">0</p><p class="text-sm text-gray-600 mt-1">Produk Habis</p></button>
                     </div>
                 </div>
 
-                <!-- Komponen Modal -->
-                <div x-show="openModal" x-cloak style="display: none;" x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div @click="openModal = false" class="fixed inset-0 bg-gray-900 bg-opacity-75"></div>
-                    <div @click.outside="openModal = false" class="bg-white rounded-lg shadow-xl overflow-hidden max-w-2xl w-full z-10">
-                        <div class="flex justify-between items-center px-6 py-4 border-b"><h3 class="text-lg font-bold" x-text="modalTitle"></h3><button @click="openModal = false" class="text-gray-400 hover:text-gray-600"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button></div>
-                        <div class="p-6"><p class="text-center text-gray-500">Tidak ada data "<span x-text="modalTitle.toLowerCase()"></span>" yang perlu ditangani saat ini.</p></div>
-                        <div class="px-6 py-3 bg-gray-50 text-right"><button @click="openModal = false" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Tutup</button></div>
-                    </div>
-                </div>
+                {{-- [MODIFIED] Memanggil semua file modal baru. --}}
+                {{-- Alpine.js akan menampilkan yang sesuai berdasarkan state 'openModal'. --}}
+                @include('ecommerce.partials.modals.belum-bayar')
+                @include('ecommerce.partials.modals.perlu-diproses')
+                @include('ecommerce.partials.modals.telah-diproses')
+                @include('ecommerce.partials.modals.respon-pengembalian')
+                @include('ecommerce.partials.modals.respon-pembatalan')
+                @include('ecommerce.partials.modals.produk-diblokir')
+                @include('ecommerce.partials.modals.produk-habis')
             </div>
 
-            <!-- Bagian Peringatan Stok Rendah (MODIFIED) -->
+            <!-- Bagian Peringatan Stok Rendah (TIDAK DIUBAH) -->
             <div class="mt-8 bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                 <div class="p-6 bg-white border-b border-gray-200">
+                 <div class="p-6 bg-white border-gray-200">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-xl font-bold">Peringatan Stok Rendah</h2>
                         <a href="/ecommerce/products" class="text-sm font-semibold text-indigo-600 hover:text-indigo-900">Lihat Semua Produk</a>
@@ -101,12 +122,12 @@
                 </div>
             </div>
 
-            <!-- Satu Baris Untuk Top Sales dan Grafik -->
+            <!-- Satu Baris Untuk Top Sales dan Grafik (TIDAK DIUBAH) -->
             <div class="mt-8 grid grid-cols-1 lg:grid-cols-5 gap-8">
                 <!-- KIRI: TOP 3 PRODUK TERLARIS -->
                 <div class="lg:col-span-2" x-data="{ startDate: '', endDate: '' }" x-init="const today = new Date().toISOString().split('T')[0]; startDate = today; endDate = today;">
                     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg h-full">
-                        <div class="p-6 bg-white border-b border-gray-200">
+                        <div class="p-6 bg-white border-gray-200">
                             <h2 class="text-xl font-bold text-center mb-4">Top 3 Produk Terlaris</h2>
                             <div class="flex items-center justify-center space-x-2 md:space-x-4">
                                 <div class="flex-1"><label for="topProductStartDate" class="block text-sm font-medium text-gray-700">Mulai</label><input type="date" id="topProductStartDate" x-model="startDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></div>
@@ -183,7 +204,7 @@
                     "
                 >
                      <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg h-full">
-                        <div class="p-6 bg-white border-b border-gray-200">
+                        <div class="p-6 bg-white border-gray-200">
                             <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold">Grafik Penjualan</h2></div>
                             <!-- Area Filter Grafik -->
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -204,7 +225,7 @@
                 </div>
             </div>
 
-            <!-- Bagian Kolom E-Commerce: Shopee dan Tokopedia (Sudah Dimodifikasi) -->
+            <!-- Bagian Kolom E-Commerce: Shopee dan Tokopedia (TIDAK DIUBAH) -->
             <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
                 <!-- KARTU SHOPEE -->
                 <div class="bg-orange-500 text-white rounded-lg shadow-lg p-6" x-data="{ startDate: '', endDate: '' }" x-init="const today = new Date().toISOString().split('T')[0]; startDate = today; endDate = today;">

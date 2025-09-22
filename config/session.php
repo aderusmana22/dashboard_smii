@@ -155,7 +155,7 @@ return [
     |
     */
 
-    'domain' => env('SESSION_DOMAIN'),
+ 'domain' => env('SESSION_DOMAIN', null),
 
     /*
     |--------------------------------------------------------------------------
@@ -196,7 +196,7 @@ return [
     |
     */
 
-    'same_site' => 'lax',
+    'samesite' => env('SESSION_SAMESITE', 'lax'), 
 
     /*
     |--------------------------------------------------------------------------
@@ -206,7 +206,7 @@ return [
     | Setting this value to true will tie the cookie to the top-level site for
     | a cross-site context. Partitioned cookies are accepted by the browser
     | when flagged "secure" and the Same-Site attribute is set to "none".
-    |
+    |x
     */
 
     'partitioned' => false,

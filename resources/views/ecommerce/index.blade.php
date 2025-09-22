@@ -35,10 +35,30 @@
                 class="bg-white overflow-hidden shadow-sm sm:rounded-lg"
             >
                 <div class="p-6 bg-white border-gray-200">
-                    <h2 class="text-2xl font-bold mb-1">Yang Perlu Dilakukan</h2>
-                    <p class="text-gray-500 mb-6">Hal-hal yang perlu kamu tangani</p>
+                    {{-- === PERUBAHAN DIMULAI DI SINI === --}}
+                    @if ($tiktokShopData && !empty($tiktokShopData['shops']))
+                        {{-- Loop melalui toko, meskipun biasanya hanya ada satu --}}
+                        @foreach ($tiktokShopData['shops'] as $shop)
+                            <h2 class="text-2xl font-bold mb-1">
+                                Toko Terhubung: {{ $shop['name'] }}
+                            </h2>
+                            <p class="text-gray-500 mb-6">
+                                Region: <span class="font-semibold">{{ $shop['region'] }}</span> |
+                                Tipe: <span class="font-semibold">{{ str_replace('_', ' ', $shop['seller_type']) }}</span>
+                            </p>
+                            <p>{{ $shop['cipher'] }}</p>
+                        @endforeach
+                    @else
+                        <h2 class="text-2xl font-bold mb-1">Yang Perlu Dilakukan</h2>
+                        <div class="text-sm text-yellow-700 bg-yellow-100 p-3 rounded-md mb-4">
+                            Toko TikTok belum terhubung. Silakan hubungkan toko Anda di halaman
+                            <a href="{{ route('ecommerce.settings.index') }}" class="font-bold underline">Konfigurasi</a>
+                            untuk melihat data.
+                        </div>
+                    @endif
+                    {{-- === AKHIR PERUBAHAN === --}}
+
                     <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 text-center gap-y-8">
-                        {{-- [MODIFIED] Setiap tombol kini mengatur state 'openModal' ke nilai yang unik --}}
                         <button @click="openModal = 'belumBayar'" class="px-4 text-center"><p class="text-3xl font-bold text-blue-600">0</p><p class="text-sm text-gray-600 mt-1">Belum Bayar</p></button>
                         <button @click="openModal = 'perluDiproses'" class="px-4 lg:border-l lg:border-gray-200 text-center"><p class="text-3xl font-bold text-blue-600">0</p><p class="text-sm text-gray-600 mt-1">Pengiriman Perlu Diproses</p></button>
                         <button @click="openModal = 'telahDiproses'" class="px-4 lg:border-l lg:border-gray-200 md:border-l text-center"><p class="text-3xl font-bold text-blue-600">0</p><p class="text-sm text-gray-600 mt-1">Pengiriman Telah Diproses</p></button>
@@ -49,8 +69,6 @@
                     </div>
                 </div>
 
-                {{-- [MODIFIED] Memanggil semua file modal baru. --}}
-                {{-- Alpine.js akan menampilkan yang sesuai berdasarkan state 'openModal'. --}}
                 @include('ecommerce.partials.modals.belum-bayar')
                 @include('ecommerce.partials.modals.perlu-diproses')
                 @include('ecommerce.partials.modals.telah-diproses')

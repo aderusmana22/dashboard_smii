@@ -30,5 +30,10 @@ return [
         'secret' => env('AWS_SECRET_ACCESS_KEY'),
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
-
+    // config/services.php
+'tiktok' => [
+    'key' => env('TIKTOK_APP_KEY'),
+    'secret' => env('TIKTOK_APP_SECRET'),
+    'redirect' => env('TIKTOK_REDIRECT_URI'),
+],
 ];

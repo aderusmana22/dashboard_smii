@@ -25,8 +25,26 @@ export default defineConfig({
                 'public/assets/src/css/vendors_css.css',
             ],
             refresh: true,
+            
         }),
     ],
+    server: {
+        host: true,
+        port: 5173,
+        strictPort: true,
+        hmr: {
+        host: 'vite-dev.yogaardiansyah.my.id',
+        protocol: 'wss',
+        clientPort: 443,
+        },
+    },
+    // server: {
+    //     host: true,
+    //     hmr: {
+    //     host: 'vite-dev.yogaardiansyah.my.id',
+    //     protocol: 'wss',
+    //     },
+    // },
     // css: {
     //     postcss: {
     //         plugins: [

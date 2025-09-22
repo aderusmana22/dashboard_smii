@@ -4,6 +4,7 @@ namespace App\Http\Controllers\ECommerce;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\TiktokShop;
 
 class EcommerceSettingsController extends Controller
 {
@@ -13,12 +14,14 @@ class EcommerceSettingsController extends Controller
      */
     public function index()
     {
+        $tiktokShop = TiktokShop::first();
+
         // --- DATA SAMPLE ---
         // Anggap saja kita mengambil nilai '10' dari database.
         $stockAlertLimit = '10';
 
         // Tampilkan view dan kirim data sample ke sana
-        return view('ecommerce.settings.index', compact('stockAlertLimit'));
+          return view('ecommerce.settings.index', compact('tiktokShop', 'stockAlertLimit'));
     }
 
     /**

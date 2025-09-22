@@ -27,10 +27,15 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\HSE\SafetyBoardController; 
 use App\Http\Controllers\LaporanKecelakaanController; 
 use App\Http\Controllers\EditorImageController;
-use App\Http\Controllers\DashboardEcommerceController;
+use App\Http\Controllers\Ecommerce\DashboardEcommerceController;
 use App\Http\Controllers\Ecommerce\ProductController;
 use App\Http\Controllers\EmailApprovalController;
 use App\Http\Controllers\Ecommerce\EcommerceSettingsController;
+use App\Http\Controllers\TiktokController;
+use App\Http\Controllers\TiktokShop\TiktokProductController;
+use App\Http\Controllers\Ecommerce\OrderListController;
+use App\Http\Controllers\Ecommerce\SalesDashboardController;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -236,9 +241,24 @@ Route::prefix('accidents-report')->name('accidents-report.')->group(function () 
     Route::get('/ecommerce/products', [ProductController::class, 'index'])
         ->middleware(['auth'])->name('ecommerce.products.index');
     // Rute untuk Halaman Data Penjualan E-Commerce
-    Route::get('/ecommerce/sales', [EcommerceSalesController::class, 'index'])->name('ecommerce.sales.index');
+    Route::get('/ecommerce/sales', [SalesDashboardController::class, 'index'])->name('ecommerce.sales.index');
     Route::get('/ecommerce/settings', [EcommerceSettingsController::class, 'index'])->name('ecommerce.settings.index');
     Route::post('/ecommerce/settings', [EcommerceSettingsController::class, 'update'])->name('ecommerce.settings.update');
+    Route::get('/ecommerce/tokopedia/orders-data', [SalesDashboardController::class, 'getPaginatedOrders'])->name('ecommerce.tokopedia.orders.data');
+
+    Route::prefix('tiktok')->name('tiktok.')->group(function () {
+        Route::get('/auth', [TiktokController::class, 'redirectToAuth'])->name('auth');
+        Route::get('/callback', [TiktokController::class, 'handleCallback'])->name('callback');
+        Route::delete('/disconnect', [TiktokController::class, 'disconnect'])->name('disconnect');
+    });
+
+    Route::get('/tiktok/products', [TiktokProductController::class, 'index'])->name('tiktok.products.index');
+    Route::get('/tiktok/orders', [OrderListController::class, 'index'])->name('tiktok.orders.data');
+
+    Route::post('/ecommerce/tiktok/sync', [OrderListController::class, 'syncOrders'])->name('ecommerce.tiktok.sync');
+    
+    // TESTING
+    Route::get('/tiktok-debug', [TiktokController::class, 'debugApiCall']);
 
     Route::prefix('testing')->name('testing.')->group(function () {
         Route::get('/email/request', [\App\Http\Controllers\DevTestingController::class, 'previewEmailRequest'])->name('email.request');
@@ -247,8 +267,8 @@ Route::prefix('accidents-report')->name('accidents-report.')->group(function () 
         Route::get('/email/reject-form', [\App\Http\Controllers\DevTestingController::class, 'previewRejectForm'])->name('email.reject_form');
     });
 
-
 });
+
 
 // approval email
 Route::group(['as' => 'email-approval.', 'prefix' => 'email-approval'], function () {
@@ -272,7 +292,6 @@ Route::get('/warehouse-data-filter', [InventoryController::class, 'warehouseFilt
 Route::get('/warehouse-dispatch-filter', [InventoryController::class, 'warehouseAreaDispatch']);
 Route::get('/warehouse-data', [InventoryController::class, 'getWarehouseDataCombined'])->name('warehouse.getWarehouseData');
 Route::get('/warehouse-temperature', [InventoryController::class, 'getWarehouseDataWithTemperature']);
-
 
 
 Route::group(['middleware' => ['role:super-admin|admin']], function () {

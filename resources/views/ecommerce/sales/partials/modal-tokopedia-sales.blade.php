@@ -1,6 +1,7 @@
 <div 
     x-show="isTokopediaModalOpen" 
     style="display: none;" 
+    id="tokopedia-modal"
     class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" 
     x-cloak
 >
@@ -13,7 +14,6 @@
             <button @click="isTokopediaModalOpen = false" class="text-gray-500 hover:text-gray-800 text-3xl leading-none">&times;</button>
         </div>
 
-        {{-- BAGIAN YANG DIKEMBALIKAN --}}
         <div class="p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50 gap-4">
             <div>
                 <p class="text-xs text-gray-500">
@@ -31,7 +31,6 @@
                 </button>
             </form>
         </div>
-        {{-- AKHIR BAGIAN YANG DIKEMBALIKAN --}}
 
         <div class="p-4 border-b">
             <div class="relative">

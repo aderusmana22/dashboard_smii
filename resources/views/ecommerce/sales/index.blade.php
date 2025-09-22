@@ -115,7 +115,16 @@
         }
     </style>
 
-    <div class="py-12" x-data="{ isShopeeModalOpen: false, isTokopediaModalOpen: false }">
+    <div class="py-12" 
+         x-data="{ isShopeeModalOpen: false, isTokopediaModalOpen: false }"
+         x-init="
+            $watch('isTokopediaModalOpen', value => {
+                if (value) {
+                    loadTokopediaTable('{{ $tokopedia_ajax_url }}');
+                }
+            })
+         "
+    >
         <div class="max-w-9xl mx-auto sm:px-6 lg:px-8">
             
             @if (session('success'))
@@ -300,86 +309,90 @@
 
     </div>
     
-    <script>
-        jQuery.noConflict();
+<script>
+    // Fungsi global ini tetap sama, sudah benar.
+    function loadTokopediaTable(url) {
+        const tableContainer = jQuery('#tokopedia-table-container');
+        tableContainer.html('<div class="p-6 text-center py-10"><p class="text-gray-500">Memuat data...</p></div>');
+
+        jQuery.ajax({
+            url: url,
+            type: 'GET',
+            success: function(response) {
+                if (response && response.html) {
+                    tableContainer.html(response.html);
+                } else {
+                    tableContainer.html('<div class="p-6 text-center py-10"><p class="text-red-500">Format respons tidak valid atau data kosong.</p></div>');
+                }
+            },
+            error: function(jqXHR) {
+                let errorMessage = 'Gagal memuat data. Silakan coba lagi.';
+                if (jqXHR.responseJSON && jqXHR.responseJSON.error) {
+                    errorMessage = jqXHR.responseJSON.error;
+                }
+                tableContainer.html(`<div class="p-6 text-center py-10"><p class="text-red-500">${errorMessage}</p></div>`);
+            }
+        });
+    }
+
+    // Gunakan event listener DOMContentLoaded untuk memastikan semua elemen siap
+    document.addEventListener("DOMContentLoaded", function() {
         (function($) {
-            $(document).ready(function() {
-                // Inisialisasi DataTables untuk Shopee
-                if (!$.fn.DataTable.isDataTable('#shopee-sales-table')) {
-                    $('#shopee-sales-table').DataTable({
-                        pageLength: 25,
-                        dom: "<'flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4'lf>" +
-                            "<'w-full overflow-x-auto't>" +
-                            "<'flex flex-col sm:flex-row justify-between items-start sm:items-center mt-4 gap-4'ip>",
-                    });
-                }
+            // Inisialisasi DataTables untuk Shopee (tidak berubah)
+            if (!$.fn.DataTable.isDataTable('#shopee-sales-table')) {
+                $('#shopee-sales-table').DataTable({
+                    pageLength: 25,
+                    dom: "<'flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4'lf>" +
+                         "<'w-full overflow-x-auto't>" +
+                         "<'flex flex-col sm:flex-row justify-between items-start sm:items-center mt-4 gap-4'ip>",
+                });
+            }
 
-                // --- LOGIKA BARU UNTUK MODAL AJAX TOKOPEDIA ---
+            // ==================================================================
+            // --- PERUBAHAN UTAMA DI SINI ---
+            // Kita menargetkan ID modal yang baru kita buat sebagai basis delegasi.
+            // ==================================================================
+            const tokopediaModal = $('#tokopedia-modal');
+
+            // 1. Event listener untuk klik pada link paginasi
+            tokopediaModal.on('click', '#tokopedia-pagination-links a', function(e) {
+                // Mencegah browser pindah halaman
+                e.preventDefault(); 
                 
-                function loadTokopediaTable(url) {
-                    $('#tokopedia-table-container').html('<div class="text-center py-10"><p class="text-gray-500">Memuat data...</p></div>');
-
-                    $.ajax({
-                        url: url,
-                        type: 'GET',
-                        success: function(response) {
-                            if(response.html) {
-                                $('#tokopedia-table-container').html(response.html);
-                            } else {
-                                $('#tokopedia-table-container').html('<div class="text-center py-10"><p class="text-red-500">Format respons tidak valid.</p></div>');
-                            }
-                        },
-                        error: function(jqXHR) {
-                            let errorMessage = 'Gagal memuat data. Silakan coba lagi.';
-                            if (jqXHR.responseJSON && jqXHR.responseJSON.error) {
-                                errorMessage = jqXHR.responseJSON.error;
-                            }
-                            $('#tokopedia-table-container').html(`<div class="text-center py-10"><p class="text-red-500">${errorMessage}</p></div>`);
-                        }
-                    });
-                }
-
-                // --- PERBAIKAN UTAMA DI SINI ---
-                // Kita akan menggunakan event click pada tombol "Lihat Semua"
-                // untuk memicu pemuatan data pertama kali.
-                $('button[x-on\\:click="isTokopediaModalOpen = true"]').on('click', function() {
-                    // Beri jeda sedikit agar modal sempat muncul
-                    setTimeout(function() {
-                        // Cek jika container masih dalam keadaan loading awal
-                        if ($('#tokopedia-table-container').find('p').text() === 'Memuat data...') {
-                            loadTokopediaTable("{{ $tokopedia_ajax_url }}");
-                        }
-                    }, 50); 
-                });
-
-                $(document).on('click', '#tokopedia-pagination-links .pagination a', function(e) {
-                    e.preventDefault();
-                    const url = $(this).attr('href');
-                    loadTokopediaTable(url);
-                });
-
-                let searchTimeout;
-                $(document).on('keyup', '#tokopedia-search-input', function() {
-                    clearTimeout(searchTimeout);
-                    const searchTerm = $(this).val();
-                    const baseUrl = "{{ $tokopedia_ajax_url }}";
-                    const url = new URL(baseUrl);
-                    url.searchParams.set('search', searchTerm);
-                    url.searchParams.delete('page');
-                    
-                    searchTimeout = setTimeout(function() {
-                        loadTokopediaTable(url.href);
-                    }, 500);
-                });
+                const url = $(this).attr('href');
                 
-                // Script untuk spinner tombol sync
-                $('#sync-form').on('submit', function() {
-                    $('#sync-spinner').removeClass('hidden');
-                    $('#sync-text').text('Menyinkronkan...');
-                    $(this).find('button[type="submit"]').prop('disabled', true);
-                });
+                if (!url || url === '#') {
+                    return;
+                }
+                
+                loadTokopediaTable(url);
             });
+
+            // 2. Event listener untuk input pencarian (dengan debounce)
+            let searchTimeout;
+            tokopediaModal.on('keyup', '#tokopedia-search-input', function() {
+                clearTimeout(searchTimeout);
+                const searchTerm = $(this).val();
+                const baseUrl = "{{ $tokopedia_ajax_url }}";
+                const url = new URL(baseUrl);
+                
+                url.searchParams.set('search', searchTerm);
+                url.searchParams.delete('page');
+                
+                searchTimeout = setTimeout(function() {
+                    loadTokopediaTable(url.href);
+                }, 500);
+            });
+            
+            // 3. Script untuk spinner tombol sync (tidak berubah)
+            $('#sync-form').on('submit', function() {
+                $('#sync-spinner').removeClass('hidden');
+                $('#sync-text').text('Menyinkronkan...');
+                $(this).find('button[type="submit"]').prop('disabled', true);
+            });
+
         })(jQuery);
-    </script>
+    });
+</script>
 
 </x-app-layout>

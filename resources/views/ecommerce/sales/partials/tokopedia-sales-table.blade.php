@@ -18,9 +18,9 @@
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-semibold text-right">Rp {{ number_format($sale->total_amount, 0, ',', '.') }}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                         @if($sale->status == 'COMPLETED')
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Selesai</span>
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">COMPLETED</span>
                         @elseif($sale->status == 'CANCELLED')
-                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Dibatalkan</span>
+                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">CANCELLED  </span>
                         @else
                             <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">{{ str_replace('_', ' ', $sale->status) }}</span>
                         @endif

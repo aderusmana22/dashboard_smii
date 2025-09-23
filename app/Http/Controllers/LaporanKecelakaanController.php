@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use App\Models\LaporanApprovalStatus;
 use App\Jobs\SendApprovalEmailJob;
+use App\Jobs\SendReportStatusEmailJob; // <-- Pastikan use statement ini ada
 
 class LaporanKecelakaanController extends Controller
 {
@@ -29,23 +30,15 @@ class LaporanKecelakaanController extends Controller
 
     public function getData(Request $request)
     {
-        // =================================================================
-        // LOGIKA BARU YANG TANGGUH: Mengambil revisi tertinggi dari setiap grup laporan.
-        // Ini adalah perbaikan utama untuk masalah tampilan Anda.
-        // =================================================================
         $laporanTable = (new LaporanKecelakaan)->getTable();
         $approvalStatusTable = (new LaporanApprovalStatus)->getTable();
 
-        // Langkah 1: Buat subquery untuk menemukan revision_number tertinggi untuk setiap nomor form dasar.
-        // `SUBSTRING_INDEX` digunakan untuk mengekstrak 'HSE-2025-2' dari 'HSE-2025-2-REV1'.
         $latestRevisionsSubquery = LaporanKecelakaan::select(
                 DB::raw('SUBSTRING_INDEX(nomor_form, "-REV", 1) as base_form'),
                 DB::raw('MAX(revision_number) as max_revision')
             )
             ->groupBy('base_form');
 
-        // Langkah 2: Buat query utama yang menggabungkan (join) tabel laporan dengan hasil subquery di atas.
-        // Ini akan menyaring hanya laporan yang cocok dengan nomor form dasar DAN revision_number tertinggi.
         $query = LaporanKecelakaan::query()
             ->joinSub($latestRevisionsSubquery, 'latest_revs', function ($join) use ($laporanTable) {
                 $join->on(DB::raw('SUBSTRING_INDEX(nomor_form, "-REV", 1)'), '=', 'latest_revs.base_form')
@@ -54,7 +47,6 @@ class LaporanKecelakaanController extends Controller
             ->leftJoin($approvalStatusTable, "{$laporanTable}.id", '=', "{$approvalStatusTable}.laporan_kecelakaan_id")
             ->select("{$laporanTable}.*");
 
-        // Filter diterapkan pada hasil yang sudah benar (hanya versi terakhir)
         if ($request->filled('nomor_form')) {
             $query->where("{$laporanTable}.nomor_form", 'like', '%' . $request->nomor_form . '%');
         }
@@ -71,7 +63,6 @@ class LaporanKecelakaanController extends Controller
             $query->whereDate("{$laporanTable}.date", '<=', $request->date_end);
         }
 
-        // Hitung total data
         $totalDataQuery = LaporanKecelakaan::query()
             ->joinSub($latestRevisionsSubquery, 'latest_revs', function ($join) {
                 $join->on(DB::raw('SUBSTRING_INDEX(nomor_form, "-REV", 1)'), '=', 'latest_revs.base_form')
@@ -81,7 +72,6 @@ class LaporanKecelakaanController extends Controller
         $totalData = (clone $totalDataQuery)->count();
         $totalFiltered = (clone $query)->count();
 
-        // Pengurutan
         if ($request->has('order')) {
             $orderColumnIndex = $request->input('order.0.column');
             $orderColumnName = $request->input('columns.' . $orderColumnIndex . '.name');
@@ -102,7 +92,6 @@ class LaporanKecelakaanController extends Controller
             $query->latest("{$laporanTable}.created_at");
         }
 
-        // Pagination
         if ($request->filled('length') && $request->length != -1) {
             $query->skip($request->input('start'))->take($request->input('length'));
         }
@@ -184,7 +173,6 @@ class LaporanKecelakaanController extends Controller
                 
                 $baseNomorForm = explode('-REV', $originalReport->nomor_form)[0];
 
-                // PERBAIKAN PENCEGAHAN: Nonaktifkan SEMUA versi lama dan update statusnya.
                 $allOldVersions = LaporanKecelakaan::where(DB::raw('SUBSTRING_INDEX(nomor_form, "-REV", 1)'), $baseNomorForm)->get();
                 foreach ($allOldVersions as $oldVersion) {
                     $oldVersion->is_active = false;
@@ -242,16 +230,12 @@ class LaporanKecelakaanController extends Controller
                 Log::error('Gagal mengirim email persetujuan awal: ' . $e->getMessage());
             }
 
-            // --- PERUBAHAN DI SINI ---
-            // Menghapus ->with('success', '...') agar tidak ada flash message
             return redirect()->route('accidents-report.index');
 
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Gagal menyimpan laporan kecelakaan: ' . $e->getMessage() . ' di file ' . $e->getFile() . ' baris ' . $e->getLine());
             
-            // --- PERUBAHAN DI SINI ---
-            // Menghapus ->with('error', '...') agar tidak ada flash message
             return back()->withInput();
         }
     }
@@ -281,7 +265,19 @@ class LaporanKecelakaanController extends Controller
                 'notes' => 'Menyetujui laporan sebagai ' . $this->getRoleName($currentApproverField),
             ]);
             if ($currentIndex === count($this->approvalOrder) - 1) {
+                // Ini adalah persetujuan terakhir (oleh GM)
                 $status->update(['status' => 'approved', 'current_approver_id' => null]);
+
+                // --- KIRIM NOTIFIKASI LAPORAN DISETUJUI ---
+                DB::afterCommit(function () use ($laporan) {
+                    try {
+                        SendReportStatusEmailJob::dispatch($laporan, 'approved');
+                    } catch (\Exception $e) {
+                        Log::error('Gagal mengirim email notifikasi laporan disetujui: ' . $e->getMessage());
+                    }
+                });
+                // --- AKHIR NOTIFIKASI ---
+
             } else {
                 $nextApproverField = $this->approvalOrder[$currentIndex + 1];
                 $nextApproverId = $laporan->{$nextApproverField};
@@ -302,9 +298,6 @@ class LaporanKecelakaanController extends Controller
             }
             DB::commit();
             
-            // Kode ini sudah benar untuk AJAX. Pesan akan dihandle oleh JavaScript.
-            // Jika Anda benar-benar ingin menghapus pesan, ganti menjadi:
-            // return response()->json(['success' => true]);
              return view('safetyboard.partials.feedback', [
                 'type' => 'success',
                 'message' => 'Laporan berhasil disetujui. Proses persetujuan akan dilanjutkan ke tahap berikutnya.'
@@ -353,9 +346,16 @@ class LaporanKecelakaanController extends Controller
             ]);
             DB::commit();
 
-            // Kode ini sudah benar untuk AJAX.
-            // Jika Anda ingin menghapus pesan, ganti menjadi:
-            // return response()->json(['success' => true]);
+            // --- KIRIM NOTIFIKASI LAPORAN DITOLAK ---
+            DB::afterCommit(function () use ($laporan, $request) {
+                try {
+                    SendReportStatusEmailJob::dispatch($laporan, 'rejected', $request->rejection_reason);
+                } catch (\Exception $e) {
+                    Log::error('Gagal mengirim email notifikasi laporan ditolak: ' . $e->getMessage());
+                }
+            });
+            // --- AKHIR NOTIFIKASI ---
+            
             return view('safetyboard.partials.feedback', [
                 'type' => 'success',
                 'message' => 'Laporan telah berhasil ditolak. Pembuat laporan akan diberi notifikasi untuk revisi.'
@@ -389,15 +389,11 @@ class LaporanKecelakaanController extends Controller
 
     public function show(LaporanKecelakaan $laporan)
     {
-        // =================================================================
-        // PERUBAHAN DI SINI: Redirect jika pengguna mengakses revisi lama.
-        // =================================================================
         $baseNomorForm = explode('-REV', $laporan->nomor_form)[0];
         $latestVersion = LaporanKecelakaan::where(DB::raw('SUBSTRING_INDEX(nomor_form, "-REV", 1)'), $baseNomorForm)
                                             ->orderBy('revision_number', 'desc')
                                             ->first();
 
-        // Jika laporan yang diakses BUKAN versi terbaru, arahkan ke URL versi terbaru.
         if ($latestVersion && $laporan->id !== $latestVersion->id) {
             return redirect()->route('accidents-report.show', $latestVersion->nomor_form);
         }
@@ -409,36 +405,23 @@ class LaporanKecelakaanController extends Controller
 
     public function revise(LaporanKecelakaan $laporan)
     {
-        // =================================================================
-        // PERUBAHAN DI SINI: Logika keamanan dan pengalihan yang lebih kuat.
-        // =================================================================
         $baseNomorForm = explode('-REV', $laporan->nomor_form)[0];
         $latestVersion = LaporanKecelakaan::where(DB::raw('SUBSTRING_INDEX(nomor_form, "-REV", 1)'), $baseNomorForm)
                                             ->orderBy('revision_number', 'desc')
                                             ->first();
 
-        // 1. Jika pengguna mencoba merevisi versi LAMA, arahkan mereka untuk merevisi versi TERBARU.
         if ($latestVersion && $laporan->id !== $latestVersion->id) {
-            // --- PERUBAHAN DI SINI ---
-            // Menghapus ->with('info', '...')
             return redirect()->route('accidents-report.revise', $latestVersion->nomor_form);
         }
 
-        // 2. Periksa wewenang (hanya pembuat laporan yang bisa merevisi)
         if ($laporan->pembuat_laporan_id !== Auth::id()) {
-            // --- PERUBAHAN DI SINI ---
-            // Menghapus ->with('error', '...')
             return redirect()->route('accidents-report.index');
         }
 
-        // 3. Periksa status (hanya laporan yang ditolak yang bisa direvisi)
         if ($laporan->approvalStatus?->status !== 'rejected') {
-            // --- PERUBAHAN DI SINI ---
-            // Menghapus ->with('error', '...')
             return redirect()->route('accidents-report.show', $laporan->nomor_form);
         }
 
-        // Jika semua lolos, lanjutkan ke form revisi
         $laporan->load('biayaPerawatan', 'saranPerbaikan');
         $gms = User::role('gm')->orderBy('name')->get();
         $hseManagers = User::role('asmenHse')->orderBy('name')->get();

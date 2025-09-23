@@ -354,8 +354,12 @@
                             </div>
                         </div>
                     </div>
-
-                    <a href="#" class="mt-6 inline-block bg-white text-green-600 font-bold py-2 px-4 rounded-lg hover:bg-green-100 transition">Buka Seller Center</a>
+                    <a href="https://seller-id.tokopedia.com/" 
+                    class="mt-6 inline-block bg-white text-green-600 font-bold py-2 px-4 rounded-lg hover:bg-green-100 transition" 
+                    target="_blank" 
+                    rel="noopener noreferrer">
+                    Buka Seller Center
+                    </a>
                 </div>
             </div>
         </div>

@@ -22,7 +22,7 @@
     </style>
 
 
-    <div class="py-12">
+<div class="py-12">
         <div class="max-w-9xl mx-auto sm:px-6 lg:px-8">
             <!-- Header Halaman -->
             <div class="mb-8">
@@ -30,7 +30,7 @@
                 <p class="mt-1 text-sm text-gray-500">Atur berbagai parameter untuk toko online Anda.</p>
             </div>
 
-            <!-- Notifikasi Global (untuk redirect dari TikTok) -->
+            <!-- Notifikasi Global -->
             @if (session('success'))
                 <div class="mb-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-md" role="alert">
                     <p class="font-bold">Sukses</p>
@@ -52,7 +52,6 @@
                 </div>
                 <div class="px-6 py-4 bg-gray-50 flex items-center justify-between">
                     @if ($tiktokShop)
-                        <!-- Status: Terhubung -->
                         <div class="flex items-center space-x-3">
                             <svg class="h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -62,7 +61,7 @@
                                 <p class="text-xs text-gray-500">Otorisasi diberikan pada {{ $tiktokShop->created_at->format('d M Y, H:i') }}</p>
                             </div>
                         </div>
-                        <form action="{{ route('tiktok.disconnect') }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin memutuskan koneksi dengan TikTok Shop?');">
+                        <form action="{{-- route('tiktok.disconnect') --}}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin memutuskan koneksi dengan TikTok Shop?');">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
@@ -70,9 +69,8 @@
                             </button>
                         </form>
                     @else
-                        <!-- Status: Belum Terhubung -->
                         <p class="text-sm text-gray-700">Status: <span class="font-semibold text-yellow-600">Belum Terhubung</span></p>
-                        <a href="{{ route('tiktok.auth') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-700">
+                        <a href="{{-- route('tiktok.auth') --}}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-800 hover:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-700">
                             <svg class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 24 24"><path d="M21.6 8.2l-2.5-1.2c-.5-.2-1.1.1-1.3.6-.2.5.1 1.1.6 1.3l2.5 1.2c.5.2 1.1-.1 1.3-.6.3-.5-.1-1.1-.6-1.3zM4.9 10.1l2.5-1.2c.5-.2 1.1.1 1.3.6.2.5-.1 1.1-.6 1.3L5.6 12c-.5.2-1.1-.1-1.3-.6-.2-.5.1-1.1.6-1.3zM12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm-3.1-8.9c-.5-.2-1.1.1-1.3.6s.1 1.1.6 1.3l3.1 1.5c.1 0 .2.1.3.1s.2 0 .3-.1l3.1-1.5c.5-.2.8-.8.6-1.3s-.8-.8-1.3-.6L12 13.4l-3.1-1.5z"/></svg>
                             Hubungkan dengan TikTok Shop
                         </a>
@@ -80,7 +78,7 @@
                 </div>
             </div>
 
-            <!-- Kartu Form Konfigurasi (Kode Anda yang sudah ada) -->
+            <!-- Kartu Form Konfigurasi -->
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <form action="{{ route('ecommerce.settings.update') }}" method="POST">
                     @csrf

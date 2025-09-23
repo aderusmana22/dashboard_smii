@@ -3,6 +3,7 @@
         Data Penjualan
     @endsection
 
+    {{-- Aset yang sudah ada --}}
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/2.0.8/js/dataTables.js"></script>
@@ -42,7 +43,7 @@
         background-color: #ffffff !important;
         border: 1px solid #d1d5db !important;
         color: #000000 !important;
-        border-radius: 0.375rem !important;
+        border-radius: 0.375remW !important;
         box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05) !important;
         font-size: 0.875rem !important;
         padding: 0.5rem 1.25rem !important;
@@ -72,19 +73,19 @@
         justify-content: center !important;
         padding: 0.5rem 1rem !important;
         border: 1px solid #d1d5db !important;
-        background-color: #f9fafb !important; /* DIUBAH: Warna Off-White / Putih Tulang */
+        background-color: #f9fafb !important;
         background-image: none !important;
         font-size: 0.875rem !important;
         font-weight: 500 !important;
-        color: #000000 !important; /* Teks Hitam */
-        transition: background-color 0.15s ease-in-out !important; /* Transisi diaktifkan kembali */
+        color: #000000 !important;
+        transition: background-color 0.15s ease-in-out !important;
         box-shadow: none !important;
         }
 
         /* Aturan HOVER untuk KEDUA tabel */
         #shopee-sales-table_wrapper .dt-paging button:hover,
         #tokopedia-sales-table_wrapper .dt-paging button:hover {
-        background-color: #f3f4f6 !important; /* DIUBAH: Warna Abu-abu Sangat Terang saat hover */
+        background-color: #f3f4f6 !important;
         background-image: none !important;
         color: #000000 !important;
         }
@@ -92,10 +93,10 @@
         /* Aturan untuk tombol AKTIF di KEDUA tabel */
         #shopee-sales-table_wrapper .dt-paging button.current,
         #tokopedia-sales-table_wrapper .dt-paging button.current {
-        background-color: #f9fafb !important; /* DIUBAH: Kembali ke Off-White */
+        background-color: #f9fafb !important;
         background-image: none !important;
-        border-color: #000000 !important; /* Border hitam sebagai penanda aktif */
-        font-weight: 700 !important; /* Teks tebal sebagai penanda aktif */
+        border-color: #000000 !important;
+        font-weight: 700 !important;
         }
 
         /* Aturan untuk tombol non-aktif */
@@ -112,6 +113,23 @@
         .dt-paging button:last-child {
         border-top-right-radius: 0.375rem !important;
         border-bottom-right-radius: 0.375rem !important;
+        }
+
+        /* Gaya untuk input date agar konsisten */
+        input[type="date"] {
+            background-color: #ffffff;
+            border: 1px solid #d1d5db;
+            color: #374151;
+            border-radius: 0.375rem;
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            font-size: 0.875rem;
+            padding: 0.4rem 0.8rem;
+            cursor: pointer;
+        }
+        .dark-skin input[type="date"] {
+            background-color: rgb(55 65 81 / 1);
+            border-color: rgb(75 85 99 / 1);
+            color: rgb(229 231 235 / 1);
         }
     </style>
 
@@ -145,11 +163,29 @@
                     <h1 class="text-3xl font-bold text-gray-800">Laporan Penjualan per Platform</h1>
                     <p class="mt-1 text-sm text-gray-500">Analisis performa penjualan produk Anda secara terpisah di Shopee dan Tokopedia.</p>
                 </div>
-                <div class="mt-4 md:mt-0 flex space-x-2">
-                    <button class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 text-sm font-medium">
-                        <svg class="w-5 h-5 inline-block mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V10zM15 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4zM15 17a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1v-2z" /></svg>
-                        Filter
-                    </button>
+                <div class="mt-4 md:mt-0 flex space-x-2 items-center">
+                    {{-- FORM UNTUK FILTER TANGGAL DENGAN INPUT TYPE DATE --}}
+                    <form id="filter-form" method="GET" action="{{ route('ecommerce.sales.index') }}" class="flex items-center space-x-2">
+                        <div class="flex items-center space-x-2">
+                            <label for="start_date_input" class="text-sm font-medium text-gray-700">Dari:</label>
+                            <input type="date" id="start_date_input" name="start_date" value="{{ $startDate }}">
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <label for="end_date_input" class="text-sm font-medium text-gray-700">Sampai:</label>
+                            <input type="date" id="end_date_input" name="end_date" value="{{ $endDate }}">
+                        </div>
+                        
+                        <button type="submit" class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 text-sm font-medium">
+                            <svg class="w-5 h-5 inline-block mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v10a1 1 0 01-1 1H4a1 1 0 01-1-1V10zM15 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4zM15 17a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1v-2z" /></svg>
+                            Filter
+                        </button>
+                        
+                        @if(request()->has('start_date'))
+                            <a href="{{ route('ecommerce.sales.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 text-sm font-medium">
+                                Reset
+                            </a>
+                        @endif
+                    </form>
                     <button class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 text-sm font-medium">
                         <svg class="w-5 h-5 inline-block mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                         Export Data
@@ -246,7 +282,10 @@
                     </div>
                     <div class="bg-gray-50 p-6 rounded-lg">
                         <h3 class="text-sm font-medium text-gray-500">Produk Terjual (Tokopedia)</h3>
-                        <p class="mt-2 text-3xl font-bold text-gray-900">N/A</p>
+                        {{-- ================================================== --}}
+                        {{-- ============ PERBAIKAN UTAMA DI SINI ============= --}}
+                        {{-- ================================================== --}}
+                        <p class="mt-2 text-3xl font-bold text-gray-900">{{ number_format($tokopedia_summary['total_products_sold'], 0, ',', '.') }}</p>
                     </div>
                     <div class="bg-gray-50 p-6 rounded-lg">
                         <h3 class="text-sm font-medium text-gray-500">Rata-rata Nilai Pesanan (Tokopedia)</h3>
@@ -276,7 +315,7 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-semibold">Rp {{ number_format($sale->total_amount, 0, ',', '.') }}</td>
                                         </tr>
                                     @empty
-                                        <tr><td colspan="3" class="px-6 py-4 text-center text-gray-500">Tidak ada data transaksi. Klik "Lihat Semua" lalu perbarui data.</td></tr>
+                                        <tr><td colspan="3" class="px-6 py-4 text-center text-gray-500">Tidak ada data transaksi untuk rentang tanggal yang dipilih.</td></tr>
                                     @endforelse
                                 </tbody>
                             </table>
@@ -286,16 +325,19 @@
                         <h3 class="text-xl font-bold mb-4">Produk Terlaris (Tokopedia)</h3>
                         <div class="border rounded-lg p-4">
                             <ul class="space-y-4">
+                                {{-- ================================================== --}}
+                                {{-- ============ PERBAIKAN TAMBAHAN DI SINI ========== --}}
+                                {{-- ================================================== --}}
                                 @forelse($tokopedia_top_products as $product)
                                 <li class="flex items-center space-x-4">
-                                    <img class="h-14 w-14 rounded-md object-cover" src="{{ $product['image_url'] }}" alt="{{ $product['name'] }}">
+                                    <img class="h-14 w-14 rounded-md object-cover" src="{{ $product->image_url }}" alt="{{ $product->product_name }}">
                                     <div class="flex-1">
-                                        <p class="text-sm font-medium text-gray-900">{{ $product['name'] }}</p>
-                                        <p class="text-sm text-gray-500">{{ $product['sold_count'] }} unit terjual</p>
+                                        <p class="text-sm font-medium text-gray-900">{{ $product->product_name }}</p>
+                                        <p class="text-sm text-gray-500">{{ $product->sold_count }} unit terjual</p>
                                     </div>
                                 </li>
                                 @empty
-                                    <p class="text-sm text-gray-500">Data akan tersedia setelah tabel item pesanan dibuat.</p>
+                                    <p class="text-sm text-gray-500">Tidak ada produk terlaris untuk ditampilkan.</p>
                                 @endforelse
                             </ul>
                         </div>
@@ -310,7 +352,6 @@
     </div>
     
 <script>
-    // Fungsi global ini tetap sama, sudah benar.
     function loadTokopediaTable(url) {
         const tableContainer = jQuery('#tokopedia-table-container');
         tableContainer.html('<div class="p-6 text-center py-10"><p class="text-gray-500">Memuat data...</p></div>');
@@ -335,7 +376,6 @@
         });
     }
 
-    // Gunakan event listener DOMContentLoaded untuk memastikan semua elemen siap
     document.addEventListener("DOMContentLoaded", function() {
         (function($) {
             // Inisialisasi DataTables untuk Shopee (tidak berubah)
@@ -348,35 +388,38 @@
                 });
             }
 
-            // ==================================================================
-            // --- PERUBAHAN UTAMA DI SINI ---
-            // Kita menargetkan ID modal yang baru kita buat sebagai basis delegasi.
-            // ==================================================================
             const tokopediaModal = $('#tokopedia-modal');
 
-            // 1. Event listener untuk klik pada link paginasi
+            // 1. Event listener untuk klik pada link paginasi (tidak berubah)
             tokopediaModal.on('click', '#tokopedia-pagination-links a', function(e) {
-                // Mencegah browser pindah halaman
                 e.preventDefault(); 
-                
-                const url = $(this).attr('href');
-                
-                if (!url || url === '#') {
-                    return;
-                }
-                
-                loadTokopediaTable(url);
+                const paginationUrl = $(this).attr('href');
+                if (!paginationUrl || paginationUrl === '#') return;
+                loadTokopediaTable(paginationUrl);
             });
 
-            // 2. Event listener untuk input pencarian (dengan debounce)
+            // 2. Event listener untuk input pencarian (disesuaikan)
             let searchTimeout;
             tokopediaModal.on('keyup', '#tokopedia-search-input', function() {
                 clearTimeout(searchTimeout);
                 const searchTerm = $(this).val();
-                const baseUrl = "{{ $tokopedia_ajax_url }}";
+                
+                // Ambil nilai tanggal langsung dari input date di halaman utama
+                const startDate = $('#start_date_input').val();
+                const endDate = $('#end_date_input').val();
+                
+                const baseUrl = "{{ route('ecommerce.tokopedia.orders.data') }}";
                 const url = new URL(baseUrl);
                 
                 url.searchParams.set('search', searchTerm);
+                
+                if (startDate) {
+                    url.searchParams.set('start_date', startDate);
+                }
+                if (endDate) {
+                    url.searchParams.set('end_date', endDate);
+                }
+                
                 url.searchParams.delete('page');
                 
                 searchTimeout = setTimeout(function() {

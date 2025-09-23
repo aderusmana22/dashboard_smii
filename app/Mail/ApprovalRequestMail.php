@@ -11,28 +11,17 @@ use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
-class ApprovalRequestMail extends Mailable
+class ApprovalRequestMail extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    // Properti publik akan secara otomatis tersedia di dalam file Blade
     public LaporanKecelakaan $laporan;
     public User $approver;
-
-    // Properti publik baru untuk menampung HTML yang sudah di-style
     public string $uraian_kejadian_styled;
     public string $analisa_masalah_styled;
     public string $tindakan_pencegahan_styled;
     public string $rekomendasi_styled;
 
-    /**
-     * Create a new message instance.
-     *
-     * @param \App\Models\LaporanKecelakaan $laporan
-     * @param \App\Models\User $approver
-     * @param string $approveToken
-     * @param string $rejectToken
-     */
     public function __construct(
         LaporanKecelakaan $laporan,
         User $approver,
@@ -41,61 +30,73 @@ class ApprovalRequestMail extends Mailable
     ) {
         $this->laporan = $laporan;
         $this->approver = $approver;
-
-        // Panggil method private untuk memproses dan menata semua konten HTML
         $this->prepareStyledHtml();
     }
 
-    /**
-     * Menjalankan fungsi styling untuk semua field yang relevan.
-     */
     private function prepareStyledHtml(): void
     {
-        $this->uraian_kejadian_styled = $this->styleEmailImages($this->laporan->uraian_kejadian);
-        $this->analisa_masalah_styled = $this->styleEmailImages($this->laporan->analisa_masalah);
-        $this->tindakan_pencegahan_styled = $this->styleEmailImages($this->laporan->tindakan_pencegahan);
-        $this->rekomendasi_styled = $this->styleEmailImages($this->laporan->rekomendasi);
+        $this->uraian_kejadian_styled = $this->processHtmlForEmail($this->laporan->uraian_kejadian);
+        $this->analisa_masalah_styled = $this->processHtmlForEmail($this->laporan->analisa_masalah);
+        $this->tindakan_pencegahan_styled = $this->processHtmlForEmail($this->laporan->tindakan_pencegahan);
+        $this->rekomendasi_styled = $this->processHtmlForEmail($this->laporan->rekomendasi);
     }
 
     /**
-     * Mem-parsing string HTML dan menerapkan gaya inline pada tag <img> untuk email.
-     * Ini adalah fungsi yang sebelumnya menyebabkan error di file Blade.
+     * Mem-parsing string HTML, secara paksa memperbaiki URL gambar yang rusak, dan menerapkan gaya.
+     * Didesain khusus untuk memperbaiki data lama yang mungkin memiliki path aneh.
      * 
-     * @param string|null $htmlContent Konten HTML mentah.
-     * @return string Konten HTML yang sudah diberi gaya.
+     * @param string|null $htmlContent Konten HTML mentah dari database.
+     * @return string Konten HTML yang siap untuk ditampilkan di email.
      */
-    private function styleEmailImages(?string $htmlContent): string
+    private function processHtmlForEmail(?string $htmlContent): string
     {
         if (empty(trim($htmlContent))) {
             return '';
         }
 
         $dom = new \DOMDocument();
-        // Menggunakan @ untuk menekan error dari HTML yang mungkin tidak valid & memastikan encoding UTF-8
         @$dom->loadHtml(mb_convert_encoding($htmlContent, 'HTML-ENTITIES', 'UTF-8'), LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
 
         $images = $dom->getElementsByTagName('img');
-        foreach ($images as $img) {
-            // Terapkan gaya inline langsung ke elemen gambar
-            $img->setAttribute('style', 'max-height: 200px; width: auto; height: auto; display: block; margin: 10px auto;');
+        $appUrl = rtrim(config('app.url'), '/'); // Ambil URL dasar dan hapus slash di akhir
+
+        // Iterasi mundur diperlukan saat memodifikasi node untuk menghindari masalah indeks
+        for ($i = $images->length - 1; $i >= 0; $i--) {
+            $img = $images->item($i);
+            $currentSrc = $img->getAttribute('src');
+
+            // --- INI LOGIKA PERBAIKAN BARU YANG LEBIH AGRESIF ---
+            
+            // Cari posisi string '/storage/editor-uploads/'
+            $storagePathPosition = strpos($currentSrc, '/storage/editor-uploads/');
+
+            // Jika string tersebut ditemukan di dalam src
+            if ($appUrl && $storagePathPosition !== false) {
+                // Ambil bagian path yang benar, mulai dari '/storage/...'
+                $correctRelativePath = substr($currentSrc, $storagePathPosition);
+                
+                // Gabungkan URL dasar dengan path yang benar untuk membuat URL absolut
+                $absoluteUrl = $appUrl . $correctRelativePath;
+                
+                // Set atribut src ke URL absolut yang sudah diperbaiki
+                $img->setAttribute('src', $absoluteUrl);
+            }
+            // --- AKHIR LOGIKA PERBAIKAN BARU ---
+
+            // Terapkan gaya inline agar responsif di klien email
+            $img->setAttribute('style', 'max-width: 100%; height: auto; display: block; margin: 10px 0;');
         }
         
         return $dom->saveHTML();
     }
 
-    /**
-     * Get the message envelope.
-     */
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Approval Laporan kecelakaan kerja - ' . $this->laporan->nomor_form,
+            subject: 'Approval Laporan Kecelakaan Kerja - ' . $this->laporan->nomor_form,
         );
     }
 
-    /**
-     * Get the message content definition.
-     */
     public function content(): Content
     {
         return new Content(
@@ -107,11 +108,6 @@ class ApprovalRequestMail extends Mailable
         );
     }
 
-    /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
-     */
     public function attachments(): array
     {
         return [];

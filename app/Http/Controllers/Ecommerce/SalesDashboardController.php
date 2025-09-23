@@ -79,6 +79,63 @@ class SalesDashboardController extends Controller
         ]);
     }
 
+     /**
+     * [BARU] Endpoint AJAX untuk mengambil semua data penjualan Tokopedia.
+     */
+    public function fetchSalesData(Request $request)
+    {
+        $request->validate([
+            'start_date' => 'nullable|date_format:Y-m-d',
+            'end_date' => 'nullable|date_format:Y-m-d|after_or_equal:start_date',
+        ]);
+
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        // Query dasar untuk pesanan yang sudah selesai
+        $completedOrdersQuery = TiktokpedOrder::where('status', 'COMPLETED');
+
+        if ($startDate && $endDate) {
+            $completedOrdersQuery->whereBetween('created_at_tiktok', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+        }
+
+        $summaryQuery = clone $completedOrdersQuery;
+        $listQuery = clone $completedOrdersQuery;
+
+        $completedOrderIds = $summaryQuery->pluck('id');
+
+        // 1. Data untuk ringkasan (summary cards)
+        $tokopedia_summary = [
+            'total_revenue' => $summaryQuery->sum('total_amount'),
+            'total_orders' => $summaryQuery->count(),
+            'total_products_sold' => TiktokpedOrderItem::whereIn('tiktokped_order_id', $completedOrderIds)->sum('quantity'),
+            'average_order_value' => $summaryQuery->count() > 0 ? $summaryQuery->average('total_amount') : 0,
+        ];
+        
+        // 2. Daftar transaksi terakhir di halaman utama
+        $tokopedia_sales_list = $listQuery->latest('created_at_tiktok')->take(5)->get();
+
+        // 3. Hitung produk terlaris
+        $tokopedia_top_products = TiktokpedOrderItem::query()
+            ->select('product_name', DB::raw('SUM(quantity) as sold_count'), DB::raw('MIN(sku_image) as image_url'))
+            ->whereIn('tiktokped_order_id', $completedOrderIds)
+            ->groupBy('product_name')
+            ->orderByDesc('sold_count')
+            ->take(4)
+            ->get();
+
+        // Render partial views menjadi HTML
+        $summaryHtml = view('ecommerce.sales.partials.tokopedia-summary-cards', ['tokopedia_summary' => $tokopedia_summary])->render();
+        $salesListHtml = view('ecommerce.sales.partials.tokopedia-sales-list', ['tokopedia_sales_list' => $tokopedia_sales_list])->render();
+        $topProductsHtml = view('ecommerce.sales.partials.tokopedia-top-products', ['tokopedia_top_products' => $tokopedia_top_products])->render();
+
+        return response()->json([
+            'summary_html' => $summaryHtml,
+            'sales_list_html' => $salesListHtml,
+            'top_products_html' => $topProductsHtml,
+        ]);
+    }
+
     public function getPaginatedOrders(Request $request)
     {
         try {

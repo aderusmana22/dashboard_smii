@@ -250,6 +250,9 @@ Route::prefix('accidents-report')->name('accidents-report.')->group(function () 
     Route::post('/ecommerce/products/sync', [ProductController::class, 'sync'])->name('ecommerce.products.sync');
     Route::post('/ecommerce/products/{product}/stock', [ProductController::class, 'updateStock'])->name('ecommerce.products.stock.update');
 
+    Route::get('/ecommerce/dashboard/tokopedia-stats', [DashboardEcommerceController::class, 'fetchTokopediaStats'])->name('ecommerce.dashboard.tokopedia_stats');
+    Route::get('/ecommerce/sales/fetch-data', [SalesDashboardController::class, 'fetchSalesData'])->name('ecommerce.sales.fetch_data');
+    
     Route::prefix('tiktok')->name('tiktok.')->group(function () {
         Route::get('/auth', [TiktokController::class, 'redirectToAuth'])->name('auth');
         Route::get('/callback', [TiktokController::class, 'handleCallback'])->name('callback');

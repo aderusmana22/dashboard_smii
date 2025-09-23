@@ -3,7 +3,7 @@
         Dashboard E-Commerce
     @endsection
 
-        {{-- Kode CSS untuk dark mode tetap sama --}}
+    {{-- Kode CSS untuk dark mode tetap sama --}}
     <style>
         .dark-skin .bg-white { background-color: rgb(31 41 55 / 1); }
         .dark-skin .bg-gray-50 { background-color: rgb(55 65 81 / 1); }
@@ -20,24 +20,37 @@
         .dark-skin .text-red-600:hover { color: #fca5a5; }
         .dark-skin .modal-cancel-button { background-color: rgb(75 85 99 / 1); color: rgb(229 231 235 / 1); }
         .dark-skin .modal-cancel-button:hover { background-color: rgb(107 114 128 / 1); }
+        /* Gaya untuk input date agar konsisten */
+        input[type="date"] {
+            background-color: #ffffff;
+            border: 1px solid #d1d5db;
+            color: #374151;
+            border-radius: 0.375rem;
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            font-size: 0.875rem;
+            padding: 0.4rem 0.8rem;
+            cursor: pointer;
+        }
+        .dark-skin input[type="date"] {
+            background-color: rgb(55 65 81 / 1);
+            border-color: rgb(75 85 99 / 1);
+            color: rgb(229 231 235 / 1);
+        }
     </style>
 
-
-    {{-- Script Alpine.js untuk fungsionalitas interaktif --}}
+    {{-- Script Alpine.js dan jQuery --}}
     <script src="//unpkg.com/alpinejs" defer></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
     <div class="py-12">
         <div class="max-w-9xl mx-auto sm:px-6 lg:px-8">
             <!-- Bagian Atas: Yang Perlu Dilakukan (Dengan Modal Alpine.js) -->
             <div
-                {{-- [MODIFIED] Menggunakan satu state untuk mengontrol modal mana yang terbuka --}}
                 x-data="{ openModal: '' }"
                 class="bg-white overflow-hidden shadow-sm sm:rounded-lg"
             >
                 <div class="p-6 bg-white border-gray-200">
-                    {{-- === PERUBAHAN DIMULAI DI SINI === --}}
                     @if ($tiktokShopData && !empty($tiktokShopData['shops']))
-                        {{-- Loop melalui toko, meskipun biasanya hanya ada satu --}}
                         @foreach ($tiktokShopData['shops'] as $shop)
                             <h2 class="text-2xl font-bold mb-1">
                                 Toko Terhubung: {{ $shop['name'] }}
@@ -56,7 +69,6 @@
                             untuk melihat data.
                         </div>
                     @endif
-                    {{-- === AKHIR PERUBAHAN === --}}
 
                     <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 text-center gap-y-8">
                         <button @click="openModal = 'belumBayar'" class="px-4 text-center"><p class="text-3xl font-bold text-blue-600">0</p><p class="text-sm text-gray-600 mt-1">Belum Bayar</p></button>
@@ -85,7 +97,6 @@
                         <h2 class="text-xl font-bold">Peringatan Stok Rendah</h2>
                         <a href="/ecommerce/products" class="text-sm font-semibold text-indigo-600 hover:text-indigo-900">Lihat Semua Produk</a>
                     </div>
-                    {{-- Wrapper div untuk fungsionalitas scroll --}}
                     <div class="max-h-[196px] overflow-y-auto pr-2">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50 sticky top-0">
@@ -95,7 +106,6 @@
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                {{-- Contoh Data 1 --}}
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center">
@@ -105,7 +115,6 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">3</span></td>
                                 </tr>
-                                {{-- Contoh Data 2 --}}
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center">
@@ -115,7 +124,6 @@
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">5</span></td>
                                 </tr>
-                                {{-- Tambahan data untuk menunjukkan scroll berfungsi --}}
                                 <tr>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center">
@@ -243,14 +251,14 @@
                 </div>
             </div>
 
-            <!-- Bagian Kolom E-Commerce: Shopee dan Tokopedia (TIDAK DIUBAH) -->
+            <!-- Bagian Kolom E-Commerce: Shopee dan Tokopedia -->
             <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-                <!-- KARTU SHOPEE -->
-                <div class="bg-orange-500 text-white rounded-lg shadow-lg p-6" x-data="{ startDate: '', endDate: '' }" x-init="const today = new Date().toISOString().split('T')[0]; startDate = today; endDate = today;">
+                <!-- KARTU SHOPEE (DUMMY) -->
+                <div class="bg-orange-500 text-white rounded-lg shadow-lg p-6">
                     <h3 class="text-2xl font-bold flex items-center mb-4"><svg class="w-8 h-8 mr-3" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4z"></path><path fill-rule="evenodd" d="M3 8h14v7a2 2 0 01-2 2H5a2 2 0 01-2-2V8zm5 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>Shopee</h3>
                     <div class="flex items-end gap-2 mb-6">
-                        <div class="flex-1"><label for="shopeeStartDate" class="block text-sm font-medium text-orange-100">Mulai</label><input type="date" id="shopeeStartDate" x-model="startDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-800 sm:text-sm"></div>
-                        <div class="flex-1"><label for="shopeeEndDate" class="block text-sm font-medium text-orange-100">Selesai</label><input type="date" id="shopeeEndDate" x-model="endDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-800 sm:text-sm"></div>
+                        <div class="flex-1"><label class="block text-sm font-medium text-orange-100">Mulai</label><input type="date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-800 sm:text-sm"></div>
+                        <div class="flex-1"><label class="block text-sm font-medium text-orange-100">Selesai</label><input type="date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-800 sm:text-sm"></div>
                         <button class="px-4 py-2 bg-white text-orange-600 rounded-md hover:bg-orange-50 font-bold">Filter</button>
                     </div>
                     <div class="space-y-4">
@@ -258,108 +266,96 @@
                         <div class="flex justify-between items-center"><span class="text-lg text-orange-100">Total Nilai</span><span class="text-2xl font-bold">Rp 1.250.000</span></div>
                         <div class="flex justify-between items-center"><span class="text-lg text-orange-100">Total Pembeli</span><span class="text-2xl font-bold">89 Pembeli</span></div>
                     </div>
-
-                    <!-- Tambahan Top 3 Pembeli -->
                     <div class="mt-6 pt-4 border-t border-orange-400">
                         <h4 class="font-bold text-lg mb-2">Top 3 Pembeli</h4>
                         <div class="space-y-3 text-sm">
-                            <!-- Pembeli 1 -->
                             <div class="flex items-center justify-between">
-                                <div class="flex items-center">
-                                    <img src="https://i.pravatar.cc/40?u=user1" alt="User" class="w-8 h-8 rounded-full mr-3 border-2 border-orange-200">
-                                    <div>
-                                        <p class="font-semibold">Budi_Susanto</p>
-                                        <p class="text-xs text-orange-100">Produk: Kacamata</p>
-                                    </div>
-                                </div>
+                                <div class="flex items-center"><img src="https://i.pravatar.cc/40?u=user1" alt="User" class="w-8 h-8 rounded-full mr-3 border-2 border-orange-200"><div><p class="font-semibold">Budi_Susanto</p><p class="text-xs text-orange-100">Produk: Kacamata</p></div></div>
                                 <span class="font-bold bg-white text-orange-600 px-2 py-1 rounded-full text-xs">15x Beli</span>
                             </div>
-                            <!-- Pembeli 2 -->
                             <div class="flex items-center justify-between">
-                                <div class="flex items-center">
-                                    <img src="https://i.pravatar.cc/40?u=user2" alt="User" class="w-8 h-8 rounded-full mr-3 border-2 border-orange-200">
-                                    <div>
-                                        <p class="font-semibold">Citra_Lestari</p>
-                                        <p class="text-xs text-orange-100">Produk: Baju Kemeja Polos</p>
-                                    </div>
-                                </div>
+                                <div class="flex items-center"><img src="https://i.pravatar.cc/40?u=user2" alt="User" class="w-8 h-8 rounded-full mr-3 border-2 border-orange-200"><div><p class="font-semibold">Citra_Lestari</p><p class="text-xs text-orange-100">Produk: Baju Kemeja Polos</p></div></div>
                                 <span class="font-bold bg-white text-orange-600 px-2 py-1 rounded-full text-xs">12x Beli</span>
                             </div>
-                            <!-- Pembeli 3 -->
                             <div class="flex items-center justify-between">
-                                <div class="flex items-center">
-                                    <img src="https://i.pravatar.cc/40?u=user3" alt="User" class="w-8 h-8 rounded-full mr-3 border-2 border-orange-200">
-                                    <div>
-                                        <p class="font-semibold">Dewi_Ayu</p>
-                                        <p class="text-xs text-orange-100">Produk: Celana Jeans Biru</p>
-                                    </div>
-                                </div>
+                                <div class="flex items-center"><img src="https://i.pravatar.cc/40?u=user3" alt="User" class="w-8 h-8 rounded-full mr-3 border-2 border-orange-200"><div><p class="font-semibold">Dewi_Ayu</p><p class="text-xs text-orange-100">Produk: Celana Jeans Biru</p></div></div>
                                 <span class="font-bold bg-white text-orange-600 px-2 py-1 rounded-full text-xs">9x Beli</span>
                             </div>
                         </div>
                     </div>
-
                     <a href="#" class="mt-6 inline-block bg-white text-orange-600 font-bold py-2 px-4 rounded-lg hover:bg-orange-100 transition">Buka Seller Centre</a>
                 </div>
-                <!-- KARTU TOKOPEDIA -->
-                <div class="bg-green-600 text-white rounded-lg shadow-lg p-6" x-data="{ startDate: '', endDate: '' }" x-init="const today = new Date().toISOString().split('T')[0]; startDate = today; endDate = today;">
-                    <h3 class="text-2xl font-bold flex items-center mb-4"><svg class="w-8 h-8 mr-3" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.658-.463 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>Tokopedia</h3>
+
+                <!-- KARTU TOKOPEDIA (DINAMIS DENGAN AJAX) -->
+                <div class="bg-green-600 text-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-2xl font-bold flex items-center mb-4">
+                        <svg class="w-8 h-8 mr-3" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.658-.463 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
+                        Tokopedia
+                    </h3>
+                    
+                    {{-- Filter Area --}}
                     <div class="flex items-end gap-2 mb-6">
-                        <div class="flex-1"><label for="tokpedStartDate" class="block text-sm font-medium text-green-100">Mulai</label><input type="date" id="tokpedStartDate" x-model="startDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-800 sm:text-sm"></div>
-                        <div class="flex-1"><label for="tokpedEndDate" class="block text-sm font-medium text-green-100">Selesai</label><input type="date" id="tokpedEndDate" x-model="endDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-800 sm:text-sm"></div>
-                        <button class="px-4 py-2 bg-white text-green-600 rounded-md hover:bg-green-50 font-bold">Filter</button>
-                    </div>
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-center"><span class="text-lg text-green-100">Total Pesanan</span><span class="text-2xl font-bold">8 Ton</span></div>
-                        <div class="flex justify-between items-center"><span class="text-lg text-green-100">Total Nilai</span><span class="text-2xl font-bold">Rp 840.000</span></div>
-                        <div class="flex justify-between items-center"><span class="text-lg text-green-100">Total Pembeli</span><span class="text-2xl font-bold">56 Pembeli</span></div>
+                        <div class="flex-1">
+                            <label for="tokopedia-start-date" class="block text-sm font-medium text-green-100">Mulai</label>
+                            <input type="date" id="tokopedia-start-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-800 sm:text-sm">
+                        </div>
+                        <div class="flex-1">
+                            <label for="tokopedia-end-date" class="block text-sm font-medium text-green-100">Selesai</label>
+                            <input type="date" id="tokopedia-end-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-800 sm:text-sm">
+                        </div>
+                        <button id="tokopedia-filter-btn" class="px-4 py-2 bg-white text-green-600 rounded-md hover:bg-green-50 font-bold">Filter</button>
+                        <button id="tokopedia-reset-btn" class="px-4 py-2 bg-green-700 text-white rounded-md hover:bg-green-800 font-bold">Reset</button>
                     </div>
 
-                    <!-- Tambahan Top 3 Pembeli -->
-                    <div class="mt-6 pt-4 border-t border-green-500">
-                        <h4 class="font-bold text-lg mb-2">Top 3 Pembeli</h4>
-                        <div class="space-y-3 text-sm">
-                            <!-- Pembeli 1 -->
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center">
-                                    <img src="https://i.pravatar.cc/40?u=user4" alt="User" class="w-8 h-8 rounded-full mr-3 border-2 border-green-200">
-                                    <div>
-                                        <p class="font-semibold">Eko_Prasetyo</p>
-                                        <p class="text-xs text-green-100">Produk: Kaos Hitam</p>
-                                    </div>
-                                </div>
-                                <span class="font-bold bg-white text-green-600 px-2 py-1 rounded-full text-xs">18x Beli</span>
+                    {{-- Area Statistik --}}
+                    <div id="tokopedia-stats-container" class="relative">
+                        {{-- Loading Spinner --}}
+                        <div id="tokopedia-loading" class="absolute inset-0 bg-green-600 bg-opacity-75 flex items-center justify-center z-10 hidden">
+                            <svg class="animate-spin h-8 w-8 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-lg text-green-100">Total Pesanan</span>
+                                <span class="text-2xl font-bold">8 Ton</span> {{-- Dummy value --}}
                             </div>
-                            <!-- Pembeli 2 -->
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center">
-                                    <img src="https://i.pravatar.cc/40?u=user5" alt="User" class="w-8 h-8 rounded-full mr-3 border-2 border-green-200">
-                                    <div>
-                                        <p class="font-semibold">Fitri_Nur</p>
-                                        <p class="text-xs text-green-100">Produk: Kaos Putih</p>
-                                    </div>
-                                </div>
-                                <span class="font-bold bg-white text-green-600 px-2 py-1 rounded-full text-xs">14x Beli</span>
+                            <div class="flex justify-between items-center">
+                                <span class="text-lg text-green-100">Total Nilai</span>
+                                <span id="tokopedia-total-nilai" class="text-2xl font-bold">Rp {{ number_format($tokopediaCardData['total_nilai'], 0, ',', '.') }}</span>
                             </div>
-                            <!-- Pembeli 3 -->
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center">
-                                    <img src="https://i.pravatar.cc/40?u=user6" alt="User" class="w-8 h-8 rounded-full mr-3 border-2 border-green-200">
-                                    <div>
-                                        <p class="font-semibold">Gita_Sari</p>
-                                        <p class="text-xs text-green-100">Produk: Celana Jeans Biru</p>
-                                    </div>
-                                </div>
-                                <span class="font-bold bg-white text-green-600 px-2 py-1 rounded-full text-xs">11x Beli</span>
+                            <div class="flex justify-between items-center">
+                                <span class="text-lg text-green-100">Total Pembeli</span>
+                                <span id="tokopedia-total-pembeli" class="text-2xl font-bold">{{ $tokopediaCardData['total_pembeli'] }} Pembeli</span>
                             </div>
                         </div>
+
+                        {{-- Top 3 Pembeli --}}
+                        <div class="mt-6 pt-4 border-t border-green-500">
+                            <h4 class="font-bold text-lg mb-2">Top 3 Pembeli</h4>
+                            <div id="tokopedia-top-buyers" class="space-y-3 text-sm">
+                                @forelse ($tokopediaCardData['top_buyers'] as $buyer)
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <img src="https://i.pravatar.cc/40?u={{ urlencode($buyer->recipient_name) }}" alt="User" class="w-8 h-8 rounded-full mr-3 border-2 border-green-200">
+                                            <p class="font-semibold">{{ $buyer->recipient_name }}</p>
+                                        </div>
+                                        <span class="font-bold bg-white text-green-600 px-2 py-1 rounded-full text-xs">{{ $buyer->purchase_count }}x Beli</span>
+                                    </div>
+                                @empty
+                                    <p class="text-green-100">Tidak ada data pembeli.</p>
+                                @endforelse
+                            </div>
+                        </div>
+                        <a href="https://seller-id.tokopedia.com/" 
+                           class="mt-6 inline-block bg-white text-green-600 font-bold py-2 px-4 rounded-lg hover:bg-green-100 transition" 
+                           target="_blank" 
+                           rel="noopener noreferrer">
+                           Buka Seller Center
+                        </a>
                     </div>
-                    <a href="https://seller-id.tokopedia.com/" 
-                    class="mt-6 inline-block bg-white text-green-600 font-bold py-2 px-4 rounded-lg hover:bg-green-100 transition" 
-                    target="_blank" 
-                    rel="noopener noreferrer">
-                    Buka Seller Center
-                    </a>
                 </div>
             </div>
         </div>
@@ -367,4 +363,75 @@
 
     <!-- Script untuk Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Script untuk AJAX Kartu Tokopedia -->
+    <script>
+    $(document).ready(function() {
+        function formatRupiah(angka) {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0
+            }).format(angka);
+        }
+
+        function updateTokopediaCard() {
+            const startDate = $('#tokopedia-start-date').val();
+            const endDate = $('#tokopedia-end-date').val();
+            const loadingSpinner = $('#tokopedia-loading');
+
+            loadingSpinner.removeClass('hidden');
+
+            $.ajax({
+                url: '{{ route("ecommerce.dashboard.tokopedia_stats") }}',
+                type: 'GET',
+                data: {
+                    start_date: startDate,
+                    end_date: endDate
+                },
+                success: function(data) {
+                    $('#tokopedia-total-nilai').text(formatRupiah(data.total_nilai));
+                    $('#tokopedia-total-pembeli').text(data.total_pembeli + ' Pembeli');
+
+                    const topBuyersContainer = $('#tokopedia-top-buyers');
+                    topBuyersContainer.empty();
+
+                    if (data.top_buyers && data.top_buyers.length > 0) {
+                        let allBuyersHtml = '';
+                        data.top_buyers.forEach(buyer => {
+                            const buyerHtml = `
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <img src="https://i.pravatar.cc/40?u=${encodeURIComponent(buyer.recipient_name)}" alt="User" class="w-8 h-8 rounded-full mr-3 border-2 border-green-200">
+                                        <p class="font-semibold">${buyer.recipient_name}</p>
+                                    </div>
+                                    <span class="font-bold bg-white text-green-600 px-2 py-1 rounded-full text-xs">${buyer.purchase_count}x Beli</span>
+                                </div>
+                            `;
+                            allBuyersHtml += buyerHtml;
+                        });
+                        topBuyersContainer.html(allBuyersHtml);
+                    } else {
+                        topBuyersContainer.html('<p class="text-green-100">Tidak ada data pembeli.</p>');
+                    }
+                },
+                error: function() {
+                    alert('Gagal memuat data. Silakan coba lagi.');
+                },
+                complete: function() {
+                    loadingSpinner.addClass('hidden');
+                }
+            });
+        }
+
+        $('#tokopedia-filter-btn').on('click', function() {
+            updateTokopediaCard();
+        });
+
+        $('#tokopedia-reset-btn').on('click', function() {
+            $('#tokopedia-start-date').val('');
+            $('#tokopedia-end-date').val('');
+            updateTokopediaCard();
+        });
+    });
+    </script>
 </x-app-layout>

@@ -95,9 +95,9 @@
                  <div class="p-6 bg-white border-gray-200">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-xl font-bold">Peringatan Stok Rendah</h2>
-                        <a href="/ecommerce/products" class="text-sm font-semibold text-indigo-600 hover:text-indigo-900">Lihat Semua Produk</a>
+                        <a href="{{ route('ecommerce.products.index') }}" class="text-sm font-semibold text-indigo-600 hover:text-indigo-900">Lihat Semua Produk</a>
                     </div>
-                    <div class="max-h-[196px] overflow-y-auto pr-2">
+                    <div class="max-h-[260px] overflow-y-auto pr-2">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50 sticky top-0">
                                 <tr>
@@ -106,184 +106,336 @@
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center">
-                                            <div class="flex-shrink-0 h-16 w-16"><img class="h-16 w-16 rounded-md object-cover" src="https://cdn.shopify.com/s/files/1/0601/5415/1102/files/casablanca_1000x.jpg" alt="Baju Kemeja"></div>
-                                            <div class="ml-4"><div class="text-sm font-medium text-gray-900">Baju Kemeja Polos</div></div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">3</span></td>
-                                </tr>
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center">
-                                            <div class="flex-shrink-0 h-16 w-16"><img class="h-16 w-16 rounded-md object-cover" src="https://cdn.shopify.com/s/files/1/0601/5415/1102/files/casablanca_1000x.jpg" alt="Celana Jeans"></div>
-                                            <div class="ml-4"><div class="text-sm font-medium text-gray-900">Celana Jeans Biru</div></div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">5</span></td>
-                                </tr>
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center">
-                                            <div class="flex-shrink-0 h-16 w-16"><img class="h-16 w-16 rounded-md object-cover" src="https://cdn.shopify.com/s/files/1/0601/5415/1102/files/casablanca_1000x.jpg" alt="Kacamata"></div>
-                                            <div class="ml-4"><div class="text-sm font-medium text-gray-900">Kacamata Hitam</div></div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">8</span></td>
-                                </tr>
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center">
-                                            <div class="flex-shrink-0 h-16 w-16"><img class="h-16 w-16 rounded-md object-cover" src="https://cdn.shopify.com/s/files/1/0601/5415/1102/files/casablanca_1000x.jpg" alt="Kaos Putih"></div>
-                                            <div class="ml-4"><div class="text-sm font-medium text-gray-900">Kaos Putih Polos</div></div>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">2</span></td>
-                                </tr>
+                                @forelse ($lowStockProducts as $product)
+                                    <tr>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <div class="flex-shrink-0 h-16 w-16">
+                                                    <img class="h-16 w-16 rounded-md object-cover" 
+                                                         src="{{ $product->main_image_url ?? 'https://via.placeholder.com/150' }}" 
+                                                         alt="{{ $product->title }}">
+                                                </div>
+                                                <div class="ml-4">
+                                                    <div class="text-sm font-medium text-gray-900">{{ $product->title }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            {{-- Memberi warna berbeda untuk stok yang sangat rendah --}}
+                                            @if($product->total_stock <= 5)
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                                                    {{ $product->total_stock }}
+                                                </span>
+                                            @else
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                                                    {{ $product->total_stock }}
+                                                </span>
+                                            @endif
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="2" class="px-6 py-4 text-center text-gray-500">
+                                            Tidak ada produk dengan stok rendah.
+                                        </td>
+                                    </tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- Satu Baris Untuk Top Sales dan Grafik (TIDAK DIUBAH) -->
-            <div class="mt-8 grid grid-cols-1 lg:grid-cols-5 gap-8">
-                <!-- KIRI: TOP 3 PRODUK TERLARIS -->
-                <div class="lg:col-span-2" x-data="{ startDate: '', endDate: '' }" x-init="const today = new Date().toISOString().split('T')[0]; startDate = today; endDate = today;">
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg h-full">
-                        <div class="p-6 bg-white border-gray-200">
-                            <h2 class="text-xl font-bold text-center mb-4">Top 3 Produk Terlaris</h2>
-                            <div class="flex items-center justify-center space-x-2 md:space-x-4">
-                                <div class="flex-1"><label for="topProductStartDate" class="block text-sm font-medium text-gray-700">Mulai</label><input type="date" id="topProductStartDate" x-model="startDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></div>
-                                <div class="flex-1"><label for="topProductEndDate" class="block text-sm font-medium text-gray-700">Selesai</label><input type="date" id="topProductEndDate" x-model="endDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"></div>
-                                <button class="self-end px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Filter</button>
-                            </div>
-                            <div class="flex items-end justify-center space-x-4 text-center mt-6">
-                                <div class="w-1/4"><img src="https://cdn.shopify.com/s/files/1/0601/5415/1102/files/casablanca_1000x.jpg" alt="Produk 2" class="w-16 h-16 object-cover mx-auto rounded-full border-4 border-gray-300"><h4 class="mt-2 font-semibold text-sm">Kaos Putih</h4><div class="bg-gray-300 rounded-t-lg h-24 mt-2 flex items-center justify-center"><span class="text-3xl font-bold text-white">2</span></div></div>
-                                <div class="w-1/3"><img src="https://cdn.shopify.com/s/files/1/0601/5415/1102/files/casablanca_1000x.jpg" alt="Produk 1" class="w-16 h-16 object-cover mx-auto rounded-full border-4 border-yellow-400"><h4 class="mt-2 font-semibold text-sm">Kacamata</h4><div class="bg-yellow-400 rounded-t-lg h-32 mt-2 flex items-center justify-center"><span class="text-4xl font-bold text-white">1</span></div></div>
-                                <div class="w-1/4"><img src="https://cdn.shopify.com/s/files/1/0601/5415/1102/files/casablanca_1000x.jpg" alt="Produk 3" class="w-16 h-16 object-cover mx-auto rounded-full border-4 border-yellow-600"><h4 class="mt-2 font-semibold text-sm">Kaos Hitam</h4><div class="bg-yellow-600 rounded-t-lg h-20 mt-2 flex items-center justify-center"><span class="text-3xl font-bold text-white">3</span></div></div>
-                            </div>
+   <!-- Satu Baris Untuk Top Sales dan Grafik -->
+<div class="mt-8 grid grid-cols-1 lg:grid-cols-5 gap-8">
+    <!-- KIRI: TOP 3 PRODUK TERLARIS -->
+    <div class="lg:col-span-2">
+        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg h-full">
+            <div class="p-6 bg-white border-gray-200">
+                <h2 class="text-xl font-bold text-center mb-4">Top 3 Produk Terlaris</h2>
+
+                {{-- Form Filter Tanggal --}}
+                <form method="GET" action="{{ route('dashboard.ecommerce') }}" class="flex items-center justify-center space-x-2 md:space-x-4">
+                    <div class="flex-1">
+                        <label for="topProductStartDate" class="block text-sm font-medium text-gray-700">Mulai</label>
+                        <input type="date" id="topProductStartDate" name="start_date" value="{{ $startDate }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    </div>
+                    <div class="flex-1">
+                        <label for="topProductEndDate" class="block text-sm font-medium text-gray-700">Selesai</label>
+                        <input type="date" id="topProductEndDate" name="end_date" value="{{ $endDate }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    </div>
+                    <div class="self-end flex items-center space-x-1">
+                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Filter</button>
+                        @if($startDate || $endDate)
+                        <a href="{{ route('dashboard.ecommerce') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 text-sm font-medium">Reset</a>
+                        @endif
+                    </div>
+                </form>
+
+                {{-- Tampilan Podium Dinamis --}}
+                @if($topProducts->isNotEmpty())
+                <div class="flex items-end justify-center space-x-4 text-center mt-6">
+                    {{-- Posisi 2 --}}
+                    <div class="w-1/4">
+                        @if(isset($topProducts[1]))
+                        <img src="{{ $topProducts[1]->image_url }}" alt="{{ $topProducts[1]->product_name }}" class="w-16 h-16 object-cover mx-auto rounded-full border-4 border-gray-300">
+                        <h4 class="mt-2 font-semibold text-sm truncate">{{ $topProducts[1]->product_name }}</h4>
+                        <div class="bg-gray-300 rounded-t-lg h-24 mt-2 flex items-center justify-center">
+                            <span class="text-3xl font-bold text-white">2</span>
                         </div>
+                        <p class="text-xs text-gray-500 mt-1">{{ $topProducts[1]->total_sold }} terjual</p>
+                        @endif
+                    </div>
+                    {{-- Posisi 1 --}}
+                    <div class="w-1/3">
+                        @if(isset($topProducts[0]))
+                        <img src="{{ $topProducts[0]->image_url }}" alt="{{ $topProducts[0]->product_name }}" class="w-16 h-16 object-cover mx-auto rounded-full border-4 border-yellow-400">
+                        <h4 class="mt-2 font-semibold text-sm truncate">{{ $topProducts[0]->product_name }}</h4>
+                        <div class="bg-yellow-400 rounded-t-lg h-32 mt-2 flex items-center justify-center">
+                            <span class="text-4xl font-bold text-white">1</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">{{ $topProducts[0]->total_sold }} terjual</p>
+                        @endif
+                    </div>
+                    {{-- Posisi 3 --}}
+                    <div class="w-1/4">
+                        @if(isset($topProducts[2]))
+                        <img src="{{ $topProducts[2]->image_url }}" alt="{{ $topProducts[2]->product_name }}" class="w-16 h-16 object-cover mx-auto rounded-full border-4 border-yellow-600">
+                        <h4 class="mt-2 font-semibold text-sm truncate">{{ $topProducts[2]->product_name }}</h4>
+                        <div class="bg-yellow-600 rounded-t-lg h-20 mt-2 flex items-center justify-center">
+                            <span class="text-3xl font-bold text-white">3</span>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">{{ $topProducts[2]->total_sold }} terjual</p>
+                        @endif
                     </div>
                 </div>
+                @else
+                <div class="text-center mt-10 text-gray-500">
+                    <p>Tidak ada data penjualan untuk rentang tanggal yang dipilih.</p>
+                </div>
+                @endif
+            </div>
+        </div>
+    </div>
 
-                <!-- KANAN: GRAFIK PENJUALAN DINAMIS DENGAN SEMUA FILTER -->
-                <div class="lg:col-span-3"
-                    x-data="{
-                        salesChart: null,
-                        startDate: '',
-                        endDate: '',
-                        selectedProduct: 'all',
-                        chartMetric: 'revenue',
-                        products: [
-                            { id: 'all', name: 'Semua Produk' },
-                            { id: 'product_a', name: 'Baju Kemeja Polos' },
-                            { id: 'product_b', name: 'Celana Jeans Biru' },
-                            { id: 'product_c', name: 'Kacamata' }
-                        ],
-                        chartData: {
-                            revenue: { all: [12.5, 19.2, 14.3, 25.5, 22.1, 30.7, 28.4], product_a: [5.1, 8.2, 6.0, 11.3, 9.5, 12.1, 11.9], product_b: [3.5, 4.1, 3.8, 7.2, 6.8, 9.9, 9.1], product_c: [3.9, 6.9, 4.5, 7.0, 5.8, 8.7, 7.4] },
-                            quantity: { all: [120, 150, 135, 198, 180, 250, 241], product_a: [50, 65, 55, 80, 75, 98, 95], product_b: [35, 40, 38, 55, 52, 77, 72], product_c: [35, 45, 42, 63, 53, 75, 74] }
-                        },
-                        updateChart() {
-                            const data = this.chartData[this.chartMetric][this.selectedProduct];
-                            const isRevenue = this.chartMetric === 'revenue';
-                            this.salesChart.data.datasets[0].data = data;
-                            this.salesChart.data.datasets[0].label = isRevenue ? 'Pendapatan (Juta Rp)' : 'Jumlah Terjual';
-                            this.salesChart.options.scales.y.ticks.callback = (value) => isRevenue ? value + ' Jt' : value;
-                            this.salesChart.options.plugins.tooltip.callbacks.label = (context) => {
-                                let label = context.dataset.label || '';
-                                if (label) { label += ': '; }
-                                if (context.parsed.y !== null) { label += isRevenue ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(context.parsed.y * 1000000) : context.parsed.y + ' unit'; }
-                                return label;
-                            };
-                            this.salesChart.update();
+    <!-- KANAN: GRAFIK PENJUALAN DINAMIS DENGAN SEMUA FILTER -->
+    <div class="lg:col-span-3" x-data="{
+                    salesChart: null,
+                    startDate: '{{ $startDate ?? now()->subDays(30)->toDateString() }}',
+                    endDate: '{{ $endDate ?? now()->toDateString() }}',
+                    selectedProduct: 'all',
+                    chartMetric: 'revenue',
+                    isLoading: true,
+
+                    // Fungsi untuk membuat atau menginisialisasi chart
+                    initChart(labels, data) {
+                        // Hancurkan chart lama jika ada untuk mencegah memory leak dan konflik
+                        if (this.salesChart) {
+                            this.salesChart.destroy();
                         }
-                    }"
-                    x-init="
-                        const today = new Date().toISOString().split('T')[0]; startDate = today; endDate = today;
-                        const ctx = $refs.salesChartCanvas.getContext('2d');
-                        salesChart = new Chart(ctx, {
+
+                        const isRevenue = this.chartMetric === 'revenue';
+                        const ctx = this.$refs.salesChartCanvas.getContext('2d');
+
+                        this.salesChart = new Chart(ctx, {
                             type: 'line',
                             data: {
-                                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul'],
+                                labels: labels,
                                 datasets: [{
-                                    label: 'Pendapatan (Juta Rp)',
-                                    data: chartData.revenue.all,
-                                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                                    borderColor: 'rgba(54, 162, 235, 1)',
+                                    label: isRevenue ? 'Pendapatan (Juta Rp)' : 'Jumlah Terjual',
+                                    data: data,
+                                    backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                                    borderColor: 'rgba(79, 70, 229, 1)',
                                     borderWidth: 2,
                                     tension: 0.3
                                 }]
                             },
                             options: {
-                                responsive: true, maintainAspectRatio: false,
-                                scales: { y: { beginAtZero: true, ticks: { callback: (value) => value + ' Jt' } } },
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    y: {
+                                        beginAtZero: true,
+                                        ticks: {
+                                            callback: (value) => isRevenue ? value + ' Jt' : value
+                                        }
+                                    }
+                                },
                                 plugins: {
-                                    legend: { display: true, position: 'top' },
-                                    tooltip: { callbacks: { label: (context) => { let label = context.dataset.label || ''; if (label) { label += ': '; } if (context.parsed.y !== null) { label += new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(context.parsed.y * 1000000); } return label; } } }
+                                    legend: {
+                                        display: true,
+                                        position: 'top'
+                                    },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: (context) => {
+                                                let label = context.dataset.label || '';
+                                                if (label) { label += ': '; }
+                                                if (context.parsed.y !== null) {
+                                                    label += isRevenue
+                                                        ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(context.parsed.y * 1000000)
+                                                        : context.parsed.y + ' unit';
+                                                }
+                                                return label;
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         });
-                    "
-                >
-                     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg h-full">
-                        <div class="p-6 bg-white border-gray-200">
-                            <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold">Grafik Penjualan</h2></div>
-                            <!-- Area Filter Grafik -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                <!-- Filter Tanggal -->
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div><label for="chartStartDate" class="block text-sm font-medium text-gray-700">Mulai</label><input type="date" id="chartStartDate" x-model="startDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm"></div>
-                                    <div><label for="chartEndDate" class="block text-sm font-medium text-gray-700">Selesai</label><input type="date" id="chartEndDate" x-model="endDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm"></div>
-                                </div>
-                                <!-- Filter Produk & Metrik -->
-                                <div class="flex items-end gap-2">
-                                    <div class="flex-grow"><label class="block text-sm font-medium text-gray-700">Produk</label><select x-model="selectedProduct" @change="updateChart()" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm"><template x-for="product in products" :key="product.id"><option :value="product.id" x-text="product.name"></option></template></select></div>
-                                    <div class="flex-shrink-0"><label class="block text-sm font-medium text-gray-700">Metrik</label><div class="inline-flex rounded-md shadow-sm mt-1" role="group"><button @click="chartMetric = 'revenue'; updateChart()" type="button" :class="{ 'bg-indigo-600 text-white': chartMetric === 'revenue', 'bg-white text-gray-700 hover:bg-gray-50': chartMetric !== 'revenue' }" class="px-3 py-2 text-sm font-medium rounded-l-md border">Rp</button><button @click="chartMetric = 'quantity'; updateChart()" type="button" :class="{ 'bg-indigo-600 text-white': chartMetric === 'quantity', 'bg-white text-gray-700 hover:bg-gray-50': chartMetric !== 'quantity' }" class="px-3 py-2 text-sm font-medium rounded-r-md border">Qty</button></div></div>
-                                </div>
+                    },
+
+                    // Fungsi untuk mengambil data dari server dan memperbarui chart
+                    updateChartData() {
+                        this.isLoading = true;
+                        $.ajax({
+                            url: '{{ route("ecommerce.dashboard.chart_data") }}',
+                            type: 'GET',
+                            data: {
+                                start_date: this.startDate,
+                                end_date: this.endDate,
+                                product_name: this.selectedProduct
+                            },
+                            success: (response) => {
+                                const data = this.chartMetric === 'revenue' ? response.revenue : response.quantity;
+                                // Panggil initChart untuk membuat ulang chart dengan data baru
+                                this.initChart(response.labels, data);
+                            },
+                            error: () => {
+                                alert('Gagal memuat data grafik. Silakan coba lagi.');
+                            },
+                            complete: () => {
+                                this.isLoading = false;
+                            }
+                        });
+                    }
+                }" x-init="
+                    // Panggil saat inisialisasi pertama kali
+                    updateChartData();
+                ">
+        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg h-full">
+            <div class="p-6 bg-white border-gray-200">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Grafik Penjualan</h2>
+                </div>
+                <!-- Area Filter Grafik -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <!-- Filter Tanggal -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label for="chartStartDate" class="block text-sm font-medium text-gray-700">Mulai</label>
+                            <input type="date" id="chartStartDate" x-model="startDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                        </div>
+                        <div>
+                            <label for="chartEndDate" class="block text-sm font-medium text-gray-700">Selesai</label>
+                            <input type="date" id="chartEndDate" x-model="endDate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm">
+                        </div>
+                    </div>
+                    <!-- Filter Produk & Metrik -->
+                    <div class="flex items-end gap-2">
+                        <div class="flex-grow">
+                            <label class="block text-sm font-medium text-gray-700">Produk</label>
+                            <select x-model="selectedProduct" @change="updateChartData()" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm">
+                                <option value="all">Semua Produk</option>
+                                @foreach($productsForFilter as $productName)
+                                <option value="{{ $productName }}">{{ $productName }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="flex-shrink-0">
+                            <label class="block text-sm font-medium text-gray-700">Metrik</label>
+                            <div class="inline-flex rounded-md shadow-sm mt-1" role="group">
+                                <button @click="chartMetric = 'revenue'; updateChartData()" type="button" :class="{ 'bg-indigo-600 text-white': chartMetric === 'revenue', 'bg-white text-gray-700 hover:bg-gray-50': chartMetric !== 'revenue' }" class="px-3 py-2 text-sm font-medium rounded-l-md border">Rp</button>
+                                <button @click="chartMetric = 'quantity'; updateChartData()" type="button" :class="{ 'bg-indigo-600 text-white': chartMetric === 'quantity', 'bg-white text-gray-700 hover:bg-gray-50': chartMetric !== 'quantity' }" class="px-3 py-2 text-sm font-medium rounded-r-md border">Qty</button>
                             </div>
-                            <div class="h-80"><canvas x-ref="salesChartCanvas"></canvas></div>
+                        </div>
+                        <div class="self-end">
+                            <button @click="updateChartData()" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Filter</button>
                         </div>
                     </div>
                 </div>
+                <div class="h-80 relative">
+                    <div x-show="isLoading" class="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10">
+                        <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </div>
+                    <canvas x-ref="salesChartCanvas"></canvas>
+                </div>
             </div>
+        </div>
+    </div>
+</div> <!-- Menutup .grid-cols-5 (Container Utama) -->
 
             <!-- Bagian Kolom E-Commerce: Shopee dan Tokopedia -->
             <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
                 <!-- KARTU SHOPEE (DUMMY) -->
-                <div class="bg-orange-500 text-white rounded-lg shadow-lg p-6">
-                    <h3 class="text-2xl font-bold flex items-center mb-4"><svg class="w-8 h-8 mr-3" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4z"></path><path fill-rule="evenodd" d="M3 8h14v7a2 2 0 01-2 2H5a2 2 0 01-2-2V8zm5 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>Shopee</h3>
+               <div class="bg-orange-500 text-white rounded-lg shadow-lg p-6">
+                    <h3 class="text-2xl font-bold flex items-center mb-4">
+                        <svg class="w-8 h-8 mr-3" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4z"></path><path fill-rule="evenodd" d="M3 8h14v7a2 2 0 01-2 2H5a2 2 0 01-2-2V8zm5 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
+                        Shopee
+                    </h3>
+                    
+                    {{-- Filter Area --}}
                     <div class="flex items-end gap-2 mb-6">
-                        <div class="flex-1"><label class="block text-sm font-medium text-orange-100">Mulai</label><input type="date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-800 sm:text-sm"></div>
-                        <div class="flex-1"><label class="block text-sm font-medium text-orange-100">Selesai</label><input type="date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-800 sm:text-sm"></div>
-                        <button class="px-4 py-2 bg-white text-orange-600 rounded-md hover:bg-orange-50 font-bold">Filter</button>
+                        <div class="flex-1">
+                            <label for="shopee-start-date" class="block text-sm font-medium text-orange-100">Mulai</label>
+                            <input type="date" id="shopee-start-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-800 sm:text-sm">
+                        </div>
+                        <div class="flex-1">
+                            <label for="shopee-end-date" class="block text-sm font-medium text-orange-100">Selesai</label>
+                            <input type="date" id="shopee-end-date" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-gray-800 sm:text-sm">
+                        </div>
+                        <button id="shopee-filter-btn" class="px-4 py-2 bg-white text-orange-600 rounded-md hover:bg-orange-50 font-bold">Filter</button>
+                        <button id="shopee-reset-btn" class="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 font-bold">Reset</button>
                     </div>
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-center"><span class="text-lg text-orange-100">Total Pesanan</span><span class="text-2xl font-bold">12 Ton</span></div>
-                        <div class="flex justify-between items-center"><span class="text-lg text-orange-100">Total Nilai</span><span class="text-2xl font-bold">Rp 1.250.000</span></div>
-                        <div class="flex justify-between items-center"><span class="text-lg text-orange-100">Total Pembeli</span><span class="text-2xl font-bold">89 Pembeli</span></div>
-                    </div>
-                    <div class="mt-6 pt-4 border-t border-orange-400">
-                        <h4 class="font-bold text-lg mb-2">Top 3 Pembeli</h4>
-                        <div class="space-y-3 text-sm">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center"><img src="https://i.pravatar.cc/40?u=user1" alt="User" class="w-8 h-8 rounded-full mr-3 border-2 border-orange-200"><div><p class="font-semibold">Budi_Susanto</p><p class="text-xs text-orange-100">Produk: Kacamata</p></div></div>
-                                <span class="font-bold bg-white text-orange-600 px-2 py-1 rounded-full text-xs">15x Beli</span>
+
+                    {{-- Area Statistik --}}
+                    <div id="shopee-stats-container" class="relative">
+                        {{-- Loading Spinner --}}
+                        <div id="shopee-loading" class="absolute inset-0 bg-orange-500 bg-opacity-75 flex items-center justify-center z-10 hidden">
+                            <svg class="animate-spin h-8 w-8 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-lg text-orange-100">Total Nilai</span>
+                                <span id="shopee-total-nilai" class="text-2xl font-bold">Rp {{ number_format($shopeeCardData['total_nilai'], 0, ',', '.') }}</span>
                             </div>
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center"><img src="https://i.pravatar.cc/40?u=user2" alt="User" class="w-8 h-8 rounded-full mr-3 border-2 border-orange-200"><div><p class="font-semibold">Citra_Lestari</p><p class="text-xs text-orange-100">Produk: Baju Kemeja Polos</p></div></div>
-                                <span class="font-bold bg-white text-orange-600 px-2 py-1 rounded-full text-xs">12x Beli</span>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center"><img src="https://i.pravatar.cc/40?u=user3" alt="User" class="w-8 h-8 rounded-full mr-3 border-2 border-orange-200"><div><p class="font-semibold">Dewi_Ayu</p><p class="text-xs text-orange-100">Produk: Celana Jeans Biru</p></div></div>
-                                <span class="font-bold bg-white text-orange-600 px-2 py-1 rounded-full text-xs">9x Beli</span>
+                            <div class="flex justify-between items-center">
+                                <span class="text-lg text-orange-100">Total Pembeli</span>
+                                <span id="shopee-total-pembeli" class="text-2xl font-bold">{{ $shopeeCardData['total_pembeli'] }} Pembeli</span>
                             </div>
                         </div>
+
+                        {{-- Top 3 Pembeli --}}
+                        <div class="mt-6 pt-4 border-t border-orange-400">
+                            <h4 class="font-bold text-lg mb-2">Top 3 Pembeli</h4>
+                            <div id="shopee-top-buyers" class="space-y-3 text-sm">
+                                @forelse ($shopeeCardData['top_buyers'] as $buyer)
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center">
+                                            <img src="https://i.pravatar.cc/40?u={{ urlencode($buyer->recipient_name) }}" alt="User" class="w-8 h-8 rounded-full mr-3 border-2 border-orange-200">
+                                            <p class="font-semibold">{{ $buyer->recipient_name }}</p>
+                                        </div>
+                                        <span class="font-bold bg-white text-orange-600 px-2 py-1 rounded-full text-xs">{{ $buyer->purchase_count }}x Beli</span>
+                                    </div>
+                                @empty
+                                    <p class="text-orange-100">Tidak ada data pembeli.</p>
+                                @endforelse
+                            </div>
+                        </div>
+                        <a href="https://seller.shopee.co.id/" 
+                           class="mt-6 inline-block bg-white text-orange-600 font-bold py-2 px-4 rounded-lg hover:bg-orange-100 transition" 
+                           target="_blank" 
+                           rel="noopener noreferrer">
+                           Buka Seller Centre
+                        </a>
                     </div>
-                    <a href="#" class="mt-6 inline-block bg-white text-orange-600 font-bold py-2 px-4 rounded-lg hover:bg-orange-100 transition">Buka Seller Centre</a>
                 </div>
 
                 <!-- KARTU TOKOPEDIA (DINAMIS DENGAN AJAX) -->
@@ -373,6 +525,55 @@
                 minimumFractionDigits: 0
             }).format(angka);
         }
+
+          function updateShopeeCard() {
+            const startDate = $('#shopee-start-date').val();
+            const endDate = $('#shopee-end-date').val();
+            const loadingSpinner = $('#shopee-loading');
+
+            loadingSpinner.removeClass('hidden');
+
+            $.ajax({
+                url: '{{ route("ecommerce.dashboard.shopee_stats") }}',
+                type: 'GET',
+                data: { start_date: startDate, end_date: endDate },
+                success: function(data) {
+                    $('#shopee-total-nilai').text(formatRupiah(data.total_nilai));
+                    $('#shopee-total-pembeli').text(data.total_pembeli + ' Pembeli');
+
+                    const topBuyersContainer = $('#shopee-top-buyers');
+                    topBuyersContainer.empty();
+
+                    if (data.top_buyers && data.top_buyers.length > 0) {
+                        let allBuyersHtml = '';
+                        data.top_buyers.forEach(buyer => {
+                            const buyerHtml = `
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <img src="https://i.pravatar.cc/40?u=${encodeURIComponent(buyer.recipient_name)}" alt="User" class="w-8 h-8 rounded-full mr-3 border-2 border-orange-200">
+                                        <p class="font-semibold">${buyer.recipient_name}</p>
+                                    </div>
+                                    <span class="font-bold bg-white text-orange-600 px-2 py-1 rounded-full text-xs">${buyer.purchase_count}x Beli</span>
+                                </div>
+                            `;
+                            allBuyersHtml += buyerHtml;
+                        });
+                        topBuyersContainer.html(allBuyersHtml);
+                    } else {
+                        topBuyersContainer.html('<p class="text-orange-100">Tidak ada data pembeli.</p>');
+                    }
+                },
+                error: function() { alert('Gagal memuat data Shopee.'); },
+                complete: function() { loadingSpinner.addClass('hidden'); }
+            });
+        }
+
+        $('#shopee-filter-btn').on('click', updateShopeeCard);
+        $('#shopee-reset-btn').on('click', function() {
+            $('#shopee-start-date').val('');
+            $('#shopee-end-date').val('');
+            updateShopeeCard();
+        });
 
         function updateTokopediaCard() {
             const startDate = $('#tokopedia-start-date').val();

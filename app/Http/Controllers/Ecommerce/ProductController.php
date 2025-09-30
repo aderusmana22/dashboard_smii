@@ -1,89 +1,172 @@
 <?php
 
-// app/Http/Controllers/Ecommerce/ProductController.php
-
 namespace App\Http\Controllers\Ecommerce;
 
 use App\Http\Controllers\Controller;
-use App\Services\TiktokShop\TiktokProductService;
-use App\Services\TiktokShop\TiktokUpdateInventoryService; // <-- 1. IMPORT SERVICE BARU
-use App\Exceptions\TiktokApiException;
+use App\Models\MasterProduct;
 use App\Models\EcommerceSetting;
-use App\Models\TiktokProduct;
-use Illuminate\Http\Request; // <-- 2. IMPORT REQUEST
-use Illuminate\Support\Facades\Log;
+use App\Services\MasterProductService;
+use App\Services\TiktokShop\TiktokProductSyncService;
+use App\Services\TiktokShop\TiktokUpdateInventoryService;
+use App\Services\TiktokShop\TiktokUpdatePriceService; // <-- TAMBAHKAN INI
+use App\Services\Shopee\ShopeeProductSyncService;
+use App\Services\Shopee\ShopeeUpdateInventoryService;
+use App\Services\Shopee\ShopeeUpdatePriceService; // <-- TAMBAHKAN INI
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Facades\Log;
 
 class ProductController extends Controller
 {
-    protected TiktokProductService $tiktokProductService;
-    protected TiktokUpdateInventoryService $tiktokUpdateInventoryService; // <-- 3. TAMBAHKAN PROPERTI
-
     public function __construct(
-        TiktokProductService $tiktokProductService,
-        TiktokUpdateInventoryService $tiktokUpdateInventoryService // <-- 4. INJECT DI CONSTRUCTOR
+        protected TiktokProductSyncService $tiktokSyncService,
+        protected ShopeeProductSyncService $shopeeSyncService,
+        protected MasterProductService $masterProductService,
+        protected TiktokUpdateInventoryService $tiktokUpdateInventoryService,
+        protected ShopeeUpdateInventoryService $shopeeUpdateInventoryService,
+        protected TiktokUpdatePriceService $tiktokUpdatePriceService, // <-- TAMBAHKAN INI
+        protected ShopeeUpdatePriceService $shopeeUpdatePriceService  // <-- TAMBAHKAN INI
     ) {
-        $this->tiktokProductService = $tiktokProductService;
-        $this->tiktokUpdateInventoryService = $tiktokUpdateInventoryService; // <-- 5. ASSIGN
     }
 
+    // ... (fungsi index, syncTiktok, syncShopee tetap sama) ...
     public function index(): View
     {
-        // ... (metode index tidak berubah)
-        $orderClause = "CASE status
-                            WHEN 'ACTIVATE' THEN 1
-                            WHEN 'SELLER_DEACTIVATED' THEN 2
-                            WHEN 'DELETED' THEN 3
-                            WHEN 'UNKNOWN' THEN 4
-                            ELSE 5
-                        END";
-        $products = TiktokProduct::orderByRaw($orderClause)
-                                   ->latest('updated_at')
-                                   ->paginate(15);
-        $lastSync = EcommerceSetting::where('key', 'tiktok_products_last_sync')->value('value');
-        return view('ecommerce.product', compact('products', 'lastSync'));
+        $products = MasterProduct::with(['tiktok_product', 'shopee_product'])
+            ->orderByRaw(
+                "CASE
+                    WHEN
+                        EXISTS (
+                            SELECT 1 FROM tiktok_products
+                            WHERE tiktok_products.id = master_products.tiktok_product_id
+                            AND tiktok_products.status = 'ACTIVATE'
+                        )
+                    OR
+                        EXISTS (
+                            SELECT 1 FROM shopee_products
+                            WHERE shopee_products.id = master_products.shopee_product_id
+                            AND shopee_products.item_status = 'NORMAL'
+                        )
+                    THEN 1
+                    ELSE 0
+                END DESC"
+            )
+            ->latest('updated_at') // Urutan sekunder: yang terbaru di atas
+            ->paginate(15);
+
+        $lastSyncTiktok = EcommerceSetting::where('key', 'tiktok_products_last_sync')->value('value');
+        $lastSyncShopee = EcommerceSetting::where('key', 'shopee_products_last_sync')->value('value');
+
+        return view('ecommerce.product', compact('products', 'lastSyncTiktok', 'lastSyncShopee'));
     }
 
-    public function sync(): RedirectResponse
+    public function syncTiktok(): RedirectResponse
     {
-        // ... (metode sync tidak berubah)
         try {
-            $count = $this->tiktokProductService->syncProductsFromApi();
-            return redirect()->route('ecommerce.products.index')
-                ->with('success', "Sinkronisasi berhasil. {$count} produk telah diperbarui.");
-        } catch (TiktokApiException $e) {
-            Log::error('Error di ProductController@sync: ' . $e->getMessage());
-            return redirect()->route('ecommerce.products.index')
-                ->with('error', 'Gagal sinkronisasi produk dari TikTok: ' . $e->getMessage());
+            $this->tiktokSyncService->syncProductsFromApi();
+            $this->masterProductService->syncMasterTable();
+            EcommerceSetting::updateOrCreate(['key' => 'tiktok_products_last_sync'], ['value' => now()]);
+            return redirect()->route('ecommerce.products.index')->with('success', 'Sinkronisasi produk TikTok berhasil.');
+        } catch (\Exception $e) {
+            Log::error('Error sync TikTok: ' . $e->getMessage());
+            return redirect()->route('ecommerce.products.index')->with('error', 'Gagal sinkronisasi TikTok: ' . $e->getMessage());
+        }
+    }
+
+    public function syncShopee(): RedirectResponse
+    {
+        try {
+            $this->shopeeSyncService->syncProductsFromApi();
+            $this->masterProductService->syncMasterTable();
+            EcommerceSetting::updateOrCreate(['key' => 'shopee_products_last_sync'], ['value' => now()]);
+            return redirect()->route('ecommerce.products.index')->with('success', 'Sinkronisasi produk Shopee berhasil.');
+        } catch (\Exception $e) {
+            Log::error('Error sync Shopee: ' . $e->getMessage());
+            return redirect()->route('ecommerce.products.index')->with('error', 'Gagal sinkronisasi Shopee: ' . $e->getMessage());
+        }
+    }
+
+
+    public function updateStock(Request $request, MasterProduct $product): RedirectResponse
+    {
+        $validated = $request->validate(['stock' => 'required|integer|min:0']);
+        $newMasterStock = $validated['stock'];
+        $errors = [];
+
+        $product->load(['tiktok_product', 'shopee_product']);
+
+        // 1. Update di TikTok jika terhubung
+        if ($product->tiktok_product) {
+            try {
+                $this->tiktokUpdateInventoryService->updateInventory($product->tiktok_product, $newMasterStock);
+                $product->tiktok_product->update(['total_stock' => $newMasterStock]);
+            } catch (\Exception $e) {
+                Log::error("Gagal update stok TikTok untuk master product ID {$product->id}: " . $e->getMessage());
+                $errors[] = 'Gagal update stok TikTok: ' . $e->getMessage();
+            }
+        }
+
+        // 2. Update di Shopee jika terhubung
+        if ($product->shopee_product) {
+            try {
+                $this->shopeeUpdateInventoryService->updateInventory($product->shopee_product, $newMasterStock);
+                $product->shopee_product->update(['total_stock' => $newMasterStock]);
+            } catch (\Exception $e) {
+                Log::error("Gagal update stok Shopee untuk master product ID {$product->id}: " . $e->getMessage());
+                $errors[] = 'Gagal update stok Shopee: ' . $e->getMessage();
+            }
+        }
+
+        // 3. Jika tidak ada error, update stok di tabel master
+        if (empty($errors)) {
+            $product->update(['total_stock' => $newMasterStock]);
+            return redirect()->route('ecommerce.products.index')->with('success', "Stok untuk '{$product->title}' berhasil diperbarui menjadi {$newMasterStock} di semua platform.");
+        } else {
+            return redirect()->route('ecommerce.products.index')->with('error', implode('; ', $errors));
         }
     }
 
     /**
-     * ==================================================================
-     * --- 6. TAMBAHKAN METODE BARU UNTUK UPDATE STOK ---
-     * ==================================================================
+     * == FUNGSI BARU ==
+     * Memperbarui harga produk di semua platform yang terhubung.
      */
-    public function updateStock(Request $request, TiktokProduct $product): RedirectResponse
+    public function updatePrice(Request $request, MasterProduct $product): RedirectResponse
     {
-        $validated = $request->validate([
-            'stock' => 'required|integer|min:0',
-        ]);
+        $validated = $request->validate(['price' => 'required|numeric|min:0']);
+        $newPrice = $validated['price'];
+        $errors = [];
 
-        try {
-            // Panggil service untuk update stok di API TikTok
-            $this->tiktokUpdateInventoryService->updateInventory($product, $validated['stock']);
+        $product->load(['tiktok_product', 'shopee_product']);
 
-            // Jika berhasil, update juga stok di database lokal
-            $product->update(['total_stock' => $validated['stock']]);
+        // 1. Update harga di TikTok jika terhubung
+        if ($product->tiktok_product) {
+            try {
+                // API TikTok mengharapkan harga sebagai string
+                $this->tiktokUpdatePriceService->updatePrice($product->tiktok_product, (string)$newPrice);
+            } catch (\Exception $e) {
+                Log::error("Gagal update harga TikTok untuk master product ID {$product->id}: " . $e->getMessage());
+                $errors[] = 'Gagal update harga TikTok: ' . $e->getMessage();
+            }
+        }
 
-            return redirect()->route('ecommerce.products.index')
-                ->with('success', "Stok untuk produk '{$product->title}' berhasil diperbarui.");
+        // 2. Update harga di Shopee jika terhubung
+        if ($product->shopee_product) {
+            try {
+                // API Shopee mengharapkan harga sebagai float/numeric
+                $this->shopeeUpdatePriceService->updatePrice($product->shopee_product, (float)$newPrice);
+            } catch (\Exception $e) {
+                Log::error("Gagal update harga Shopee untuk master product ID {$product->id}: " . $e->getMessage());
+                $errors[] = 'Gagal update harga Shopee: ' . $e->getMessage();
+            }
+        }
 
-        } catch (TiktokApiException $e) {
-            Log::error("Gagal update stok untuk produk ID {$product->id}: " . $e->getMessage());
-            return redirect()->route('ecommerce.products.index')
-                ->with('error', "Gagal memperbarui stok: " . $e->getMessage());
+        if (empty($errors)) {
+            // Tidak perlu update harga di tabel master karena tidak ada kolomnya
+            // Cukup berikan pesan sukses
+            return redirect()->route('ecommerce.products.index')->with('success', "Harga untuk '{$product->title}' berhasil dikirim untuk diperbarui di semua platform.");
+        } else {
+            return redirect()->route('ecommerce.products.index')->with('error', implode('; ', $errors));
         }
     }
 }

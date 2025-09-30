@@ -14,6 +14,7 @@ return new class extends Migration
             $table->id();
             $table->string('tiktok_product_id')->unique()->comment('ID produk dari TikTok API');
             $table->string('title');
+            $table->string('sku')->nullable()->index();
             $table->string('status');
             $table->text('main_image_url')->nullable();
             $table->unsignedInteger('total_stock')->default(0);

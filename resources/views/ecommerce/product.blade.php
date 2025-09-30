@@ -1,85 +1,78 @@
 <x-app-layout>
-    @section('title', 'Daftar Produk')
+    @section('title', 'Daftar Produk Master')
 
-    {{-- Alpine.js --}}
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
-    {{-- State Alpine.js --}}
-    <div class="py-12" 
-         x-data="{ 
-            isModalOpen: false, 
-            modalProductTitle: '', 
-            modalCurrentStock: 0,
-            modalUpdateUrl: '' 
-         }">
-
+    <div class="py-12" x-data="{
+        isStockModalOpen: false,
+        isPriceModalOpen: false,
+        modalProductTitle: '',
+        modalCurrentStock: 0,
+        modalUpdateStockUrl: '',
+        modalUpdatePriceUrl: ''
+    }">
         <div class="max-w-9xl mx-auto sm:px-6 lg:px-8">
 
-            {{-- Flash message --}}
+            {{-- ... (Notifikasi success/error tetap sama) ... --}}
             @if (session('success'))
                 <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
-                    <strong class="font-bold">Berhasil!</strong>
                     <span class="block sm:inline">{{ session('success') }}</span>
                 </div>
             @endif
             @if (session('error'))
                 <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-                    <strong class="font-bold">Gagal!</strong>
                     <span class="block sm:inline">{{ session('error') }}</span>
                 </div>
             @endif
 
-            {{-- Card --}}
+
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 bg-white border-b border-gray-200">
-
-                    {{-- Header --}}
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
                         <div>
-                            <h2 class="text-2xl font-bold text-gray-900">Daftar Produk TikTok</h2>
+                            <h2 class="text-2xl font-bold text-gray-900">Daftar Produk Master</h2>
+                            {{-- PERUBAHAN TEKS --}}
                             <p class="text-sm text-gray-500 mt-1">
-                                Data terakhir diperbarui: 
-                                <span class="font-medium text-gray-700">
-                                    {{ $lastSync ? \Carbon\Carbon::parse($lastSync)->isoFormat('D MMMM YYYY, HH:mm:ss') : 'Belum pernah disinkronisasi' }}
-                                </span>
+                                Tokopedia Sync: <span class="font-medium">{{ $lastSyncTiktok ? \Carbon\Carbon::parse($lastSyncTiktok)->diffForHumans() : 'Belum pernah' }}</span>
+                            </p>
+                             <p class="text-sm text-gray-500 mt-1">
+                                Shopee Sync: <span class="font-medium">{{ $lastSyncShopee ? \Carbon\Carbon::parse($lastSyncShopee)->diffForHumans() : 'Belum pernah' }}</span>
                             </p>
                         </div>
-                        <form action="{{ route('ecommerce.products.sync') }}" method="POST" class="mt-4 sm:mt-0" id="sync-form">
-                            @csrf
-                            <button type="submit" class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:border-indigo-900 focus:ring ring-indigo-300 disabled:opacity-25 transition ease-in-out duration-150">
-                                <svg class="w-4 h-4 mr-2 -ml-1 animate-spin hidden" id="sync-spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                <span id="sync-text">Perbarui Data</span>
-                            </button>
-                        </form>
+                        <div class="flex space-x-2 mt-4 sm:mt-0">
+                            <form action="{{ route('ecommerce.products.sync.tiktok') }}" method="POST" class="sync-form">
+                                @csrf
+                                {{-- PERUBAHAN WARNA DAN TEKS TOMBOL --}}
+                                <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700">
+                                    <svg class="w-4 h-4 mr-2 -ml-1 animate-spin hidden sync-spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                    <span class="sync-text">Sync Tokopedia</span>
+                                </button>
+                            </form>
+                             <form action="{{ route('ecommerce.products.sync.shopee') }}" method="POST" class="sync-form">
+                                @csrf
+                                <button type="submit" class="inline-flex items-center px-4 py-2 bg-orange-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-orange-500">
+                                    <svg class="w-4 h-4 mr-2 -ml-1 animate-spin hidden sync-spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                    <span class="sync-text">Sync Shopee</span>
+                                </button>
+                            </form>
+                        </div>
                     </div>
 
-                    {{-- Table --}}
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produk</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Platform</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Harga</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stok</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stok Total</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status Platform</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
                                 </tr>
                             </thead>
+
                             <tbody class="bg-white divide-y divide-gray-200 text-sm">
                                 @forelse ($products as $product)
-                                    @php
-                                        $status_map = [
-                                            'SELLER_DEACTIVATED' => ['text' => 'Nonaktif', 'class' => 'bg-yellow-100 text-yellow-800'],
-                                            'ACTIVATE'  => ['text' => 'Aktif', 'class' => 'bg-green-100 text-green-800'],
-                                            'DELETED' => ['text' => 'Dihapus', 'class' => 'bg-red-100 text-red-800'],
-                                            'FROZEN'  => ['text' => 'Dibekukan', 'class' => 'bg-gray-200 text-gray-800'],
-                                            'DRAFT'   => ['text' => 'Draf', 'class' => 'bg-blue-100 text-blue-800'],
-                                        ];
-                                        $product_status = $status_map[strtoupper($product->status)] ?? ['text' => 'Tidak Diketahui', 'class' => 'bg-gray-100 text-gray-800'];
-                                    @endphp
                                     <tr>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="flex items-center">
@@ -88,58 +81,90 @@
                                                 </div>
                                                 <div class="ml-4">
                                                     <div class="text-sm font-medium text-gray-900">{{ $product->title }}</div>
-                                                    <div class="text-xs text-gray-500">ID: {{ $product->tiktok_product_id }}</div>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-gray-900">{{ $product->price_range }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-gray-900">{{ $product->total_stock }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $product_status['class'] }}">{{ $product_status['text'] }}</span>
+                                            <div class="flex flex-col space-y-1">
+                                                @if($product->tiktok_product)
+                                                    {{-- PERUBAHAN WARNA DAN TEKS BADGE --}}
+                                                    <span class="inline-block bg-green-600 text-white text-xs font-semibold px-2 py-1 rounded">Tokopedia</span>
+                                                @endif
+                                                @if($product->shopee_product)
+                                                    <span class="inline-block bg-orange-500 text-white text-xs font-semibold px-2 py-1 rounded">Shopee</span>
+                                                @endif
+                                            </div>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-4">
-                                            <a href="#" class="text-indigo-600 hover:text-indigo-900">Detail</a>
-                                            <button 
-                                                @click="
-                                                    isModalOpen = true;
-                                                    modalProductTitle = @js($product->title);
-                                                    modalCurrentStock = {{ $product->total_stock }};
-                                                    modalUpdateUrl = '{{ route('ecommerce.products.stock.update', $product) }}';
-                                                "
-                                                class="text-green-600 hover:text-green-900">
-                                                Ubah Stok
-                                            </button>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex flex-col space-y-1 text-xs">
+                                                @if($product->tiktok_product)
+                                                    {{-- PERUBAHAN TEKS --}}
+                                                    <span>Tokopedia: <span class="font-semibold">{{ $product->tiktok_product->display_price }}</span></span>
+                                                @endif
+                                                @if($product->shopee_product)
+                                                    <span>Shopee: <span class="font-semibold">{{ $product->shopee_product->display_price }}</span></span>
+                                                @endif
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-gray-900 font-bold text-lg">{{ $product->total_stock }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            <div class="flex flex-col space-y-1 text-xs">
+                                                @if($product->tiktok_product)
+                                                    {{-- PERUBAHAN TEKS --}}
+                                                    <span>Tokopedia: <span class="font-semibold">{{ $product->tiktok_product->status }}</span></span>
+                                                @endif
+                                                @if($product->shopee_product)
+                                                    <span>Shopee: <span class="font-semibold">{{ $product->shopee_product->item_status }}</span></span>
+                                                @endif
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                            <div class="flex space-x-4">
+                                                <button
+                                                    @click="
+                                                        isStockModalOpen = true;
+                                                        modalProductTitle = @js($product->title);
+                                                        modalCurrentStock = {{ $product->total_stock }};
+                                                        modalUpdateStockUrl = '{{ route('ecommerce.products.stock.update', $product) }}';
+                                                    "
+                                                    class="text-indigo-600 hover:text-indigo-900">
+                                                    Ubah Stok
+                                                </button>
+                                                <button
+                                                    @click="
+                                                        isPriceModalOpen = true;
+                                                        modalProductTitle = @js($product->title);
+                                                        modalUpdatePriceUrl = '{{ route('ecommerce.products.price.update', $product) }}';
+                                                    "
+                                                    class="text-green-600 hover:text-green-900">
+                                                    Ubah Harga
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 @empty
-                                    <tr>
-                                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">
-                                            Tidak ada produk di database. Coba klik tombol "Perbarui Data".
-                                        </td>
-                                    </tr>
+                                    <tr><td colspan="6" class="text-center py-4">Tidak ada data produk. Silakan lakukan sinkronisasi.</td></tr>
                                 @endforelse
                             </tbody>
                         </table>
                     </div>
-
-                    <div class="mt-6">
-                        {{ $products->links() }}
-                    </div>
+                    <div class="mt-6">{{ $products->links() }}</div>
                 </div>
             </div>
         </div>
 
-        {{-- Modal dari partial (pastikan path sesuai) --}}
         @include('ecommerce.partials.modals.update-stock-modal')
+        @include('ecommerce.partials.modals.update-price-modal')
 
     </div>
 
-    {{-- JS Spinner untuk sync --}}
     <script>
-        document.getElementById('sync-form').addEventListener('submit', function() {
-            document.getElementById('sync-spinner').classList.remove('hidden');
-            document.getElementById('sync-text').textContent = 'Menyinkronkan...';
-            this.querySelector('button[type="submit"]').disabled = true;
+        document.querySelectorAll('.sync-form').forEach(form => {
+            form.addEventListener('submit', function() {
+                this.querySelector('.sync-spinner').classList.remove('hidden');
+                this.querySelector('.sync-text').textContent = 'Loading...';
+                this.querySelector('button[type="submit"]').disabled = true;
+            });
         });
     </script>
 </x-app-layout>

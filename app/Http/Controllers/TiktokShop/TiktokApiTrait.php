@@ -74,4 +74,20 @@ trait TiktokApiTrait
 
         return $shop->fresh(); // Kembalikan model yang sudah di-refresh
     }
+
+        private function getShopCipher(TiktokShop $shopConnection): string
+    {
+        $path = '/authorization/202309/shops';
+        $timestamp = time();
+        $params = ['app_key' => $this->appKey, 'timestamp' => $timestamp];
+        $params['sign'] = $this->generateSignature($path, $params);
+
+        $response = Http::withHeaders(['x-tts-access-token' => $shopConnection->access_token])
+                        ->get($this->apiBaseUrl . $path, $params);
+
+        if ($response->successful() && $response->json('code') === 0 && !empty($response->json('data.shops'))) {
+            return $response->json('data.shops')[0]['cipher'];
+        }
+        throw new TiktokApiException('Gagal mendapatkan informasi toko (shop_cipher).');
+    }
 }

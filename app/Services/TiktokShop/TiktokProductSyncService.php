@@ -4,33 +4,37 @@ namespace App\Services\TiktokShop;
 
 use App\Exceptions\TiktokApiException;
 use App\Http\Controllers\TiktokShop\TiktokApiTrait;
-use App\Models\EcommerceSetting;
 use App\Models\TiktokProduct;
 use App\Models\TiktokShop;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 
-class TiktokProductService
+class TiktokProductSyncService
 {
     use TiktokApiTrait;
 
     protected TiktokGetProductService $getProductService;
 
+    /**
+     * Constructor untuk menginject service yang mengambil detail produk.
+     */
     public function __construct(TiktokGetProductService $getProductService)
     {
         $this->getProductService = $getProductService;
     }
 
     /**
-     * Mengambil semua produk dari API, menyimpannya ke database,
-     * dan memperbarui timestamp sinkronisasi.
+     * Menjalankan alur sinkronisasi penuh:
+     * 1. Mendapatkan daftar ID produk.
+     * 2. Mengambil detail untuk setiap ID.
+     * 3. Menyimpan data ke tabel `tiktok_products`.
      */
-    public function syncProductsFromApi(int $pageSize = 100): int
+    public function syncProductsFromApi(int $pageSize = 100): void
     {
         $shopConnection = TiktokShop::first();
         if (!$shopConnection) {
-            throw new TiktokApiException('Koneksi toko TikTok tidak ditemukan.');
+            throw new TiktokApiException('Koneksi toko TikTok tidak ditemukan di database.');
         }
 
         $this->initializeTiktokApi();
@@ -42,39 +46,27 @@ class TiktokProductService
         $productIds = $this->searchAndGetProductIds($shopConnection, $shopCipher, $pageSize);
 
         if (empty($productIds)) {
-            $this->updateLastSyncTimestamp();
-            return 0; // Tidak ada produk untuk disinkronkan
+            Log::info('Tidak ada produk TikTok yang ditemukan untuk disinkronkan.');
+            return;
         }
 
-        $syncedCount = 0;
-        DB::beginTransaction();
-        try {
+        DB::transaction(function () use ($productIds) {
             foreach ($productIds as $id) {
+                // Gunakan service yang di-inject untuk mendapatkan detail
                 $detail = $this->getProductService->getProductDetail($id);
                 if ($detail) {
                     $this->saveOrUpdateProduct($detail);
-                    $syncedCount++;
                 }
             }
-
-            $this->updateLastSyncTimestamp();
-            DB::commit();
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Gagal saat sinkronisasi produk TikTok ke DB', ['error' => $e->getMessage()]);
-            // Lempar kembali exception agar controller bisa menangkapnya
-            throw new TiktokApiException('Proses sinkronisasi produk ke database gagal.');
-        }
-
-        return $syncedCount;
+        });
     }
 
     /**
-     * Menyimpan atau memperbarui produk di database.
+     * Menyimpan atau memperbarui satu produk di tabel `tiktok_products`.
      */
     private function saveOrUpdateProduct(array $productData): void
     {
-        // Kalkulasi data yang akan disimpan
+        // Kalkulasi harga
         $prices = data_get($productData, 'skus.*.price.sale_price', []);
         $min_price = !empty($prices) ? min($prices) : 0;
         $max_price = !empty($prices) ? max($prices) : 0;
@@ -82,6 +74,7 @@ class TiktokProductService
             ? 'Rp' . number_format($min_price)
             : 'Rp' . number_format($min_price) . ' - Rp' . number_format($max_price);
 
+        // Kalkulasi total stok dari semua varian/gudang
         $inventories = data_get($productData, 'skus.*.inventory', []);
         $total_stock = 0;
         if (is_array($inventories)) {
@@ -96,32 +89,19 @@ class TiktokProductService
             ['tiktok_product_id' => $productData['id']], // Kunci unik untuk mencari
             [
                 'title'            => data_get($productData, 'title', 'Tanpa Judul'),
-                
-                // ==================================================
-                // --- PERBAIKAN UTAMA ADA DI BARIS INI ---
-                // ==================================================
+                'sku'              => data_get($productData, 'skus.0.seller_sku'), // Ambil SKU dari varian pertama
                 'status'           => data_get($productData, 'product_status', 'UNKNOWN'),
-                
                 'main_image_url'   => data_get($productData, 'main_images.0.urls.0'),
                 'total_stock'      => $total_stock,
                 'price_range'      => $price_range,
-                'raw_data'         => json_encode($productData), // Simpan data mentah
+                'raw_data'         => json_encode($productData),
             ]
         );
     }
 
     /**
-     * Memperbarui timestamp di tabel settings.
+     * Mengambil semua ID produk dari toko yang terhubung.
      */
-    private function updateLastSyncTimestamp(): void
-    {
-        EcommerceSetting::updateOrCreate(
-            ['key' => 'tiktok_products_last_sync'],
-            ['value' => now()]
-        );
-    }
-
-    // Metode searchAndGetProductIds dan getShopCipher tetap sama, tidak perlu diubah
     private function searchAndGetProductIds(TiktokShop $shopConnection, string $shopCipher, int $pageSize): array
     {
         $path = '/product/202309/products/search';
@@ -135,28 +115,37 @@ class TiktokProductService
         $bodyJsonString = json_encode([]);
         $params['sign'] = $this->generateSignature($path, $params, $bodyJsonString);
         $fullUrl = $this->apiBaseUrl . $path . '?' . http_build_query($params);
+
         $response = Http::withHeaders([
             'x-tts-access-token' => $shopConnection->access_token,
             'Content-Type'       => 'application/json',
         ])->post($fullUrl, []);
+
         if ($response->successful() && $response->json('code') === 0) {
             return array_column($response->json('data.products', []), 'id');
         }
+
         Log::error('Gagal saat mencari ID produk TikTok (Langkah 1)', ['body' => $response->body()]);
         throw new TiktokApiException('Langkah 1 Gagal: Tidak dapat mengambil daftar ID produk.');
     }
 
+    /**
+     * Mendapatkan 'shop_cipher' yang diperlukan untuk request API produk.
+     */
     private function getShopCipher(TiktokShop $shopConnection): string
     {
         $path = '/authorization/202309/shops';
         $timestamp = time();
         $params = ['app_key' => $this->appKey, 'timestamp' => $timestamp];
         $params['sign'] = $this->generateSignature($path, $params);
+
         $response = Http::withHeaders(['x-tts-access-token' => $shopConnection->access_token])
                         ->get($this->apiBaseUrl . $path, $params);
+
         if ($response->successful() && $response->json('code') === 0 && !empty($response->json('data.shops'))) {
             return $response->json('data.shops')[0]['cipher'];
         }
+
         throw new TiktokApiException('Gagal mendapatkan informasi toko (shop_cipher).');
     }
 }

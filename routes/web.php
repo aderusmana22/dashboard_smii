@@ -23,9 +23,9 @@ use App\Http\Controllers\JobController;
 use App\Http\Controllers\AreaController;
 use App\Http\Controllers\MarshoDepartmentController;
 use App\Http\Controllers\MarshoUserController;
-use App\Http\Controllers\ReportController; 
-use App\Http\Controllers\HSE\SafetyBoardController; 
-use App\Http\Controllers\LaporanKecelakaanController; 
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\HSE\SafetyBoardController;
+use App\Http\Controllers\LaporanKecelakaanController;
 use App\Http\Controllers\EditorImageController;
 use App\Http\Controllers\Ecommerce\DashboardEcommerceController;
 use App\Http\Controllers\Ecommerce\ProductController;
@@ -35,6 +35,8 @@ use App\Http\Controllers\TiktokController;
 use App\Http\Controllers\TiktokShop\TiktokProductController;
 use App\Http\Controllers\Ecommerce\OrderListController;
 use App\Http\Controllers\Ecommerce\SalesDashboardController;
+use App\Http\Controllers\Shopee\ShopeeController;
+use App\Http\Controllers\Ecommerce\ShopeeOrderController;
 
 /*
 |--------------------------------------------------------------------------
@@ -148,37 +150,37 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
     Route::prefix('dashboard/safety-board')->name('dashboard.safety-board.')->group(function () {
         Route::get('/', [SafetyBoardController::class, 'index'])->name('index');
         Route::get('/api/safety-data', [SafetyBoardController::class, 'getSafetyData']); // For AJAX calls
-        
+
     });
 
 
-Route::prefix('accidents-report')->name('accidents-report.')->group(function () {
-    
-    // Halaman utama yang akan menampilkan tabel DataTables
-    Route::get('/', [LaporanKecelakaanController::class, 'index'])->name('index');
+    Route::prefix('accidents-report')->name('accidents-report.')->group(function () {
 
-    // Endpoint khusus untuk DataTables mengambil data via AJAX (Server-Side)
-    Route::get('/data', [LaporanKecelakaanController::class, 'getData'])->name('data');
+        // Halaman utama yang akan menampilkan tabel DataTables
+        Route::get('/', [LaporanKecelakaanController::class, 'index'])->name('index');
 
-    // Rute untuk membuat laporan baru
-    Route::get('/create', [LaporanKecelakaanController::class, 'create'])->name('create');
-    Route::post('/', [LaporanKecelakaanController::class, 'store'])->name('store');
+        // Endpoint khusus untuk DataTables mengambil data via AJAX (Server-Side)
+        Route::get('/data', [LaporanKecelakaanController::class, 'getData'])->name('data');
 
-    // =================================================================
-    // PERUBAHAN: Menggunakan {laporan:nomor_form} untuk semua rute
-    // yang memerlukan model LaporanKecelakaan.
-    // =================================================================
+        // Rute untuk membuat laporan baru
+        Route::get('/create', [LaporanKecelakaanController::class, 'create'])->name('create');
+        Route::post('/', [LaporanKecelakaanController::class, 'store'])->name('store');
 
-    // Rute untuk melihat detail laporan
-    Route::get('/{laporan:nomor_form}', [LaporanKecelakaanController::class, 'show'])->name('show');
+        // =================================================================
+        // PERUBAHAN: Menggunakan {laporan:nomor_form} untuk semua rute
+        // yang memerlukan model LaporanKecelakaan.
+        // =================================================================
 
-    // Rute untuk merevisi laporan yang ditolak
-    Route::get('/{laporan:nomor_form}/revise', [LaporanKecelakaanController::class, 'revise'])->name('revise');
+        // Rute untuk melihat detail laporan
+        Route::get('/{laporan:nomor_form}', [LaporanKecelakaanController::class, 'show'])->name('show');
 
-    // Rute untuk aksi persetujuan dan penolakan (akan dipanggil via AJAX)
-    Route::post('/{laporan:nomor_form}/approve', [LaporanKecelakaanController::class, 'approve'])->name('approve');
-    Route::post('/{laporan:nomor_form}/reject', [LaporanKecelakaanController::class, 'reject'])->name('reject');
-});
+        // Rute untuk merevisi laporan yang ditolak
+        Route::get('/{laporan:nomor_form}/revise', [LaporanKecelakaanController::class, 'revise'])->name('revise');
+
+        // Rute untuk aksi persetujuan dan penolakan (akan dipanggil via AJAX)
+        Route::post('/{laporan:nomor_form}/approve', [LaporanKecelakaanController::class, 'approve'])->name('approve');
+        Route::post('/{laporan:nomor_form}/reject', [LaporanKecelakaanController::class, 'reject'])->name('reject');
+    });
 
     Route::post('editor/upload-image', [EditorImageController::class, 'store'])->name('editor.upload.image');
 
@@ -193,7 +195,7 @@ Route::prefix('accidents-report')->name('accidents-report.')->group(function () 
         return response()->json(['count' => auth()->user()->unreadNotifications->count()]);
     })->name('notifications.count');
 
-    
+
     // Rute untuk Job Kanban
     Route::get('/jobs', [JobController::class, 'index'])->name('jobs.index');
     Route::post('/jobs', [JobController::class, 'store'])->name('jobs.store');
@@ -203,7 +205,7 @@ Route::prefix('accidents-report')->name('accidents-report.')->group(function () 
     Route::post('/jobs/{job}/close', [JobController::class, 'close'])->name('jobs.close'); // Gunakan POST karena FormData
 
     // Rute untuk mengelola Resources (Area dan Departemen)
-        // Route ini sudah menangani GET (index) dan POST (store)
+    // Route ini sudah menangani GET (index) dan POST (store)
     Route::resource('areas', AreaController::class)->except(['create', 'show', 'edit']);
 
     // Biasanya, resource controller sudah mencakup ini, tetapi pastikan:
@@ -212,7 +214,7 @@ Route::prefix('accidents-report')->name('accidents-report.')->group(function () 
 
     Route::resource('marsho-departments', MarshoDepartmentController::class)->except(['show', 'edit', 'create']);
 
-       // Rute untuk Activity Log
+    // Rute untuk Activity Log
     Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
 
     // Rute untuk melihat log spesifik per Job
@@ -222,9 +224,9 @@ Route::prefix('accidents-report')->name('accidents-report.')->group(function () 
     Route::post('/marsho-users', [MarshoUserController::class, 'store'])->name('marsho-users.store');
 
     //export kanban
-        Route::prefix('reports')->name('reports.')->group(function() {
-            // == ROUTE BARU UNTUK EKSPOR MARSHO JOBS ==
-            Route::get('/marsho-jobs', [ReportController::class, 'showJobsExportPage'])->name('marsho-jobs.page');
+    Route::prefix('reports')->name('reports.')->group(function () {
+        // == ROUTE BARU UNTUK EKSPOR MARSHO JOBS ==
+        Route::get('/marsho-jobs', [ReportController::class, 'showJobsExportPage'])->name('marsho-jobs.page');
 
         Route::get('/marsho-jobs/export', [ReportController::class, 'exportMarshoJobs'])->name('marsho-jobs.export');
     });
@@ -245,25 +247,58 @@ Route::prefix('accidents-report')->name('accidents-report.')->group(function () 
     Route::get('/ecommerce/settings', [EcommerceSettingsController::class, 'index'])->name('ecommerce.settings.index');
     Route::post('/ecommerce/settings', [EcommerceSettingsController::class, 'update'])->name('ecommerce.settings.update');
     Route::get('/ecommerce/tokopedia/orders-data', [SalesDashboardController::class, 'getPaginatedOrders'])->name('ecommerce.tokopedia.orders.data');
+Route::get('/ecommerce/shopee/orders-data', [SalesDashboardController::class, 'getPaginatedShopeeOrders'])->name('ecommerce.shopee.orders.data');
+
 
     Route::get('/ecommerce/products', [ProductController::class, 'index'])->name('ecommerce.products.index');
     Route::post('/ecommerce/products/sync', [ProductController::class, 'sync'])->name('ecommerce.products.sync');
     Route::post('/ecommerce/products/{product}/stock', [ProductController::class, 'updateStock'])->name('ecommerce.products.stock.update');
 
+
+            // === BAGIAN YANG PERLU DIPERBAIKI / DITAMBAHKAN ===
+    // Route untuk memicu sinkronisasi TikTok
+    Route::post('ecommerce/products/sync-tiktok', [ProductController::class, 'syncTiktok'])->name('ecommerce.products.sync.tiktok');
+
+    // Route untuk memicu sinkronisasi Shopee (INI YANG HILANG)
+    Route::post('ecommerce/products/sync-shopee', [ProductController::class, 'syncShopee'])->name('ecommerce.products.sync.shopee');
+    // =================================================
+
+    // Route untuk memperbarui stok produk master
+    Route::post('ecommerce/products/{product}/update-stock', [ProductController::class, 'updateStock'])->name('products.stock.update');
+
+    // Route AJAX untuk statistik kartu
+Route::get('/ecommerce/dashboard/tokopedia-stats', [DashboardEcommerceController::class, 'fetchTokopediaStats'])->name('ecommerce.dashboard.tokopedia_stats');
+
+// == ROUTE BARU UNTUK AJAX KARTU SHOPEE ==
+Route::get('/ecommerce/dashboard/shopee-stats', [DashboardEcommerceController::class, 'fetchShopeeStats'])->name('ecommerce.dashboard.shopee_stats');
+
     Route::get('/ecommerce/dashboard/tokopedia-stats', [DashboardEcommerceController::class, 'fetchTokopediaStats'])->name('ecommerce.dashboard.tokopedia_stats');
     Route::get('/ecommerce/sales/fetch-data', [SalesDashboardController::class, 'fetchSalesData'])->name('ecommerce.sales.fetch_data');
-    
+Route::get('/ecommerce/dashboard/chart-data', [DashboardEcommerceController::class, 'fetchChartData'])->name('ecommerce.dashboard.chart_data');
+Route::post('/ecommerce/products/{product}/update-price', [ProductController::class, 'updatePrice'])
+    ->name('ecommerce.products.price.update');
     Route::prefix('tiktok')->name('tiktok.')->group(function () {
         Route::get('/auth', [TiktokController::class, 'redirectToAuth'])->name('auth');
         Route::get('/callback', [TiktokController::class, 'handleCallback'])->name('callback');
         Route::delete('/disconnect', [TiktokController::class, 'disconnect'])->name('disconnect');
     });
 
+    Route::prefix('shopee')->name('shopee.')->group(function () {
+        Route::get('/auth', [ShopeeController::class, 'redirectToAuth'])->name('auth');
+        Route::get('/callback', [ShopeeController::class, 'handleCallback'])->name('callback');
+        Route::post('/disconnect', [ShopeeController::class, 'disconnect'])->name('disconnect');
+    });
+
+    Route::post('/ecommerce/shopee/orders/sync', [ShopeeOrderController::class, 'syncOrders'])
+    ->name('ecommerce.shopee.orders.sync');
+    // Route untuk sinkronisasi (pastikan sudah ada)\
+    Route::post('/ecommerce/tiktok/orders/sync', [OrderListController::class, 'syncOrders'])->name('ecommerce.tiktok.orders.sync');
+
     Route::get('/tiktok/products', [TiktokProductController::class, 'index'])->name('tiktok.products.index');
     Route::get('/tiktok/orders', [OrderListController::class, 'index'])->name('tiktok.orders.data');
 
     Route::post('/ecommerce/tiktok/sync', [OrderListController::class, 'syncOrders'])->name('ecommerce.tiktok.sync');
-    
+
     // TESTING
     Route::get('/tiktok-debug', [TiktokController::class, 'debugApiCall']);
 

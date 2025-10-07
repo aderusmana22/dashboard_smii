@@ -28,7 +28,7 @@
         <div class="max-w-9xl mx-auto sm:px-6 lg:px-8">
             
             @if (session('success'))
-                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
+                <div class="bg-green-100 border border-green-400 text-white px-4 py-3 rounded relative mb-4" role="alert">
                     <strong class="font-bold">Berhasil!</strong>
                     <span class="block sm:inline">{{ session('success') }}</span>
                 </div>
@@ -74,21 +74,21 @@
                     Laporan Penjualan Shopee
                 </h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div class="bg-gray-50 p-6 rounded-lg">
-                        <h3 class="text-sm font-medium text-gray-500">Total Pendapatan (Shopee)</h3>
-                        <p class="mt-2 text-3xl font-bold text-gray-900">Rp {{ number_format($shopee_summary['total_revenue'], 0, ',', '.') }}</p>
+                    <div class="bg-[#EE4D2D] border border-orange-200 p-6 rounded-lg">
+                        <h3 class="text-sm font-medium text-white">Total Pendapatan (Shopee)</h3>
+                        <p class="mt-2 text-3xl font-bold text-white">Rp {{ number_format($shopee_summary['total_revenue'], 0, ',', '.') }}</p>
                     </div>
-                    <div class="bg-gray-50 p-6 rounded-lg">
-                        <h3 class="text-sm font-medium text-gray-500">Total Pesanan (Shopee)</h3>
-                        <p class="mt-2 text-3xl font-bold text-gray-900">{{ number_format($shopee_summary['total_orders'], 0, ',', '.') }}</p>
+                    <div class="bg-[#EE4D2D] border border-orange-200 p-6 rounded-lg">
+                        <h3 class="text-sm font-medium text-white">Total Pesanan (Shopee)</h3>
+                        <p class="mt-2 text-3xl font-bold text-white">{{ number_format($shopee_summary['total_orders'], 0, ',', '.') }}</p>
                     </div>
-                    <div class="bg-gray-50 p-6 rounded-lg">
-                        <h3 class="text-sm font-medium text-gray-500">Produk Terjual (Shopee)</h3>
-                        <p class="mt-2 text-3xl font-bold text-gray-900">{{ number_format($shopee_summary['total_products_sold'], 0, ',', '.') }}</p>
+                    <div class="bg-[#EE4D2D] border border-orange-200 p-6 rounded-lg">
+                        <h3 class="text-sm font-medium text-white">Produk Terjual (Shopee)</h3>
+                        <p class="mt-2 text-3xl font-bold text-white">{{ number_format($shopee_summary['total_products_sold'], 0, ',', '.') }}</p>
                     </div>
-                    <div class="bg-gray-50 p-6 rounded-lg">
-                        <h3 class="text-sm font-medium text-gray-500">Rata-rata Nilai Pesanan (Shopee)</h3>
-                        <p class="mt-2 text-3xl font-bold text-gray-900">Rp {{ number_format($shopee_summary['average_order_value'], 0, ',', '.') }}</p>
+                    <div class="bg-[#EE4D2D] border border-orange-200 p-6 rounded-lg">
+                        <h3 class="text-sm font-medium text-white">Rata-rata Nilai Pesanan (Shopee)</h3>
+                        <p class="mt-2 text-3xl font-bold text-white">Rp {{ number_format($shopee_summary['average_order_value'], 0, ',', '.') }}</p>
                     </div>
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -99,11 +99,11 @@
                         </div>
                         <div class="overflow-x-auto border rounded-lg">
                             <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
+                                <thead class="bg-[#EE4D2D]">
                                     <tr>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Invoice</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pelanggan</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jumlah</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Invoice</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Pelanggan</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Jumlah</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
@@ -114,7 +114,7 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-semibold">Rp {{ number_format($sale->total_amount, 0, ',', '.') }}</td>
                                         </tr>
                                     @empty
-                                        <tr><td colspan="3" class="px-6 py-4 text-center text-gray-500">Tidak ada data transaksi Shopee.</td></tr>
+                                        <tr><td colspan="3" class="px-6 py-4 text-center text-white">Tidak ada data transaksi Shopee.</td></tr>
                                     @endforelse
                                 </tbody>
                             </table>
@@ -129,11 +129,11 @@
                                     <img class="h-14 w-14 rounded-md object-cover" src="{{ $product->image_url }}" alt="{{ $product->item_name }}">
                                     <div class="flex-1">
                                         <p class="text-sm font-medium text-gray-900">{{ $product->item_name }}</p>
-                                        <p class="text-sm text-gray-500">{{ $product->sold_count }} unit terjual</p>
+                                        <p class="text-sm text-white">{{ $product->sold_count }} unit terjual</p>
                                     </div>
                                 </li>
                                 @empty
-                                 <p class="text-sm text-gray-500">Tidak ada produk terlaris.</p>
+                                 <p class="text-sm text-white">Tidak ada produk terlaris.</p>
                                 @endforelse
                             </ul>
                         </div>
@@ -148,21 +148,21 @@
                     Laporan Penjualan Tokopedia
                 </h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                     <div class="bg-gray-50 p-6 rounded-lg">
-                        <h3 class="text-sm font-medium text-gray-500">Total Pendapatan (Tokopedia)</h3>
-                        <p class="mt-2 text-3xl font-bold text-gray-900">Rp {{ number_format($tokopedia_summary['total_revenue'], 0, ',', '.') }}</p>
+                     <div class="bg-[#42B549] border border-green-200 p-6 rounded-lg">
+                        <h3 class="text-sm font-medium text-white">Total Pendapatan (Tokopedia)</h3>
+                        <p class="mt-2 text-3xl font-bold text-white">Rp {{ number_format($tokopedia_summary['total_revenue'], 0, ',', '.') }}</p>
                     </div>
-                    <div class="bg-gray-50 p-6 rounded-lg">
-                        <h3 class="text-sm font-medium text-gray-500">Total Pesanan (Tokopedia)</h3>
-                        <p class="mt-2 text-3xl font-bold text-gray-900">{{ number_format($tokopedia_summary['total_orders'], 0, ',', '.') }}</p>
+                    <div class="bg-[#42B549] border border-green-200 p-6 rounded-lg">
+                        <h3 class="text-sm font-medium text-white">Total Pesanan (Tokopedia)</h3>
+                        <p class="mt-2 text-3xl font-bold text-white">{{ number_format($tokopedia_summary['total_orders'], 0, ',', '.') }}</p>
                     </div>
-                    <div class="bg-gray-50 p-6 rounded-lg">
-                        <h3 class="text-sm font-medium text-gray-500">Produk Terjual (Tokopedia)</h3>
-                        <p class="mt-2 text-3xl font-bold text-gray-900">{{ number_format($tokopedia_summary['total_products_sold'], 0, ',', '.') }}</p>
+                    <div class="bg-[#42B549] border border-green-200 p-6 rounded-lg">
+                        <h3 class="text-sm font-medium text-white">Produk Terjual (Tokopedia)</h3>
+                        <p class="mt-2 text-3xl font-bold text-white">{{ number_format($tokopedia_summary['total_products_sold'], 0, ',', '.') }}</p>
                     </div>
-                    <div class="bg-gray-50 p-6 rounded-lg">
-                        <h3 class="text-sm font-medium text-gray-500">Rata-rata Nilai Pesanan (Tokopedia)</h3>
-                        <p class="mt-2 text-3xl font-bold text-gray-900">Rp {{ number_format($tokopedia_summary['average_order_value'], 0, ',', '.') }}</p>
+                    <div class="bg-[#42B549] border border-green-200 p-6 rounded-lg">
+                        <h3 class="text-sm font-medium text-white">Rata-rata Nilai Pesanan (Tokopedia)</h3>
+                        <p class="mt-2 text-3xl font-bold text-white">Rp {{ number_format($tokopedia_summary['average_order_value'], 0, ',', '.') }}</p>
                     </div>
                 </div>
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -173,11 +173,11 @@
                         </div>
                         <div class="overflow-x-auto border rounded-lg">
                             <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
+                                <thead class="bg-[#42B549]">
                                     <tr>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Invoice</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pelanggan</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jumlah</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Invoice</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Pelanggan</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-white uppercase">Jumlah</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
@@ -188,7 +188,7 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-800 font-semibold">Rp {{ number_format($sale->total_amount, 0, ',', '.') }}</td>
                                         </tr>
                                     @empty
-                                        <tr><td colspan="3" class="px-6 py-4 text-center text-gray-500">Tidak ada data transaksi untuk rentang tanggal yang dipilih.</td></tr>
+                                        <tr><td colspan="3" class="px-6 py-4 text-center text-white">Tidak ada data transaksi untuk rentang tanggal yang dipilih.</td></tr>
                                     @endforelse
                                 </tbody>
                             </table>
@@ -203,11 +203,11 @@
                                     <img class="h-14 w-14 rounded-md object-cover" src="{{ $product->image_url }}" alt="{{ $product->product_name }}">
                                     <div class="flex-1">
                                         <p class="text-sm font-medium text-gray-900">{{ $product->product_name }}</p>
-                                        <p class="text-sm text-gray-500">{{ $product->sold_count }} unit terjual</p>
+                                        <p class="text-sm text-white">{{ $product->sold_count }} unit terjual</p>
                                     </div>
                                 </li>
                                 @empty
-                                    <p class="text-sm text-gray-500">Tidak ada produk terlaris untuk ditampilkan.</p>
+                                    <p class="text-sm text-white">Tidak ada produk terlaris untuk ditampilkan.</p>
                                 @endforelse
                             </ul>
                         </div>
@@ -224,7 +224,7 @@
 <script>
     function loadShopeeTable(url) {
         const tableContainer = jQuery('#shopee-table-container');
-        tableContainer.html('<div class="p-6 text-center py-10"><p class="text-gray-500">Memuat data...</p></div>');
+        tableContainer.html('<div class="p-6 text-center py-10"><p class="text-white">Memuat data...</p></div>');
         jQuery.ajax({
             url: url, type: 'GET',
             success: function(response) {
@@ -237,7 +237,7 @@
 
     function loadTokopediaTable(url) {
         const tableContainer = jQuery('#tokopedia-table-container');
-        tableContainer.html('<div class="p-6 text-center py-10"><p class="text-gray-500">Memuat data...</p></div>');
+        tableContainer.html('<div class="p-6 text-center py-10"><p class="text-white">Memuat data...</p></div>');
         jQuery.ajax({
             url: url, type: 'GET',
             success: function(response) {

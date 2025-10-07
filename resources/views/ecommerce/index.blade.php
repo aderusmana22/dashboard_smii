@@ -306,226 +306,308 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="lg:col-span-3" x-data="{
-                    salesChart: null,
-                    startDate: '{{ $startDate ?? now()->subDays(30)->toDateString() }}',
-                    endDate: '{{ $endDate ?? now()->toDateString() }}',
-                    selectedProduct: 'all',
-                    chartMetric: 'revenue',
-                    isLoading: true,
-                    hasData: false,
-
-                    initChart(labels, data) {
-                        if (this.salesChart) {
-                            this.salesChart.destroy();
-                        }
-                        const ctx = this.$refs.salesChartCanvas.getContext('2d');
-                        if (!ctx) return;
-
-                        const isRevenue = this.chartMetric === 'revenue';
-                        let yAxisMin, yAxisMax;
-                        const dataMin = Math.min(...data);
-                        const dataMax = Math.max(...data);
-                        const range = dataMax - dataMin;
-
-                        if (range === 0) {
-                            const padding = isRevenue ? Math.max(dataMax * 0.1, 0.5) : Math.max(dataMax * 0.1, 1);
-                            yAxisMin = dataMin - padding;
-                            yAxisMax = dataMax + padding;
-                        } else {
-                            const padding = range * 0.05;
-                            yAxisMin = dataMin - padding;
-                            yAxisMax = dataMax + padding;
-                        }
-                        
-                        if (dataMin >= 0) {
-                            yAxisMin = Math.max(0, yAxisMin);
-                        }
-
-                        this.salesChart = new Chart(ctx, {
-                            type: 'line',
-                            data: {
-                                labels: labels,
-                                datasets: [{
-                                    label: isRevenue ? 'Pendapatan (Juta Rp)' : 'Jumlah Terjual',
-                                    data: data,
-                                    backgroundColor: 'rgba(79, 70, 229, 0.2)',
-                                    borderColor: 'rgba(79, 70, 229, 1)',
-                                    borderWidth: 2,
-                                    tension: 0.3,
-                                    pointRadius: 4,
-                                    pointBackgroundColor: 'rgba(79, 70, 229, 1)',
-                                    pointHoverRadius: 6,
-                                }]
+<div class="lg:col-span-3" x-data="{ 
+    salesChart: null, 
+    startDate: '{{ $startDate ?? now()->subDays(30)->toDateString() }}', 
+    endDate: '{{ $endDate ?? now()->toDateString() }}', 
+    selectedProduct: 'all', 
+    chartMetric: 'revenue', 
+    isLoading: true, 
+    hasData: false,
+    updateTimeout: null,
+    isRendering: false,
+    
+    destroyChart() {
+        if (this.salesChart) {
+            try {
+                this.salesChart.destroy();
+            } catch (e) {
+                console.warn('Chart already destroyed');
+            }
+            this.salesChart = null;
+        }
+    },
+    
+    initChart(labels, data) { 
+        if (this.isRendering) {
+            console.warn('Chart rendering in progress');
+            return;
+        }
+        
+        this.isRendering = true;
+        this.destroyChart();
+        
+        this.$nextTick(() => {
+            setTimeout(() => {
+                const canvas = this.$refs.salesChartCanvas;
+                
+                if (!canvas || !canvas.getContext) {
+                    console.warn('Canvas not ready');
+                    this.isRendering = false;
+                    return;
+                }
+                
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    this.isRendering = false;
+                    return;
+                }
+                
+                const isRevenue = this.chartMetric === 'revenue';
+                let yAxisMin, yAxisMax;
+                const dataMin = Math.min(...data);
+                const dataMax = Math.max(...data);
+                const range = dataMax - dataMin;
+                
+                if (range === 0) {
+                    const padding = isRevenue ? Math.max(dataMax * 0.1, 0.5) : Math.max(dataMax * 0.1, 1);
+                    yAxisMin = dataMin - padding;
+                    yAxisMax = dataMax + padding;
+                } else {
+                    const padding = range * 0.05;
+                    yAxisMin = dataMin - padding;
+                    yAxisMax = dataMax + padding;
+                }
+                
+                if (dataMin >= 0) {
+                    yAxisMin = Math.max(0, yAxisMin);
+                }
+                
+                try {
+                    this.salesChart = new Chart(ctx, { 
+                        type: 'line', 
+                        data: { 
+                            labels: labels, 
+                            datasets: [{ 
+                                label: isRevenue ? 'Pendapatan (Juta Rp)' : 'Jumlah Terjual', 
+                                data: data, 
+                                backgroundColor: 'rgba(79, 70, 229, 0.2)', 
+                                borderColor: 'rgba(79, 70, 229, 1)', 
+                                borderWidth: 2, 
+                                tension: 0.3, 
+                                pointRadius: 4, 
+                                pointBackgroundColor: 'rgba(79, 70, 229, 1)', 
+                                pointHoverRadius: 6, 
+                            }] 
+                        }, 
+                        options: { 
+                            responsive: true, 
+                            maintainAspectRatio: false, 
+                            animation: {
+                                duration: 750
                             },
-                            options: {
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                scales: {
-                                    y: {
-                                        min: yAxisMin,
-                                        max: yAxisMax,
-                                        ticks: {
-                                            maxTicksLimit: 8,
-                                            callback: (value) => isRevenue ? value.toFixed(2) + ' Jt' : Math.round(value)
-                                        }
-                                    }
-                                },
-                                plugins: {
-                                    legend: { display: true, position: 'top' },
-                                    tooltip: {
-                                        callbacks: {
-                                            label: (context) => {
-                                                let label = context.dataset.label || '';
-                                                if (label) { label += ': '; }
-                                                if (context.parsed.y !== null) {
-                                                    label += isRevenue
-                                                        ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(context.parsed.y * 1000000)
-                                                        : context.parsed.y + ' unit';
-                                                }
-                                                return label;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        });
-                    },
+                            scales: { 
+                                y: { 
+                                    min: yAxisMin, 
+                                    max: yAxisMax, 
+                                    ticks: { 
+                                        maxTicksLimit: 8, 
+                                        callback: (value) => isRevenue ? value.toFixed(2) + ' Jt' : Math.round(value) 
+                                    } 
+                                } 
+                            }, 
+                            plugins: { 
+                                legend: { 
+                                    display: true, 
+                                    position: 'top' 
+                                }, 
+                                tooltip: { 
+                                    callbacks: { 
+                                        label: (context) => { 
+                                            let label = context.dataset.label || ''; 
+                                            if (label) { 
+                                                label += ': '; 
+                                            } 
+                                            if (context.parsed.y !== null) { 
+                                                label += isRevenue ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(context.parsed.y * 1000000) : context.parsed.y + ' unit'; 
+                                            } 
+                                            return label; 
+                                        } 
+                                    } 
+                                } 
+                            } 
+                        } 
+                    });
+                } catch (e) {
+                    console.error('Failed to create chart:', e);
+                }
+                
+                this.isRendering = false;
+            }, 150);
+        });
+    }, 
+    
+    updateChartDataDebounced() {
+        if (this.updateTimeout) {
+            clearTimeout(this.updateTimeout);
+        }
+        
+        this.updateTimeout = setTimeout(() => {
+            this.updateChartData();
+        }, 300);
+    },
+    
+    updateChartData() { 
+        if (this.isRendering) {
+            console.warn('Please wait for current render to complete');
+            return;
+        }
+        
+        this.isLoading = true; 
+        
+        $.ajax({ 
+            url: '{{ route('ecommerce.dashboard.chart_data') }}', 
+            type: 'GET', 
+            data: { 
+                start_date: this.startDate, 
+                end_date: this.endDate, 
+                product_name: this.selectedProduct 
+            }, 
+            success: (response) => { 
+                const originalData = this.chartMetric === 'revenue' ? response.revenue : response.quantity; 
+                const originalLabels = response.labels; 
+                const filteredLabels = []; 
+                const filteredData = []; 
+                
+                originalData.forEach((value, index) => { 
+                    if (value > 0) { 
+                        filteredData.push(value); 
+                        filteredLabels.push(originalLabels[index]); 
+                    } 
+                }); 
+                
+                if (filteredData.length > 0) { 
+                    this.hasData = true; 
+                    this.$nextTick(() => { 
+                        if (this.$refs.salesChartCanvas) { 
+                            this.initChart(filteredLabels, filteredData); 
+                        } 
+                    }); 
+                } else { 
+                    this.hasData = false; 
+                    this.destroyChart();
+                } 
+            }, 
+            error: () => { 
+                alert('Gagal memuat data grafik. Silakan coba lagi.'); 
+                this.hasData = false; 
+                this.destroyChart();
+            }, 
+            complete: () => { 
+                this.isLoading = false; 
+            } 
+        }); 
+    },
+    
+    forceRerender() {
+        this.destroyChart();
+        this.isRendering = false;
+        this.updateChartData();
+    }
+}" 
+x-init="updateChartData();"
+@alpine:destroyed="destroyChart()">
 
-                    updateChartData() {
-                        this.isLoading = true;
-                        $.ajax({
-                            url: '{{ route("ecommerce.dashboard.chart_data") }}',
-                            type: 'GET',
-                            data: {
-                                start_date: this.startDate,
-                                end_date: this.endDate,
-                                product_name: this.selectedProduct
-                            },
-                            success: (response) => {
-                                const originalData = this.chartMetric === 'revenue' ? response.revenue : response.quantity;
-                                const originalLabels = response.labels;
+    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg h-full flex flex-col">
+        <div class="p-6 bg-white border-b border-gray-200">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Grafik Penjualan</h2>
+                <!-- <button 
+                    @click="forceRerender()"
+                    :disabled="isLoading || isRendering"
+                    class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                    <span x-show="!isLoading && !isRendering">🔄 Refresh</span>
+                    <span x-show="isLoading || isRendering">Loading...</span>
+                </button> -->
+            </div>
+            
+            <div class="flex flex-wrap items-end gap-x-4 gap-y-2">
+                <!-- Filter Tanggal -->
+                <div>
+                    <label for="chartStartDate" class="block text-sm font-medium text-gray-700">Mulai</label>
+                    <input type="date" id="chartStartDate" x-model="startDate" 
+                        @change="updateChartDataDebounced()"
+                        :disabled="isLoading || isRendering"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                </div>
+                <div>
+                    <label for="chartEndDate" class="block text-sm font-medium text-gray-700">Selesai</label>
+                    <input type="date" id="chartEndDate" x-model="endDate" 
+                        @change="updateChartDataDebounced()"
+                        :disabled="isLoading || isRendering"
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                </div>
+                
+                <!-- Filter Produk -->
+                <div class="flex-grow min-w-[150px]">
+                    <label class="block text-sm font-medium text-gray-700">Produk</label>
+                    <select x-model="selectedProduct" 
+                            @change="updateChartDataDebounced()"
+                            :disabled="isLoading || isRendering"
+                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                        <option value="all">Semua Produk</option>
+                        @foreach($productsForFilter as $productName)
+                        <option value="{{ $productName }}">{{ $productName }}</option>
+                        @endforeach
+                    </select>
+                </div>
 
-                                const filteredLabels = [];
-                                const filteredData = [];
-
-                                originalData.forEach((value, index) => {
-                                    if (value > 0) {
-                                        filteredData.push(value);
-                                        filteredLabels.push(originalLabels[index]);
-                                    }
-                                });
-
-                                if (filteredData.length > 0) {
-                                    this.hasData = true;
-                                    this.$nextTick(() => {
-                                        if (this.$refs.salesChartCanvas) {
-                                            this.initChart(filteredLabels, filteredData);
-                                        }
-                                    });
-                                } else {
-                                    this.hasData = false;
-                                    if (this.salesChart) {
-                                        this.salesChart.destroy();
-                                        this.salesChart = null;
-                                    }
-                                }
-                            },
-                            error: () => {
-                                alert('Gagal memuat data grafik. Silakan coba lagi.');
-                                this.hasData = false;
-                            },
-                            complete: () => {
-                                this.isLoading = false;
-                            }
-                        });
-                    }
-                }" x-init="updateChartData();">
-                    
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg h-full flex flex-col">
-                        <div class="p-6 bg-white border-gray-200">
-                            <h2 class="text-xl font-bold mb-4">Grafik Penjualan</h2>
-                            
-                            <div class="flex flex-wrap items-end gap-x-4 gap-y-2 mb-4">
-                                <!-- Filter Tanggal -->
-                                <div>
-                                    <label for="chartStartDate" class="block text-sm font-medium text-gray-700">Mulai</label>
-                                    <input type="date" id="chartStartDate" x-model="startDate" 
-                                        :disabled="isLoading"
-                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed">
-                                </div>
-                                <div>
-                                    <label for="chartEndDate" class="block text-sm font-medium text-gray-700">Selesai</label>
-                                    <input type="date" id="chartEndDate" x-model="endDate" 
-                                        :disabled="isLoading"
-                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed">
-                                </div>
-                                
-                                <!-- Filter Produk -->
-                                <div class="flex-grow min-w-[150px]">
-                                    <label class="block text-sm font-medium text-gray-700">Produk</label>
-                                    <select x-model="selectedProduct" 
-                                            :disabled="isLoading"
-                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm text-sm disabled:opacity-50 disabled:cursor-not-allowed">
-                                        <option value="all">Semua Produk</option>
-                                        @foreach($productsForFilter as $productName)
-                                        <option value="{{ $productName }}">{{ $productName }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-
-                                <!-- Filter Metrik & Tombol Aksi -->
-                                <div class="flex items-end gap-2">
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700">Metrik</label>
-                                        <div class="inline-flex rounded-md shadow-sm mt-1" role="group">
-                                            <button @click="chartMetric = 'revenue'; updateChartData()" type="button" 
-                                                    :disabled="isLoading"
-                                                    :class="{ 'bg-indigo-600 text-white': chartMetric === 'revenue', 'bg-white text-gray-700 hover:bg-gray-50': chartMetric !== 'revenue' }" 
-                                                    class="px-3 py-2 text-sm font-medium rounded-l-md border disabled:opacity-50 disabled:cursor-not-allowed">Rp</button>
-                                            <button @click="chartMetric = 'quantity'; updateChartData()" type="button" 
-                                                    :disabled="isLoading"
-                                                    :class="{ 'bg-indigo-600 text-white': chartMetric === 'quantity', 'bg-white text-gray-700 hover:bg-gray-50': chartMetric !== 'quantity' }" 
-                                                    class="px-3 py-2 text-sm font-medium rounded-r-md border disabled:opacity-50 disabled:cursor-not-allowed">Qty</button>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <button @click="updateChartData()" 
-                                                :disabled="isLoading"
-                                                class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 h-full disabled:bg-indigo-400 disabled:cursor-not-allowed">
-                                            <span x-show="!isLoading">Filter</span>
-                                            <span x-show="isLoading">Memuat...</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="flex-grow p-6 pt-0">
-                            <div class="h-[450px] relative">
-                                <canvas x-show="!isLoading && hasData" x-ref="salesChartCanvas"></canvas>
-
-                                <div x-show="isLoading" class="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-20 rounded-b-lg">
-                                    <svg class="animate-spin h-8 w-8 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                </div>
-
-                                <div x-show="!isLoading && !hasData" class="absolute inset-0 flex items-center justify-center z-10">
-                                    <div class="text-center text-gray-500">
-                                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                                        <path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6m3 6v-3m3 3v-1m-6-10H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V9a2 2 0 00-2-2h-3l-4-4z" />
-                                        </svg>
-                                        <h3 class="mt-2 text-sm font-medium text-gray-900">Tidak Ada Data Penjualan</h3>
-                                        <p class="mt-1 text-sm text-gray-500">Tidak ada aktivitas penjualan pada rentang tanggal yang dipilih.</p>
-                                    </div>
-                                </div>
-                            </div>
+                <!-- Filter Metrik & Tombol Aksi -->
+                <div class="flex items-end gap-2">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Metrik</label>
+                        <div class="inline-flex rounded-md shadow-sm mt-1" role="group">
+                            <button @click="chartMetric = 'revenue'; updateChartDataDebounced()" type="button" 
+                                    :disabled="isLoading || isRendering"
+                                    :class="{ 'bg-indigo-600 text-white': chartMetric === 'revenue', 'bg-white text-gray-700 hover:bg-gray-50': chartMetric !== 'revenue' }" 
+                                    class="px-3 py-2 text-sm font-medium rounded-l-md border disabled:opacity-50 disabled:cursor-not-allowed">Rp</button>
+                            <button @click="chartMetric = 'quantity'; updateChartDataDebounced()" type="button" 
+                                    :disabled="isLoading || isRendering"
+                                    :class="{ 'bg-indigo-600 text-white': chartMetric === 'quantity', 'bg-white text-gray-700 hover:bg-gray-50': chartMetric !== 'quantity' }" 
+                                    class="px-3 py-2 text-sm font-medium rounded-r-md border disabled:opacity-50 disabled:cursor-not-allowed">Qty</button>
                         </div>
                     </div>
+                    <div>
+                        <button @click="updateChartData()" 
+                                :disabled="isLoading || isRendering"
+                                class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 h-full disabled:bg-indigo-400 disabled:cursor-not-allowed transition-colors">
+                            <span x-show="!isLoading && !isRendering">Filter</span>
+                            <span x-show="isLoading || isRendering">Memuat...</span>
+                        </button>
+                    </div>
                 </div>
+            </div>
+        </div>
+
+        <div class="flex-grow p-6 pt-0">
+            <div class="h-[450px] relative">
+                <canvas x-show="!isLoading && hasData" x-ref="salesChartCanvas"></canvas>
+
+                <!-- Loading State -->
+                <div x-show="isLoading" class="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-20 rounded-b-lg">
+                    <div class="text-center">
+                        <svg class="animate-spin h-8 w-8 text-indigo-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <p class="mt-2 text-sm text-gray-600">Memuat data grafik...</p>
+                    </div>
+                </div>
+
+                <!-- No Data State -->
+                <div x-show="!isLoading && !hasData" class="absolute inset-0 flex items-center justify-center z-10">
+                    <div class="text-center text-gray-500">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path vector-effect="non-scaling-stroke" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6m3 6v-3m3 3v-1m-6-10H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V9a2 2 0 00-2-2h-3l-4-4z" />
+                        </svg>
+                        <h3 class="mt-2 text-sm font-medium text-gray-900">Tidak Ada Data Penjualan</h3>
+                        <p class="mt-1 text-sm text-gray-500">Tidak ada aktivitas penjualan pada rentang tanggal yang dipilih.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
                 
             </div>
 

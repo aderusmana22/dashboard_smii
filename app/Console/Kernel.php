@@ -19,6 +19,19 @@ class Kernel extends ConsoleKernel
 
         // Menjadwalkan perintah fetch-shipments setiap 30 menit
         $schedule->command('qad:fetch-shipments')->everyThirtyMinutes();
+
+         // Menjalankan sinkronisasi produk setiap 30 menit
+        $schedule->command('sync:shopee-products')->everyThirtyMinutes()->withoutOverlapping();
+        $schedule->command('sync:tiktok-products')->everyThirtyMinutes()->withoutOverlapping();
+
+        // Menjalankan sinkronisasi pesanan setiap 30 menit, pada menit ke-5 dan 35
+        // Ini untuk memberi jeda dari sinkronisasi produk
+        $schedule->command('sync:shopee-orders')->cron('5,35 * * * *')->withoutOverlapping();
+        $schedule->command('sync:tiktok-orders')->cron('5,35 * * * *')->withoutOverlapping();
+
+        // Menjalankan sinkronisasi tabel master setiap 30 menit, pada menit ke-10 dan 40
+        // Dijalankan SETELAH sinkronisasi produk selesai
+        $schedule->command('sync:master-products')->cron('10,40 * * * *')->withoutOverlapping();
     }
 
     /**

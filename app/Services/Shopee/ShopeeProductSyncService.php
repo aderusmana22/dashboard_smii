@@ -56,7 +56,14 @@ class ShopeeProductSyncService
         while ($hasNextPage) {
             $path = '/api/v2/product/get_item_list';
             $timestamp = time();
-            $sign = $this->generateApiSignature($shop, $path, $timestamp);
+
+            // [PERBAIKAN] Sesuaikan pemanggilan dengan signature baru di Trait
+            $sign = $this->generateApiSignature(
+                $path,
+                $timestamp,
+                $shop->access_token,
+                $shop->shop_id
+            );
 
             $params = [
                 'partner_id'   => $this->partnerId,
@@ -92,15 +99,18 @@ class ShopeeProductSyncService
         return $allItemIds;
     }
 
-    /**
-     * [PERBAIKAN KUNCI DI SINI]
-     * Memastikan item_id_list dikirim dengan benar.
-     */
     private function fetchProductDetails(ShopeeShop $shop, array $itemIds): array
     {
         $path = '/api/v2/product/get_item_base_info';
         $timestamp = time();
-        $sign = $this->generateApiSignature($shop, $path, $timestamp);
+
+        // [PERBAIKAN] Sesuaikan pemanggilan dengan signature baru di Trait
+        $sign = $this->generateApiSignature(
+            $path,
+            $timestamp,
+            $shop->access_token,
+            $shop->shop_id
+        );
 
         $baseParams = [
             'partner_id'   => $this->partnerId,
@@ -110,11 +120,8 @@ class ShopeeProductSyncService
             'sign'         => $sign,
         ];
 
-        // Bangun URL dengan parameter dasar
         $url = $this->apiBaseUrl . $path . '?' . http_build_query($baseParams);
 
-        // Tambahkan item_id_list secara manual untuk memastikan formatnya benar
-        // Format: &item_id_list=123&item_id_list=456
         foreach ($itemIds as $id) {
             $url .= '&item_id_list=' . $id;
         }
@@ -123,7 +130,7 @@ class ShopeeProductSyncService
 
         if ($response->failed() || !empty($response->json('error'))) {
             Log::warning('Gagal mengambil detail produk Shopee', [
-                'sent_url' => $url, // Log URL yang dikirim untuk debug
+                'sent_url' => $url,
                 'response' => $response->body()
             ]);
             return [];
@@ -136,7 +143,9 @@ class ShopeeProductSyncService
     {
         $stockInfo = data_get($data, 'stock_info_v2.summary_info.total_available_stock', 0);
         $priceInfo = data_get($data, 'price_info.0');
-        $price = $priceInfo ? 'Rp' . number_format(Arr::get($priceInfo, 'current_price', 0)) : 'N/A';
+        // [Perbaikan Kecil] Menggunakan data_get untuk harga agar lebih aman
+        $currentPrice = data_get($priceInfo, 'current_price', 0);
+        $price = $priceInfo ? 'Rp' . number_format($currentPrice) : 'N/A';
 
         ShopeeProduct::updateOrCreate(
             ['shopee_item_id' => $data['item_id']],

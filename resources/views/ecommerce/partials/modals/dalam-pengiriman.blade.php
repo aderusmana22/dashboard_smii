@@ -1,5 +1,5 @@
-{{-- File: resources/views/ecommerce/partials/modals/perlu-diproses.blade.php --}}
-<div x-show="activeModal === 'perluDiproses'" x-cloak style="display: none;" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+{{-- File: resources/views/ecommerce/partials/modals/dalam-pengiriman.blade.php --}}
+<div x-show="activeModal === 'dalamPengiriman'" x-cloak style="display: none;" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 z-50 flex items-center justify-center p-4">
     {{-- Overlay --}}
     <div @click="activeModal = ''" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm"></div>
 
@@ -8,7 +8,7 @@
         
         {{-- Header --}}
         <div class="flex justify-between items-center px-6 py-4 border-b">
-            <h3 class="text-lg font-bold">Pesanan Perlu Diproses</h3>
+            <h3 class="text-lg font-bold">Pesanan Dalam Pengiriman</h3>
             <button @click="activeModal = ''" class="text-gray-400 hover:text-gray-600">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
@@ -52,7 +52,7 @@
                             <tbody class="bg-white divide-y divide-gray-200">
                                 {{-- [PERBAIKAN] Menambahkan template untuk data kosong --}}
                                 <template x-if="!modalData.shopee || modalData.shopee.length === 0">
-                                    <tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">Tidak ada pesanan yang perlu diproses di Shopee.</td></tr>
+                                    <tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">Tidak ada pesanan dalam pengiriman di Shopee.</td></tr>
                                 </template>
                                 {{-- [PERBAIKAN] Melakukan perulangan data dinamis --}}
                                 <template x-for="order in modalData.shopee" :key="order.id">
@@ -60,7 +60,7 @@
                                         <td class="px-6 py-4 whitespace-nowrap"><div class="text-sm font-medium text-gray-900" x-text="order.recipient_name"></div></td>
                                         <td class="px-6 py-4 whitespace-nowrap"><div class="text-sm text-gray-500" x-text="order.order_id"></div></td>
                                         <td class="px-6 py-4 whitespace-nowrap"><div class="text-sm text-gray-900 font-semibold" x-text="new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(order.total_amount)"></div></td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"><a href="#" class="text-orange-600 hover:text-orange-900">Proses</a></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"><a href="#" class="text-orange-600 hover:text-orange-900">Lacak</a></td>
                                     </tr>
                                 </template>
                             </tbody>
@@ -81,7 +81,7 @@
                             <tbody class="bg-white divide-y divide-gray-200">
                                 {{-- [PERBAIKAN] Menambahkan template untuk data kosong --}}
                                 <template x-if="!modalData.tokopedia || modalData.tokopedia.length === 0">
-                                    <tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">Tidak ada pesanan yang perlu diproses di Tokopedia.</td></tr>
+                                    <tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">Tidak ada pesanan dalam pengiriman di Tokopedia.</td></tr>
                                 </template>
                                 {{-- [PERBAIKAN] Melakukan perulangan data dinamis --}}
                                 <template x-for="order in modalData.tokopedia" :key="order.id">
@@ -89,7 +89,7 @@
                                         <td class="px-6 py-4 whitespace-nowrap"><div class="text-sm font-medium text-gray-900" x-text="order.recipient_name"></div></td>
                                         <td class="px-6 py-4 whitespace-nowrap"><div class="text-sm text-gray-500" x-text="order.order_id"></div></td>
                                         <td class="px-6 py-4 whitespace-nowrap"><div class="text-sm text-gray-900 font-semibold" x-text="new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(order.total_amount)"></div></td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"><a href="#" class="text-green-600 hover:text-green-900">Proses</a></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"><a href="#" class="text-green-600 hover:text-green-900">Lacak</a></td>
                                     </tr>
                                 </template>
                             </tbody>

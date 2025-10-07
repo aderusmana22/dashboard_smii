@@ -283,6 +283,14 @@ Route::post('/ecommerce/products/{product}/update-price', [ProductController::cl
         Route::delete('/disconnect', [TiktokController::class, 'disconnect'])->name('disconnect');
     });
 
+    Route::prefix('ecommerce')->name('ecommerce.')->group(function () {
+    // ... route ecommerce lainnya
+    
+    // == ROUTE BARU UNTUK MODAL AKSI CEPAT ==
+    Route::get('/dashboard/modal-data', [App\Http\Controllers\Ecommerce\DashboardEcommerceController::class, 'fetchModalData'])->name('dashboard.modalData');
+    
+});
+
     Route::prefix('shopee')->name('shopee.')->group(function () {
         Route::get('/auth', [ShopeeController::class, 'redirectToAuth'])->name('auth');
         Route::get('/callback', [ShopeeController::class, 'handleCallback'])->name('callback');

@@ -197,20 +197,20 @@
                 <li>
                     {{-- Mengarahkan link ke route 'dashboard.ecommerce' --}}
                     <a href="{{ route('dashboard.ecommerce') }}"
-                        class="{{ request()->is('dashboard/ecommerce*') ? 'current' : '' }}">
+                        class="{{ request()->is('/ecommerce*') ? 'current' : '' }}">
                         {{-- Anda bisa mengganti ikon ini sesuai dengan set ikon yang Anda gunakan --}}
                         <i class="icon-Dashboard"><span class="path1"></span><span class="path2"></span></i>
                         Dashboard
                     </a>
                 </li>
         <li>
-            <a href="{{ route('ecommerce.products.index') }}" class="{{ request()->is('dashboard/ecommerce/products*') ? 'current' : '' }}">
+            <a href="{{ route('ecommerce.products.index') }}" class="{{ request()->is('/ecommerce/products*') ? 'current' : '' }}">
                 <i class="icon-Box"></i>
                 Produk
             </a>
         </li>
          <li>
-            <a href="{{ route('ecommerce.sales.index') }}" class="{{ request()->is('dashboard/ecommerce/sales*') ? 'current' : '' }}">
+            <a href="{{ route('ecommerce.sales.index') }}" class="{{ request()->is('/ecommerce/sales*') ? 'current' : '' }}">
                 {{-- Ganti 'icon-Chart-line' jika perlu --}}
                 <i class="icon-Chart-line"></i>
                 Penjualan
@@ -219,10 +219,18 @@
 
         {{-- (TAMBAHAN) Link Navigasi Konfigurasi --}}
         <li>
-            <a href="{{ route('ecommerce.settings.index') }}" class="{{ request()->is('dashboard/ecommerce/settings*') ? 'current' : '' }}">
+            <a href="{{ route('ecommerce.settings.index') }}" class="{{ request()->is('/ecommerce/settings*') ? 'current' : '' }}">
                 {{-- Ganti 'icon-Gear' jika perlu --}}
                 <i class="icon-Gear"></i>
                 Konfigurasi
+            </a>
+        </li>
+
+          <li>
+            <a href="{{ route('ecommerce.products.tonnage.index') }}" class="{{ request()->is('ecommerce/products/tonnage*') ? 'current' : '' }}">
+                {{-- Ganti 'icon-Gear' jika perlu --}}
+                <i class="icon-Gear"></i>
+                Tonase
             </a>
         </li>
             </ul>

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class MasterProduct extends Model
 {
@@ -18,5 +19,10 @@ class MasterProduct extends Model
     public function shopee_product()
     {
         return $this->belongsTo(ShopeeProduct::class);
+    }
+
+        public function tonnage(): HasOne
+    {
+        return $this->hasOne(ProductTonnage::class);
     }
 }

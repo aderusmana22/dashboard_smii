@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Services\TiktokShop\TiktokGetOrderListService;
 use Illuminate\Support\Facades\Log;
+use App\Models\EcommerceSetting; // <-- Tambahkan ini
 
 class SyncTiktokOrders extends Command
 {
@@ -18,6 +19,15 @@ class SyncTiktokOrders extends Command
 
         try {
             $orders = $orderService->fetchAllOrders();
+
+            // === TAMBAHKAN BARIS INI ===
+            // Update timestamp setelah berhasil
+            EcommerceSetting::updateOrCreate(
+                ['key' => 'tiktok_last_sync'], // Sesuai dengan nama key di DB Anda
+                ['value' => now()]
+            );
+            // ===========================
+
             $this->info('Berhasil mengambil ' . count($orders) . ' pesanan dari TikTok.');
             Log::info('SCHEDULER: Berhasil mengambil ' . count($orders) . ' pesanan dari TikTok.');
         } catch (\Exception $e) {

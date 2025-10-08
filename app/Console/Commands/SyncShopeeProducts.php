@@ -5,16 +5,13 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Services\Shopee\ShopeeProductSyncService;
 use Illuminate\Support\Facades\Log;
+use App\Models\EcommerceSetting; // <-- Tambahkan ini
 
 class SyncShopeeProducts extends Command
 {
-    // Nama command yang akan dipanggil di terminal atau scheduler
     protected $signature = 'sync:shopee-products';
-
-    // Deskripsi command
     protected $description = 'Sync products from Shopee API to the database';
 
-    // Method utama yang akan dieksekusi
     public function handle(ShopeeProductSyncService $syncService)
     {
         $this->info('Memulai sinkronisasi produk Shopee...');
@@ -22,6 +19,15 @@ class SyncShopeeProducts extends Command
 
         try {
             $syncService->syncProductsFromApi();
+
+            // === TAMBAHKAN BARIS INI ===
+            // Update timestamp setelah berhasil
+            EcommerceSetting::updateOrCreate(
+                ['key' => 'shopee_products_last_sync'],
+                ['value' => now()]
+            );
+            // ===========================
+
             $this->info('Sinkronisasi produk Shopee berhasil diselesaikan.');
             Log::info('SCHEDULER: Sinkronisasi produk Shopee berhasil.');
         } catch (\Exception $e) {

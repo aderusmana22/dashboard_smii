@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Services\MasterProductService;
 use Illuminate\Support\Facades\Log;
+use App\Models\EcommerceSetting; // <-- Tambahkan ini
 
 class SyncMasterProducts extends Command
 {
@@ -18,6 +19,15 @@ class SyncMasterProducts extends Command
 
         try {
             $masterProductService->syncMasterTable();
+
+            // === TAMBAHKAN BARIS INI ===
+            // Update timestamp setelah berhasil
+            EcommerceSetting::updateOrCreate(
+                ['key' => 'master_products_last_sync'], // Anda mungkin perlu menambahkan key ini di DB
+                ['value' => now()]
+            );
+            // ===========================
+
             $this->info('Sinkronisasi tabel master produk berhasil diselesaikan.');
             Log::info('SCHEDULER: Sinkronisasi tabel master produk berhasil.');
         } catch (\Exception $e) {

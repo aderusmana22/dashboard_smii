@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Services\Shopee\ShopeeGetOrderListService;
 use Illuminate\Support\Facades\Log;
+use App\Models\EcommerceSetting; // <-- Tambahkan ini
 
 class SyncShopeeOrders extends Command
 {
@@ -17,9 +18,16 @@ class SyncShopeeOrders extends Command
         Log::info('SCHEDULER: Memulai pengambilan pesanan Shopee.');
 
         try {
-            // Anda mungkin perlu menyimpan data ini ke database
             $orders = $orderService->fetchAllOrders();
-            // Log::info('Pesanan Shopee yang didapat:', $orders); // Hati-hati, bisa sangat besar
+
+            // === TAMBAHKAN BARIS INI ===
+            // Update timestamp setelah berhasil
+            EcommerceSetting::updateOrCreate(
+                ['key' => 'shopee_orders_last_sync'],
+                ['value' => now()]
+            );
+            // ===========================
+
             $this->info('Berhasil mengambil ' . count($orders) . ' pesanan dari Shopee.');
             Log::info('SCHEDULER: Berhasil mengambil ' . count($orders) . ' pesanan dari Shopee.');
         } catch (\Exception $e) {

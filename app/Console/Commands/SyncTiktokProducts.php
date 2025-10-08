@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Services\TiktokShop\TiktokProductSyncService;
 use Illuminate\Support\Facades\Log;
+use App\Models\EcommerceSetting; // <-- Tambahkan ini
 
 class SyncTiktokProducts extends Command
 {
@@ -18,6 +19,15 @@ class SyncTiktokProducts extends Command
 
         try {
             $syncService->syncProductsFromApi();
+
+            // === TAMBAHKAN BARIS INI ===
+            // Update timestamp setelah berhasil
+            EcommerceSetting::updateOrCreate(
+                ['key' => 'tiktok_products_last_sync'],
+                ['value' => now()]
+            );
+            // ===========================
+
             $this->info('Sinkronisasi produk TikTok berhasil diselesaikan.');
             Log::info('SCHEDULER: Sinkronisasi produk TikTok berhasil.');
         } catch (\Exception $e) {

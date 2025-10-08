@@ -645,6 +645,11 @@ x-init="updateChartData();"
                         </div>
 
                         <div class="space-y-4">
+                                        <div class="flex justify-between items-center">
+                <span class="text-lg text-orange-100">Total Tonase</span>
+                <span id="shopee-total-tonase" class="text-2xl font-bold">{{ number_format($shopeeCardData['total_tonnage'], 2, ',', '.') }} Ton</span>
+            </div>
+
                             <div class="flex justify-between items-center">
                                 <span class="text-lg text-orange-100">Total Nilai</span>
                                 <span id="shopee-total-nilai" class="text-2xl font-bold">Rp {{ number_format($shopeeCardData['total_nilai'], 0, ',', '.') }}</span>
@@ -714,6 +719,10 @@ x-init="updateChartData();"
 
                         <div class="space-y-4">
                             <div class="flex justify-between items-center">
+                <span class="text-lg text-green-100">Total Tonase</span>
+                <span id="tokopedia-total-tonase" class="text-2xl font-bold">{{ number_format($tokopediaCardData['total_tonnage'], 2, ',', '.') }} Ton</span>
+            </div>
+                            <div class="flex justify-between items-center">
                                 <span class="text-lg text-green-100">Total Pesanan</span>
                                 <span class="text-2xl font-bold">8 Ton</span> {{-- Dummy value --}}
                             </div>
@@ -764,6 +773,10 @@ x-init="updateChartData();"
     // == PERBAIKAN: FUNGSI INI DIPINDAHKAN KE LUAR DOCUMENT.READY ======
     // Ini membuatnya 'global' dan bisa ditemukan oleh Alpine.js
     // =================================================================
+    const formatTonnage = (number) => {
+        return `${parseFloat(number).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Ton`;
+    };
+    
     function dashboardAksiCepat() {
         return {
             activeModal: '', // Variabel untuk menyimpan modal mana yang aktif

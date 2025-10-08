@@ -37,6 +37,7 @@ use App\Http\Controllers\Ecommerce\OrderListController;
 use App\Http\Controllers\Ecommerce\SalesDashboardController;
 use App\Http\Controllers\Shopee\ShopeeController;
 use App\Http\Controllers\Ecommerce\ShopeeOrderController;
+use App\Http\Controllers\Ecommerce\ProductTonnageController;
 
 /*
 |--------------------------------------------------------------------------
@@ -254,6 +255,14 @@ Route::get('/ecommerce/shopee/orders-data', [SalesDashboardController::class, 'g
     Route::post('/ecommerce/products/sync', [ProductController::class, 'sync'])->name('ecommerce.products.sync');
     Route::post('/ecommerce/products/{product}/stock', [ProductController::class, 'updateStock'])->name('ecommerce.products.stock.update');
 
+
+    Route::prefix('ecommerce')->name('ecommerce.')->group(function () {
+    // ... rute produk Anda yang lain
+    
+    // Rute untuk Halaman Tonnage Mapper
+    Route::get('/products/tonnage', [ProductTonnageController::class, 'index'])->name('products.tonnage.index');
+    Route::post('/products/tonnage', [ProductTonnageController::class, 'store'])->name('products.tonnage.store');
+});
 
             // === BAGIAN YANG PERLU DIPERBAIKI / DITAMBAHKAN ===
     // Route untuk memicu sinkronisasi TikTok

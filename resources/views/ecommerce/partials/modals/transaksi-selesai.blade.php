@@ -100,10 +100,21 @@
         </div>
 
         {{-- Footer --}}
-        <div class="px-6 py-3 bg-gray-50 text-right border-t">
-            <button @click="activeModal = ''" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">
+  <div class="px-6 py-4 bg-gray-50 flex justify-end items-center space-x-3 border-t">
+            {{-- TOMBOL BARU: Link ke Halaman Penjualan --}}
+            <a href="{{ route('ecommerce.sales.index') }}" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                {{-- Ikon bisa disesuaikan, ini contoh menggunakan SVG Heroicons --}}
+                <svg class="w-5 h-5 mr-2 -ml-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
+                </svg>
+                Lihat Laporan Penjualan
+            </a>
+
+            {{-- Tombol Tutup yang sudah ada --}}
+            <button @click="activeModal = ''" class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 text-sm font-medium">
                 Tutup
             </button>
         </div>
+    </div>
     </div>
 </div>

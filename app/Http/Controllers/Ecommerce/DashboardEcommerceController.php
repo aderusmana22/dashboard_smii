@@ -140,14 +140,16 @@ class DashboardEcommerceController extends Controller
     {
         $shopeeStatus = ['COMPLETED'];
         $tiktokStatus = ['COMPLETED'];
-        return $this->fetchOrdersByStatus($shopeeStatus, $tiktokStatus, $countOnly);
+return $this->fetchOrdersByStatus($shopeeStatus, $tiktokStatus, $countOnly, 10);
+
     }
 
     private function getTransaksiDibatalkanData($countOnly = false)
     {
         $shopeeStatus = ['CANCELLED'];
         $tiktokStatus = ['CANCELLED'];
-        return $this->fetchOrdersByStatus($shopeeStatus, $tiktokStatus, $countOnly);
+         return $this->fetchOrdersByStatus($shopeeStatus, $tiktokStatus, $countOnly, 10);
+        
     }
 
     private function getProdukTidakAktifData($countOnly = false)
@@ -186,7 +188,7 @@ class DashboardEcommerceController extends Controller
         ];
     }
 
-    private function fetchOrdersByStatus(array $shopeeStatuses, array $tiktokStatuses, bool $countOnly)
+    private function fetchOrdersByStatus(array $shopeeStatuses, array $tiktokStatuses, bool $countOnly, ?int $limit = null)
     {
         $shopeeQuery = ShopeeOrder::whereIn('order_status', $shopeeStatuses);
         $tiktokQuery = TiktokpedOrder::whereIn('status', $tiktokStatuses);
@@ -195,9 +197,19 @@ class DashboardEcommerceController extends Controller
             return $shopeeQuery->count() + $tiktokQuery->count();
         }
 
+        // [MODIFIKASI] Terapkan limit jika parameter diisi
+        if ($limit) {
+            $shopeeQuery->take($limit);
+            $tiktokQuery->take($limit);
+        }
+
         return [
-            'shopee' => $shopeeQuery->select('id', 'recipient_name', 'order_sn as order_id', 'total_amount')->latest('create_time_shopee')->get(),
-            'tokopedia' => $tiktokQuery->select('id', 'recipient_name', 'tiktok_order_id as order_id', 'total_amount')->latest('created_at_tiktok')->get(),
+            'shopee' => $shopeeQuery->select('id', 'recipient_name', 'order_sn as order_id', 'total_amount')
+                                  ->latest('create_time_shopee') // Mengambil yang terbaru
+                                  ->get(),
+            'tokopedia' => $tiktokQuery->select('id', 'recipient_name', 'tiktok_order_id as order_id', 'total_amount')
+                                     ->latest('created_at_tiktok') // Mengambil yang terbaru
+                                     ->get(),
         ];
     }
 

@@ -311,7 +311,7 @@ Route::post('/ecommerce/products/{product}/update-price', [ProductController::cl
     // Route untuk sinkronisasi (pastikan sudah ada)\
     Route::post('/ecommerce/tiktok/orders/sync', [OrderListController::class, 'syncOrders'])->name('ecommerce.tiktok.orders.sync');
 
-    Route::get('/tiktok/products', [TiktokProductController::class, 'index'])->name('tiktok.products.index');
+  
     Route::get('/tiktok/orders', [OrderListController::class, 'index'])->name('tiktok.orders.data');
 
     Route::post('/ecommerce/tiktok/sync', [OrderListController::class, 'syncOrders'])->name('ecommerce.tiktok.sync');

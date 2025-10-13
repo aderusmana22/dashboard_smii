@@ -300,6 +300,9 @@ Route::post('/ecommerce/products/{product}/update-price', [ProductController::cl
     
 });
 
+Route::get('/dashboard/ecommerce/fetch-top-products', [DashboardEcommerceController::class, 'fetchTopProducts'])->name('dashboard.ecommerce.fetchTopProducts');
+Route::get('/dashboard/ecommerce/fetch-recent-transactions', [DashboardEcommerceController::class, 'fetchRecentTransactions'])->name('dashboard.ecommerce.fetchRecentTransactions');
+
     Route::prefix('shopee')->name('shopee.')->group(function () {
         Route::get('/auth', [ShopeeController::class, 'redirectToAuth'])->name('auth');
         Route::get('/callback', [ShopeeController::class, 'handleCallback'])->name('callback');

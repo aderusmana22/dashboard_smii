@@ -12,23 +12,63 @@
 >
     <div
         @click.away="isPriceModalOpen = false"
+        x-data="{ activePlatform: '' }"
         class="bg-white rounded-lg shadow-xl w-full max-w-md mx-auto p-6"
     >
-        <h3 class="text-lg font-medium text-gray-900 mb-4">
+        <h3 class="text-lg font-medium text-gray-900 mb-2">
             Ubah Harga untuk <span x-text="modalProductTitle" class="font-bold"></span>
         </h3>
 
+        <!-- Label untuk menampilkan harga saat ini -->
+        <div class="mb-4 text-sm text-gray-600">
+            <p>Harga Tokopedia: <span x-text="`Rp ${modalTokopediaPrice}`" class="font-semibold"></span></p>
+            <p>Harga Shopee: <span x-text="`Rp ${modalShopeePrice}`" class="font-semibold"></span></p>
+        </div>
+
         <form :action="modalUpdatePriceUrl" method="POST">
             @csrf
+
+            <!-- Tombol Pilihan Platform (Berfungsi seperti Radio Button) -->
+            <div class="mb-4 flex space-x-3">
+                <span
+                    @click="activePlatform = (activePlatform === 'tokopedia') ? '' : 'tokopedia'"
+                    :class="{ 'bg-indigo-600 text-white border-indigo-600': activePlatform === 'tokopedia', 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50': activePlatform !== 'tokopedia' }"
+                    class="px-4 py-2 rounded-md text-sm font-medium cursor-pointer border transition-colors"
+                >
+                    Tokopedia
+                </span>
+                <span
+                    @click="activePlatform = (activePlatform === 'shopee') ? '' : 'shopee'"
+                    :class="{ 'bg-indigo-600 text-white border-indigo-600': activePlatform === 'shopee', 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50': activePlatform !== 'shopee' }"
+                    class="px-4 py-2 rounded-md text-sm font-medium cursor-pointer border transition-colors"
+                >
+                    Shopee
+                </span>
+            </div>
+
+            <!-- SATU INPUT YANG BERUBAH SECARA DINAMIS -->
             <div>
-                <label for="price" class="block text-sm font-medium text-gray-700">Harga Baru (Rp)</label>
+                <label
+                    :for="activePlatform || 'price'"
+                    x-text="
+                        activePlatform === 'tokopedia' ? 'Harga Baru Tokopedia (Rp)' :
+                        (activePlatform === 'shopee' ? 'Harga Baru Shopee (Rp)' : 'Harga Baru (Rp)')
+                    "
+                    class="block text-sm font-medium text-gray-700"
+                ></label>
                 <div class="mt-1">
                     <input
                         type="number"
-                        name="price"
-                        id="price"
+                        :name="
+                            activePlatform === 'tokopedia' ? 'tokopedia_price' :
+                            (activePlatform === 'shopee' ? 'shopee_price' : 'price')
+                        "
+                        :id="activePlatform || 'price'"
+                        :placeholder="
+                            activePlatform === 'tokopedia' ? 'Contoh: 52000' :
+                            (activePlatform === 'shopee' ? 'Contoh: 51000' : 'Contoh: 50000')
+                        "
                         class="text-black block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                        placeholder="Contoh: 50000"
                         step="1"
                         min="0"
                         required

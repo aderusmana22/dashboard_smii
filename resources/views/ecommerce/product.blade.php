@@ -3,14 +3,16 @@
 
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
-    <div class="py-12" x-data="{
-        isStockModalOpen: false,
-        isPriceModalOpen: false,
-        modalProductTitle: '',
-        modalCurrentStock: 0,
-        modalUpdateStockUrl: '',
-        modalUpdatePriceUrl: ''
-    }">
+<div class="py-12" x-data="{
+    isStockModalOpen: false,
+    isPriceModalOpen: false,
+    modalProductTitle: '',
+    modalCurrentStock: 0,
+    modalUpdateStockUrl: '',
+    modalUpdatePriceUrl: '',
+    modalTokopediaPrice: '',
+    modalShopeePrice: ''
+}">
         <div class="max-w-9xl mx-auto sm:px-6 lg:px-8">
 
             {{-- ... (Notifikasi success/error tetap sama) ... --}}
@@ -130,15 +132,22 @@
                                                     class="text-indigo-600 hover:text-indigo-900">
                                                     Ubah Stok
                                                 </button>
-                                                <button
-                                                    @click="
-                                                        isPriceModalOpen = true;
-                                                        modalProductTitle = @js($product->title);
-                                                        modalUpdatePriceUrl = '{{ route('ecommerce.products.price.update', $product) }}';
-                                                    "
-                                                    class="text-green-600 hover:text-green-900">
-                                                    Ubah Harga
-                                                </button>
+                                                {{-- Cari tombol "Ubah Harga" di dalam loop @forelse --}}
+<button
+    @click="
+        isPriceModalOpen = true;
+        modalProductTitle = @js($product->title);
+        modalUpdatePriceUrl = '{{ route('ecommerce.products.price.update', $product) }}';
+        
+        // --- BAGIAN YANG DIPERBARUI ---
+        // Kirim harga saat ini ke modal. Gunakan null-safe operator (?->) dan null coalescing (??)
+        // untuk mencegah error jika produk tidak terhubung ke salah satu platform.
+        modalTokopediaPrice = @js($product->tiktok_product?->display_price ?? 'Tidak terhubung');
+        modalShopeePrice = @js($product->shopee_product?->display_price ?? 'Tidak terhubung');
+    "
+    class="text-green-600 hover:text-green-900">
+    Ubah Harga
+</button>
                                             </div>
                                         </td>
                                     </tr>

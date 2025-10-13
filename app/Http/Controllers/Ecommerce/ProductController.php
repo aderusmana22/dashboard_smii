@@ -127,46 +127,84 @@ class ProductController extends Controller
         }
     }
 
-    /**
-     * == FUNGSI BARU ==
-     * Memperbarui harga produk di semua platform yang terhubung.
-     */
     public function updatePrice(Request $request, MasterProduct $product): RedirectResponse
     {
-        $validated = $request->validate(['price' => 'required|numeric|min:0']);
-        $newPrice = $validated['price'];
-        $errors = [];
+        // 1. Validasi input yang masuk dari form modal
+        $validated = $request->validate([
+            'price' => 'sometimes|required|numeric|min:0',
+            'tokopedia_price' => 'sometimes|required|numeric|min:0',
+            'shopee_price' => 'sometimes|required|numeric|min:0',
+        ]);
 
-        $product->load(['tiktok_product', 'shopee_product']);
+        // 2. Tentukan harga dan platform mana yang akan diupdate berdasarkan input
+        $newPrice = null;
+        $platformsToUpdate = [];
 
-        // 1. Update harga di TikTok jika terhubung
-        if ($product->tiktok_product) {
-            try {
-                // API TikTok mengharapkan harga sebagai string
-                $this->tiktokUpdatePriceService->updatePrice($product->tiktok_product, (string)$newPrice);
-            } catch (\Exception $e) {
-                Log::error("Gagal update harga TikTok untuk master product ID {$product->id}: " . $e->getMessage());
-                $errors[] = 'Gagal update harga TikTok: ' . $e->getMessage();
-            }
-        }
-
-        // 2. Update harga di Shopee jika terhubung
-        if ($product->shopee_product) {
-            try {
-                // API Shopee mengharapkan harga sebagai float/numeric
-                $this->shopeeUpdatePriceService->updatePrice($product->shopee_product, (float)$newPrice);
-            } catch (\Exception $e) {
-                Log::error("Gagal update harga Shopee untuk master product ID {$product->id}: " . $e->getMessage());
-                $errors[] = 'Gagal update harga Shopee: ' . $e->getMessage();
-            }
-        }
-
-        if (empty($errors)) {
-            // Tidak perlu update harga di tabel master karena tidak ada kolomnya
-            // Cukup berikan pesan sukses
-            return redirect()->route('ecommerce.products.index')->with('success', "Harga untuk '{$product->title}' berhasil dikirim untuk diperbarui di semua platform.");
+        if ($request->has('tokopedia_price')) {
+            $newPrice = (float) $validated['tokopedia_price'];
+            $platformsToUpdate[] = 'tiktok';
+        } elseif ($request->has('shopee_price')) {
+            $newPrice = (float) $validated['shopee_price'];
+            $platformsToUpdate[] = 'shopee';
+        } elseif ($request->has('price')) {
+            // Jika input 'price' ada, artinya update keduanya (jika terhubung)
+            $newPrice = (float) $validated['price'];
+            $platformsToUpdate = ['tiktok', 'shopee'];
         } else {
+            // Seharusnya tidak terjadi jika form di-submit dengan benar
+            return back()->with('error', 'Input harga tidak ditemukan.');
+        }
+
+        // 3. Muat relasi produk untuk efisiensi
+        $product->load(['tiktok_product', 'shopee_product']);
+        $errors = [];
+        $successes = [];
+
+        // 4. Proses update ke setiap platform yang telah ditentukan
+        foreach ($platformsToUpdate as $platform) {
+            if ($platform === 'tiktok' && $product->tiktok_product) {
+                try {
+                    $this->tiktokUpdatePriceService->updatePrice($product->tiktok_product, (string) $newPrice);
+                    $successes[] = 'Tokopedia';
+                } catch (\Exception $e) {
+                    Log::error("Gagal update harga Tokopedia untuk master product ID {$product->id}: " . $e->getMessage());
+                    $errors[] = 'Gagal update harga Tokopedia: ' . $e->getMessage();
+                }
+            }
+
+            if ($platform === 'shopee' && $product->shopee_product) {
+                try {
+                    $this->shopeeUpdatePriceService->updatePrice($product->shopee_product, $newPrice);
+                    $successes[] = 'Shopee';
+                } catch (\Exception $e) {
+                    Log::error("Gagal update harga Shopee untuk master product ID {$product->id}: " . $e->getMessage());
+                    $errors[] = 'Gagal update harga Shopee: ' . $e->getMessage();
+                }
+            }
+        }
+
+        // 5. Buat pesan feedback berdasarkan hasil proses
+        $feedbackMessage = '';
+        if (!empty($successes)) {
+            $formattedPrice = 'Rp ' . number_format($newPrice, 0, ',', '.');
+            $platformNames = implode(' & ', $successes);
+            $feedbackMessage .= "Harga untuk '{$product->title}' di platform {$platformNames} berhasil diupdate menjadi {$formattedPrice}.";
+        }
+
+        if (!empty($errors)) {
+            // Jika ada sukses dan juga error
+            if (!empty($successes)) {
+                $feedbackMessage .= ' Namun terjadi error: ' . implode('; ', $errors);
+                return redirect()->route('ecommerce.products.index')->with('error', $feedbackMessage);
+            }
+            // Jika hanya error
             return redirect()->route('ecommerce.products.index')->with('error', implode('; ', $errors));
         }
+
+        if (empty($successes)) {
+            return redirect()->route('ecommerce.products.index')->with('error', 'Produk tidak terhubung ke platform yang dipilih untuk diupdate.');
+        }
+
+        return redirect()->route('ecommerce.products.index')->with('success', $feedbackMessage);
     }
 }

@@ -493,4 +493,45 @@ private function getShopeeCardData($startDate, $endDate): array
             ->take(3)
             ->values();
     }
+
+      public function fetchTopProducts(Request $request)
+    {
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $startDateTime = $startDate ? Carbon::parse($startDate)->startOfDay() : null;
+        $endDateTime = $endDate ? Carbon::parse($endDate)->endOfDay() : null;
+
+        $topProducts = $this->getTopSellingProducts($startDateTime, $endDateTime);
+
+        // Langsung kembalikan data sebagai JSON
+        return response()->json($topProducts);
+    }
+
+    /**
+     * [PERBAIKAN] Mengambil data 3 Transaksi Terakhir dan mengirimkannya sebagai JSON.
+     */
+    public function fetchRecentTransactions(Request $request)
+    {
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $startDateTime = $startDate ? Carbon::parse($startDate)->startOfDay() : null;
+        $endDateTime = $endDate ? Carbon::parse($endDate)->endOfDay() : null;
+
+        $recentTransactions = $this->getRecentTransactions($startDateTime, $endDateTime);
+
+        // Kita bisa memformat data di sini agar lebih mudah digunakan oleh JavaScript
+        $formattedTransactions = $recentTransactions->map(function ($transaction) {
+            $time = Carbon::parse($transaction->transaction_time);
+            return [
+                'product_name' => $transaction->product_name,
+                'product_image' => $transaction->product_image ?? 'https://via.placeholder.com/150',
+                'recipient_name' => $transaction->recipient_name,
+                'formatted_time' => $time->format('d M Y, H:i'),
+                'time_ago' => $time->diffForHumans(),
+            ];
+        });
+
+        // Langsung kembalikan data yang sudah diformat sebagai JSON
+        return response()->json($formattedTransactions);
+    }
 }

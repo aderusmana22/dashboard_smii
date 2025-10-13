@@ -24,4 +24,19 @@ class ShopeeProduct extends Model
 
         return 'N/A'; // Tampilkan N/A jika harga tidak ditemukan
     }
+
+    public function getRawPriceAttribute(): ?float
+    {
+        // GANTI 'price' dengan nama kolom Anda
+        $priceString = $this->price;
+
+        if (empty($priceString)) {
+            return null;
+        }
+
+        // Hapus semua karakter non-digit
+        $sanitizedPrice = preg_replace('/[^\d]/', '', $priceString);
+
+        return is_numeric($sanitizedPrice) ? (float)$sanitizedPrice : null;
+    }
 }

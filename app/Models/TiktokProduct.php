@@ -66,4 +66,21 @@ class TiktokProduct extends Model
         // 7. Jika semua gagal, kembalikan 'N/A'.
         return 'N/A';
     }
+
+     public function getRawPriceAttribute(): ?float
+    {
+        $priceString = $this->price_range;
+
+        // 1. Jika string kosong atau null, kembalikan null
+        if (empty($priceString)) {
+            return null;
+        }
+
+        // 2. Hapus semua karakter yang bukan angka (seperti "Rp", ".", ",")
+        //    Contoh: "Rp63,000" menjadi "63000"
+        $sanitizedPrice = preg_replace('/[^\d]/', '', $priceString);
+
+        // 3. Jika hasilnya numerik, ubah menjadi float. Jika tidak, kembalikan null.
+        return is_numeric($sanitizedPrice) ? (float)$sanitizedPrice : null;
+    }
 }

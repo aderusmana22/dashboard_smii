@@ -8,11 +8,11 @@ use App\Models\EcommerceSetting;
 use App\Services\MasterProductService;
 use App\Services\TiktokShop\TiktokProductSyncService;
 use App\Services\TiktokShop\TiktokUpdateInventoryService;
-use App\Services\TiktokShop\TiktokUpdatePriceService; // <-- TAMBAHKAN INI
+use App\Services\TiktokShop\TiktokUpdatePriceService;
 use App\Services\Shopee\ShopeeProductSyncService;
 use App\Services\Shopee\ShopeeUpdateInventoryService;
-use App\Services\Shopee\ShopeeUpdatePriceService; // <-- TAMBAHKAN INI
-use Illuminate\Http\Request;
+use App\Services\Shopee\ShopeeUpdatePriceService;
+use Illuminate\Http\Request; // <-- Perhatikan penambahan ini
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
@@ -25,15 +25,19 @@ class ProductController extends Controller
         protected MasterProductService $masterProductService,
         protected TiktokUpdateInventoryService $tiktokUpdateInventoryService,
         protected ShopeeUpdateInventoryService $shopeeUpdateInventoryService,
-        protected TiktokUpdatePriceService $tiktokUpdatePriceService, // <-- TAMBAHKAN INI
-        protected ShopeeUpdatePriceService $shopeeUpdatePriceService  // <-- TAMBAHKAN INI
+        protected TiktokUpdatePriceService $tiktokUpdatePriceService,
+        protected ShopeeUpdatePriceService $shopeeUpdatePriceService
     ) {
     }
 
-    // ... (fungsi index, syncTiktok, syncShopee tetap sama) ...
-    public function index(): View
+    /**
+     * Menampilkan daftar produk master.
+     * Mendukung paginasi (default) dan tampilan semua produk (?show=all).
+     */
+    public function index(Request $request): View
     {
-        $products = MasterProduct::with(['tiktok_product', 'shopee_product'])
+        // Memulai query builder untuk MasterProduct
+        $query = MasterProduct::with(['tiktok_product', 'shopee_product'])
             ->orderByRaw(
                 "CASE
                     WHEN
@@ -52,15 +56,28 @@ class ProductController extends Controller
                     ELSE 0
                 END DESC"
             )
-            ->latest('updated_at') // Urutan sekunder: yang terbaru di atas
-            ->paginate(15);
+            ->latest('updated_at'); // Urutan sekunder: yang terbaru di atas
 
+        // Cek query parameter 'show' di URL
+        if ($request->query('show') === 'all') {
+            // Jika ada ?show=all, ambil semua data tanpa paginasi
+            $products = $query->get();
+        } else {
+            // Jika tidak, gunakan paginasi default (15 item per halaman)
+            $products = $query->paginate(15);
+        }
+
+        // Mengambil data waktu sinkronisasi terakhir
         $lastSyncTiktok = EcommerceSetting::where('key', 'tiktok_products_last_sync')->value('value');
         $lastSyncShopee = EcommerceSetting::where('key', 'shopee_products_last_sync')->value('value');
 
+        // Mengirim data ke view
         return view('ecommerce.product', compact('products', 'lastSyncTiktok', 'lastSyncShopee'));
     }
 
+    /**
+     * Menjalankan sinkronisasi produk dari API TikTok.
+     */
     public function syncTiktok(): RedirectResponse
     {
         try {
@@ -74,6 +91,9 @@ class ProductController extends Controller
         }
     }
 
+    /**
+     * Menjalankan sinkronisasi produk dari API Shopee.
+     */
     public function syncShopee(): RedirectResponse
     {
         try {
@@ -87,7 +107,9 @@ class ProductController extends Controller
         }
     }
 
-
+    /**
+     * Memperbarui stok produk di semua platform yang terhubung.
+     */
     public function updateStock(Request $request, MasterProduct $product): RedirectResponse
     {
         $validated = $request->validate(['stock' => 'required|integer|min:0']);
@@ -118,15 +140,19 @@ class ProductController extends Controller
             }
         }
 
-        // 3. Jika tidak ada error, update stok di tabel master
+        // 3. Jika tidak ada error, update stok di tabel master dan beri notifikasi sukses
         if (empty($errors)) {
             $product->update(['total_stock' => $newMasterStock]);
             return redirect()->route('ecommerce.products.index')->with('success', "Stok untuk '{$product->title}' berhasil diperbarui menjadi {$newMasterStock} di semua platform.");
         } else {
+            // Jika ada error, kembalikan dengan pesan error
             return redirect()->route('ecommerce.products.index')->with('error', implode('; ', $errors));
         }
     }
 
+    /**
+     * Memperbarui harga produk di platform yang dipilih.
+     */
     public function updatePrice(Request $request, MasterProduct $product): RedirectResponse
     {
         // 1. Validasi input yang masuk dari form modal
@@ -151,7 +177,6 @@ class ProductController extends Controller
             $newPrice = (float) $validated['price'];
             $platformsToUpdate = ['tiktok', 'shopee'];
         } else {
-            // Seharusnya tidak terjadi jika form di-submit dengan benar
             return back()->with('error', 'Input harga tidak ditemukan.');
         }
 
@@ -192,12 +217,10 @@ class ProductController extends Controller
         }
 
         if (!empty($errors)) {
-            // Jika ada sukses dan juga error
             if (!empty($successes)) {
                 $feedbackMessage .= ' Namun terjadi error: ' . implode('; ', $errors);
                 return redirect()->route('ecommerce.products.index')->with('error', $feedbackMessage);
             }
-            // Jika hanya error
             return redirect()->route('ecommerce.products.index')->with('error', implode('; ', $errors));
         }
 

@@ -69,7 +69,7 @@
                                                     type="number" 
                                                     name="tonnages[{{ $product->id }}]"
                                                     value="{{ old('tonnages.' . $product->id, optional($product->tonnage)->tonnage ?? 0) }}"
-                                                    step="0.001" 
+                                                    step="0.000001" 
                                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                                                     placeholder="0.000"
                                                 >

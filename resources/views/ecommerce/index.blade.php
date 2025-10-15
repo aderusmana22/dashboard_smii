@@ -194,124 +194,140 @@
             <!-- Satu Baris Untuk Top Sales dan Grafik -->
             <div class="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-8">
                 
-                <div class="lg:col-span-2">
-                    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg h-full">
-                        <div class="p-6 bg-white border-gray-200 flex flex-col">
-                            <div>
-                                <h2 class="text-xl font-bold text-center mb-4">Top 3 Produk Terlaris</h2>
+         <div class="lg:col-span-2">
+    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg h-full">
+        <div class="p-6 bg-white border-gray-200 flex flex-col">
+            <div>
+                <h2 class="text-xl font-bold text-center mb-4">Top 3 Produk Terlaris</h2>
 
-                                {{-- Filter Tanggal --}}
-                                <div class="flex items-center justify-center space-x-2 md:space-x-4">
-                                    <div class="flex-1">
-                                        <label for="topProductStartDate" class="block text-sm font-medium text-gray-700">Mulai</label>
-                                        <input type="date" id="topProductStartDate" name="start_date" value="{{ $startDate }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                    </div>
-                                    <div class="flex-1">
-                                        <label for="topProductEndDate" class="block text-sm font-medium text-gray-700">Selesai</label>
-                                        <input type="date" id="topProductEndDate" name="end_date" value="{{ $endDate }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
-                                    </div>
-                                    <div class="self-end flex items-center space-x-1">
-                                        <button type="button" id="filterButton" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Filter</button>
-                                        <button type="button" id="resetButton" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 text-sm font-medium @if(!$startDate && !$endDate) hidden @endif">Reset</button>
-                                    </div>
-                                </div>
-
-                                {{-- Container untuk Podium Dinamis --}}
-                                <div id="top-products-container">
-                                    {{-- KONTEN AWAL SAAT HALAMAN DIMUAT (BAGIAN YANG DIPERBAIKI) --}}
-                                    @if($topProducts->isNotEmpty())
-                                    <div class="flex items-end justify-center space-x-4 text-center mt-6">
-                                        {{-- Posisi 2 --}}
-                                        <div class="w-1/4">
-                                            @if(isset($topProducts[1]))
-                                            <img src="{{ $topProducts[1]->image_url }}" alt="{{ $topProducts[1]->product_name }}" class="w-16 h-16 object-cover mx-auto rounded-full border-4 border-gray-300">
-                                            <h4 class="mt-2 font-semibold text-sm truncate">{{ $topProducts[1]->product_name }}</h4>
-                                            <div class="bg-gray-300 rounded-t-lg h-24 mt-2 flex items-center justify-center">
-                                                <span class="text-3xl font-bold text-white">2</span>
-                                            </div>
-                                            <p class="text-xs text-gray-500 mt-1">{{ $topProducts[1]->total_sold }} terjual</p>
-                                            @endif
-                                        </div>
-                                        {{-- Posisi 1 --}}
-                                        <div class="w-1/3">
-                                            @if(isset($topProducts[0]))
-                                            <img src="{{ $topProducts[0]->image_url }}" alt="{{ $topProducts[0]->product_name }}" class="w-16 h-16 object-cover mx-auto rounded-full border-4 border-yellow-400">
-                                            <h4 class="mt-2 font-semibold text-sm truncate">{{ $topProducts[0]->product_name }}</h4>
-                                            <div class="bg-yellow-400 rounded-t-lg h-32 mt-2 flex items-center justify-center">
-                                                <span class="text-4xl font-bold text-white">1</span>
-                                            </div>
-                                            <p class="text-xs text-gray-500 mt-1">{{ $topProducts[0]->total_sold }} terjual</p>
-                                            @endif
-                                        </div>
-                                        {{-- Posisi 3 --}}
-                                        <div class="w-1/4">
-                                            @if(isset($topProducts[2]))
-                                            <img src="{{ $topProducts[2]->image_url }}" alt="{{ $topProducts[2]->product_name }}" class="w-16 h-16 object-cover mx-auto rounded-full border-4 border-yellow-600">
-                                            <h4 class="mt-2 font-semibold text-sm truncate">{{ $topProducts[2]->product_name }}</h4>
-                                            <div class="bg-yellow-600 rounded-t-lg h-20 mt-2 flex items-center justify-center">
-                                                <span class="text-3xl font-bold text-white">3</span>
-                                            </div>
-                                            <p class="text-xs text-gray-500 mt-1">{{ $topProducts[2]->total_sold }} terjual</p>
-                                            @endif
-                                        </div>
-                                    </div>
-                                    @else
-                                    <div class="text-center mt-10 text-gray-500">
-                                        <p>Tidak ada data penjualan untuk rentang tanggal yang dipilih.</p>
-                                    </div>
-                                    @endif
-                                </div>
-                            </div>
-
-                            <!-- BAGIAN 3 TRANSAKSI TERAKHIR -->
-                            <div class="mt-8 pt-6 border-t border-gray-200 flex-grow">
-                                <h3 class="text-lg font-bold text-center mb-4">3 Transaksi Terakhir</h3>
-                                
-                                {{-- Container untuk Tabel Dinamis --}}
-                                <div id="recent-transactions-container">
-                                    {{-- KONTEN AWAL SAAT HALAMAN DIMUAT --}}
-                                    <div class="overflow-x-auto">
-                                        <table class="min-w-full divide-y divide-gray-200">
-                                            <thead class="bg-gray-50">
-                                                <tr>
-                                                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produk & Pembeli</th>
-                                                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Waktu</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody class="bg-white divide-y divide-gray-200">
-                                                @forelse ($recentTransactions as $transaction)
-                                                    <tr>
-                                                        <td class="px-4 py-3 whitespace-nowrap">
-                                                            <div class="flex items-center">
-                                                                <div class="flex-shrink-0 h-10 w-10">
-                                                                    <img class="h-10 w-10 rounded-md object-cover" src="{{ $transaction->product_image ?? 'https://via.placeholder.com/150' }}" alt="">
-                                                                </div>
-                                                                <div class="ml-4">
-                                                                    <div class="text-sm font-medium text-gray-900 truncate" title="{{ $transaction->product_name }}">{{ \Illuminate\Support\Str::limit($transaction->product_name, 35) }}</div>
-                                                                    <div class="text-sm text-gray-500">oleh {{ $transaction->recipient_name }}</div>
-                                                                </div>
-                                                            </div>
-                                                        </td>
-                                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                                                            <div class="font-medium text-gray-700">{{ \Carbon\Carbon::parse($transaction->transaction_time)->format('d M Y, H:i') }}</div>
-                                                            <div class="text-xs">{{ \Carbon\Carbon::parse($transaction->transaction_time)->diffForHumans() }}</div>
-                                                        </td>
-                                                    </tr>
-                                                @empty
-                                                    <tr>
-                                                        <td colspan="2" class="px-6 py-4 text-center text-gray-500">
-                                                            Tidak ada transaksi terbaru pada rentang tanggal ini.
-                                                        </td>
-                                                    </tr>
-                                                @endforelse
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                {{-- Filter Tanggal --}}
+                <div class="flex items-center justify-center space-x-2 md:space-x-4">
+                    <div class="flex-1">
+                        <label for="topProductStartDate" class="block text-sm font-medium text-gray-700">Mulai</label>
+                        <input type="date" id="topProductStartDate" name="start_date" value="{{ $startDate }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    </div>
+                    <div class="flex-1">
+                        <label for="topProductEndDate" class="block text-sm font-medium text-gray-700">Selesai</label>
+                        <input type="date" id="topProductEndDate" name="end_date" value="{{ $endDate }}" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    </div>
+                    <div class="self-end flex items-center space-x-1">
+                        <button type="button" id="filterButton" class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">Filter</button>
+                        <button type="button" id="resetButton" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 text-sm font-medium @if(!$startDate && !$endDate) hidden @endif">Reset</button>
                     </div>
                 </div>
+
+                {{-- Container untuk Podium Dinamis --}}
+                <div id="top-products-container">
+                    {{-- KONTEN AWAL DENGAN LAYOUT BALANCE --}}
+                    @if($topProducts->isNotEmpty())
+                    <div class="flex items-end justify-center space-x-4 text-center mt-6">
+                        
+                        {{-- Posisi 2 (Lebar diubah menjadi 1/3) --}}
+                        @if(isset($topProducts[1]))
+                        <div class="w-1/3">
+                            <img src="{{ $topProducts[1]->image_url }}" alt="{{ $topProducts[1]->product_name }}" class="w-16 h-16 object-cover mx-auto rounded-full border-4 border-gray-300">
+                            <div class="mt-2 flex items-center justify-center min-h-[48px]">
+                                <h4 class="font-semibold text-sm break-words">{{ $topProducts[1]->product_name }}</h4>
+                            </div>
+                            <div class="bg-gray-300 rounded-t-lg h-24 mt-2 flex items-center justify-center">
+                                <span class="text-3xl font-bold text-white">2</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">{{ $topProducts[1]->total_sold }} terjual</p>
+                        </div>
+                        @else
+                        <div class="w-1/3"></div>
+                        @endif
+
+                        {{-- Posisi 1 (Lebar tetap 1/3) --}}
+                        @if(isset($topProducts[0]))
+                        <div class="w-1/3">
+                            <img src="{{ $topProducts[0]->image_url }}" alt="{{ $topProducts[0]->product_name }}" class="w-16 h-16 object-cover mx-auto rounded-full border-4 border-yellow-400">
+                            <div class="mt-2 flex items-center justify-center min-h-[48px]">
+                                <h4 class="font-semibold text-sm break-words">{{ $topProducts[0]->product_name }}</h4>
+                            </div>
+                            <div class="bg-yellow-400 rounded-t-lg h-32 mt-2 flex items-center justify-center">
+                                <span class="text-4xl font-bold text-white">1</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">{{ $topProducts[0]->total_sold }} terjual</p>
+                        </div>
+                        @else
+                        <div class="w-1/3"></div>
+                        @endif
+                        
+                        {{-- Posisi 3 (Lebar diubah menjadi 1/3) --}}
+                        @if(isset($topProducts[2]))
+                        <div class="w-1/3">
+                            <img src="{{ $topProducts[2]->image_url }}" alt="{{ $topProducts[2]->product_name }}" class="w-16 h-16 object-cover mx-auto rounded-full border-4 border-yellow-600">
+                            <div class="mt-2 flex items-center justify-center min-h-[48px]">
+                                <h4 class="font-semibold text-sm break-words">{{ $topProducts[2]->product_name }}</h4>
+                            </div>
+                            <div class="bg-yellow-600 rounded-t-lg h-20 mt-2 flex items-center justify-center">
+                                <span class="text-3xl font-bold text-white">3</span>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">{{ $topProducts[2]->total_sold }} terjual</p>
+                        </div>
+                        @else
+                        <div class="w-1/3"></div>
+                        @endif
+
+                    </div>
+                    @else
+                    <div class="text-center mt-10 text-gray-500">
+                        <p>Tidak ada data penjualan untuk rentang tanggal yang dipilih.</p>
+                    </div>
+                    @endif
+                </div>
+            </div>
+
+            <!-- BAGIAN 3 TRANSAKSI TERAKHIR -->
+            <div class="mt-8 pt-6 border-t border-gray-200 flex-grow">
+                <h3 class="text-lg font-bold text-center mb-4">3 Transaksi Terakhir</h3>
+                
+                {{-- Container untuk Tabel Dinamis --}}
+                <div id="recent-transactions-container">
+                    {{-- KONTEN AWAL SAAT HALAMAN DIMUAT --}}
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Produk & Pembeli</th>
+                                    <th scope="col" class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Waktu</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                @forelse ($recentTransactions as $transaction)
+                                    <tr>
+                                        <td class="px-4 py-3 whitespace-nowrap">
+                                            <div class="flex items-center">
+                                                <div class="flex-shrink-0 h-10 w-10">
+                                                    <img class="h-10 w-10 rounded-md object-cover" src="{{ $transaction->product_image ?? 'https://via.placeholder.com/150' }}" alt="">
+                                                </div>
+                                                <div class="ml-4">
+                                                    <div class="text-sm font-medium text-gray-900 truncate" title="{{ $transaction->product_name }}">{{ \Illuminate\Support\Str::limit($transaction->product_name, 35) }}</div>
+                                                    <div class="text-sm text-gray-500">oleh {{ $transaction->recipient_name }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                            <div class="font-medium text-gray-700">{{ \Carbon\Carbon::parse($transaction->transaction_time)->format('d M Y, H:i') }}</div>
+                                            <div class="text-xs">{{ \Carbon\Carbon::parse($transaction->transaction_time)->diffForHumans() }}</div>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="2" class="px-6 py-4 text-center text-gray-500">
+                                            Tidak ada transaksi terbaru pada rentang tanggal ini.
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
                 <div class="lg:col-span-3" x-data="{ 
                     salesChart: null, 
@@ -925,55 +941,60 @@ document.addEventListener('DOMContentLoaded', function () {
         container.innerHTML = `<div class="text-center py-10"><svg class="animate-spin h-8 w-8 text-indigo-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><p class="mt-2 text-sm text-gray-500">Memuat data...</p></div>`;
     };
 
-    // [BARU] Fungsi untuk membangun HTML podium dari data JSON
+    // [DIPERBAIKI] Fungsi untuk membangun HTML podium dari data JSON dengan lebar seimbang dan nama produk penuh
     const renderTopProducts = (products) => {
         if (!products || products.length === 0) {
             topProductsContainer.innerHTML = `<div class="text-center mt-10 text-gray-500"><p>Tidak ada data penjualan untuk rentang tanggal yang dipilih.</p></div>`;
             return;
         }
 
-        const product2 = products ? `
-            <div class="w-1/4">
+        const product2 = products[1] ? `
+            <div class="w-1/3">
                 <img src="${products[1].image_url}" alt="${products[1].product_name}" class="w-16 h-16 object-cover mx-auto rounded-full border-4 border-gray-300">
-                <h4 class="mt-2 font-semibold text-sm truncate">${products[1].product_name}</h4>
+                <div class="mt-2 flex items-center justify-center min-h-[48px]">
+                    <h4 class="font-semibold text-sm break-words">${products[1].product_name}</h4>
+                </div>
                 <div class="bg-gray-300 rounded-t-lg h-24 mt-2 flex items-center justify-center">
                     <span class="text-3xl font-bold text-white">2</span>
                 </div>
                 <p class="text-xs text-gray-500 mt-1">${products[1].total_sold} terjual</p>
-            </div>` : '<div class="w-1/4"></div>';
+            </div>` : '<div class="w-1/3"></div>';
 
-        const product1 = products ? `
+        const product1 = products[0] ? `
             <div class="w-1/3">
                 <img src="${products[0].image_url}" alt="${products[0].product_name}" class="w-16 h-16 object-cover mx-auto rounded-full border-4 border-yellow-400">
-                <h4 class="mt-2 font-semibold text-sm truncate">${products[0].product_name}</h4>
+                <div class="mt-2 flex items-center justify-center min-h-[48px]">
+                    <h4 class="font-semibold text-sm break-words">${products[0].product_name}</h4>
+                </div>
                 <div class="bg-yellow-400 rounded-t-lg h-32 mt-2 flex items-center justify-center">
                     <span class="text-4xl font-bold text-white">1</span>
                 </div>
                 <p class="text-xs text-gray-500 mt-1">${products[0].total_sold} terjual</p>
             </div>` : '<div class="w-1/3"></div>';
 
-        const product3 = products ? `
-            <div class="w-1/4">
+        const product3 = products[2] ? `
+            <div class="w-1/3">
                 <img src="${products[2].image_url}" alt="${products[2].product_name}" class="w-16 h-16 object-cover mx-auto rounded-full border-4 border-yellow-600">
-                <h4 class="mt-2 font-semibold text-sm truncate">${products[2].product_name}</h4>
+                <div class="mt-2 flex items-center justify-center min-h-[48px]">
+                    <h4 class="font-semibold text-sm break-words">${products[2].product_name}</h4>
+                </div>
                 <div class="bg-yellow-600 rounded-t-lg h-20 mt-2 flex items-center justify-center">
                     <span class="text-3xl font-bold text-white">3</span>
                 </div>
                 <p class="text-xs text-gray-500 mt-1">${products[2].total_sold} terjual</p>
-            </div>` : '<div class="w-1/4"></div>';
+            </div>` : '<div class="w-1/3"></div>';
 
         topProductsContainer.innerHTML = `<div class="flex items-end justify-center space-x-4 text-center mt-6">${product2}${product1}${product3}</div>`;
     };
 
-    // [BARU] Fungsi untuk membangun HTML tabel transaksi dari data JSON
+    // [DIPERBAIKI] Fungsi untuk membangun HTML tabel transaksi dengan nama produk penuh
     const renderRecentTransactions = (transactions) => {
         let tableRowsHtml = '';
         if (!transactions || transactions.length === 0) {
             tableRowsHtml = `<tr><td colspan="2" class="px-6 py-4 text-center text-gray-500">Tidak ada transaksi terbaru pada rentang tanggal ini.</td></tr>`;
         } else {
             transactions.forEach(trx => {
-                // Batasi panjang nama produk untuk tampilan
-                const productName = trx.product_name.length > 35 ? trx.product_name.substring(0, 32) + '...' : trx.product_name;
+                // [DIHAPUS] Logika pemotongan nama produk dihapus
                 tableRowsHtml += `
                     <tr>
                         <td class="px-4 py-3 whitespace-nowrap">
@@ -982,7 +1003,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                     <img class="h-10 w-10 rounded-md object-cover" src="${trx.product_image}" alt="">
                                 </div>
                                 <div class="ml-4">
-                                    <div class="text-sm font-medium text-gray-900 truncate" title="${trx.product_name}">${productName}</div>
+                                    <div class="text-sm font-medium text-gray-900" title="${trx.product_name}">${trx.product_name}</div>
                                     <div class="text-sm text-gray-500">oleh ${trx.recipient_name}</div>
                                 </div>
                             </div>
@@ -1027,7 +1048,7 @@ document.addEventListener('DOMContentLoaded', function () {
         fetch(`{{ route('dashboard.ecommerce.fetchTopProducts') }}?${params}`)
             .then(response => response.json())
             .then(data => {
-                renderTopProducts(data); // Panggil fungsi render yang baru
+                renderTopProducts(data);
             })
             .catch(error => {
                 console.error('Error fetching top products:', error);
@@ -1038,7 +1059,7 @@ document.addEventListener('DOMContentLoaded', function () {
         fetch(`{{ route('dashboard.ecommerce.fetchRecentTransactions') }}?${params}`)
             .then(response => response.json())
             .then(data => {
-                renderRecentTransactions(data); // Panggil fungsi render yang baru
+                renderRecentTransactions(data);
             })
             .catch(error => {
                 console.error('Error fetching recent transactions:', error);

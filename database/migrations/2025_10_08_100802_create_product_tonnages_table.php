@@ -19,7 +19,7 @@ return new class extends Migration
                   ->onDelete('cascade'); // Hapus tonage jika produk master dihapus
             
             // Kolom untuk menyimpan nilai tonase
-            $table->decimal('tonnage', 8, 3)->default(0.000); // 8 digit total, 3 di belakang koma
+            $table->decimal('tonnage', 10, 6)->default(0.000000); // 8 digit total, 3 di belakang koma
 
             $table->timestamps();
 

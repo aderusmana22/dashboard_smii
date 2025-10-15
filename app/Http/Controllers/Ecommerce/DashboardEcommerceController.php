@@ -42,7 +42,8 @@ class DashboardEcommerceController extends Controller
         $lowStockProducts = $this->getLowStockProducts();
         $topProducts = $this->getTopSellingProducts($startDateTime, $endDateTime);
         $productsForFilter = $this->getUniqueProductNames($startDateTime, $endDateTime);
-        $recentTransactions = $this->getRecentTransactions($startDateTime, $endDateTime);
+         $rawTransactions = $this->getRecentTransactions($startDateTime, $endDateTime);
+        $recentTransactions = $this->formatRecentTransactions($rawTransactions);
         $quickActionData = $this->getQuickActionData();
 
         return view('ecommerce.index', compact(
@@ -448,6 +449,63 @@ private function getShopeeCardData($startDate, $endDate): array
     ];
 }
 
+    public function fetchTopProducts(Request $request)
+    {
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $startDateTime = $startDate ? Carbon::parse($startDate)->startOfDay() : null;
+        $endDateTime = $endDate ? Carbon::parse($endDate)->endOfDay() : null;
+
+        $topProducts = $this->getTopSellingProducts($startDateTime, $endDateTime);
+
+        // Langsung kembalikan data sebagai JSON
+        return response()->json($topProducts);
+    }
+
+
+   private function formatRecentTransactions($transactions)
+    {
+        return $transactions->map(function ($transaction) {
+            $time = Carbon::parse($transaction->transaction_time);
+
+            // Logika untuk memilih nama yang akan ditampilkan
+            $displayName = ($transaction->recipient_name === '****' || empty($transaction->recipient_name))
+                ? ($transaction->buyer_username ?? 'Pembeli')
+                : $transaction->recipient_name;
+
+            return (object) [ // Mengembalikan sebagai object agar bisa diakses seperti $transaction->...
+                'product_name' => $transaction->product_name,
+                'product_image' => $transaction->product_image ?? 'https://via.placeholder.com/150',
+                'recipient_name' => $displayName, // Menggunakan nama yang sudah diproses
+                'transaction_time' => $transaction->transaction_time, // Tetap kirim waktu asli
+                'formatted_time' => $time->format('d M Y, H:i'),
+                'time_ago' => $time->diffForHumans(),
+            ];
+        });
+    }
+
+    /**
+     * [PERBAIKAN] Mengambil data 3 Transaksi Terakhir dan mengirimkannya sebagai JSON.
+     */
+    public function fetchRecentTransactions(Request $request)
+    {
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $startDateTime = $startDate ? Carbon::parse($startDate)->startOfDay() : null;
+        $endDateTime = $endDate ? Carbon::parse($endDate)->endOfDay() : null;
+
+        $recentTransactions = $this->getRecentTransactions($startDateTime, $endDateTime);
+
+        // [PERUBAHAN] Panggil fungsi pemformatan yang sudah dibuat
+        $formattedTransactions = $this->formatRecentTransactions($recentTransactions);
+
+        return response()->json($formattedTransactions);
+    }
+
+    /**
+     * Query untuk mengambil data mentah transaksi terakhir.
+     * (Fungsi ini sudah benar dari sebelumnya, tidak perlu diubah)
+     */
     private function getRecentTransactions($startDateTime, $endDateTime)
     {
         $shopeeQuery = DB::table('shopee_order_items')
@@ -457,6 +515,7 @@ private function getShopeeCardData($startDate, $endDate): array
                 'shopee_order_items.item_name as product_name',
                 'shopee_order_items.image_url as product_image',
                 'shopee_orders.recipient_name',
+                'shopee_orders.buyer_username',
                 'shopee_orders.create_time_shopee as transaction_time'
             );
 
@@ -467,6 +526,7 @@ private function getShopeeCardData($startDate, $endDate): array
                 'tiktokped_order_items.product_name',
                 'tiktokped_order_items.sku_image as product_image',
                 'tiktokped_orders.recipient_name',
+                DB::raw("NULL as buyer_username"),
                 'tiktokped_orders.created_at_tiktok as transaction_time'
             );
 
@@ -482,46 +542,5 @@ private function getShopeeCardData($startDate, $endDate): array
             ->sortByDesc('transaction_time')
             ->take(3)
             ->values();
-    }
-
-      public function fetchTopProducts(Request $request)
-    {
-        $startDate = $request->input('start_date');
-        $endDate = $request->input('end_date');
-        $startDateTime = $startDate ? Carbon::parse($startDate)->startOfDay() : null;
-        $endDateTime = $endDate ? Carbon::parse($endDate)->endOfDay() : null;
-
-        $topProducts = $this->getTopSellingProducts($startDateTime, $endDateTime);
-
-        // Langsung kembalikan data sebagai JSON
-        return response()->json($topProducts);
-    }
-
-    /**
-     * [PERBAIKAN] Mengambil data 3 Transaksi Terakhir dan mengirimkannya sebagai JSON.
-     */
-    public function fetchRecentTransactions(Request $request)
-    {
-        $startDate = $request->input('start_date');
-        $endDate = $request->input('end_date');
-        $startDateTime = $startDate ? Carbon::parse($startDate)->startOfDay() : null;
-        $endDateTime = $endDate ? Carbon::parse($endDate)->endOfDay() : null;
-
-        $recentTransactions = $this->getRecentTransactions($startDateTime, $endDateTime);
-
-        // Kita bisa memformat data di sini agar lebih mudah digunakan oleh JavaScript
-        $formattedTransactions = $recentTransactions->map(function ($transaction) {
-            $time = Carbon::parse($transaction->transaction_time);
-            return [
-                'product_name' => $transaction->product_name,
-                'product_image' => $transaction->product_image ?? 'https://via.placeholder.com/150',
-                'recipient_name' => $transaction->recipient_name,
-                'formatted_time' => $time->format('d M Y, H:i'),
-                'time_ago' => $time->diffForHumans(),
-            ];
-        });
-
-        // Langsung kembalikan data yang sudah diformat sebagai JSON
-        return response()->json($formattedTransactions);
     }
 }

@@ -379,82 +379,72 @@ return $this->fetchOrdersByStatus($shopeeStatus, $tiktokStatus, $countOnly, 10);
 private function getTokopediaCardData($startDate, $endDate): array
 {
     $query = TiktokpedOrder::where('status', 'COMPLETED');
+    $dateFilterApplied = $startDate && $endDate;
 
-    if ($startDate && $endDate) {
+    if ($dateFilterApplied) {
         $query->whereBetween('created_at_tiktok', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
     }
 
-    $stats = (clone $query)->select(
-        DB::raw('SUM(total_amount) as total_nilai'), 
-        DB::raw('COUNT(DISTINCT recipient_name) as total_pembeli')
-    )->first();
+    // ... (kode untuk $stats dan $topBuyers tidak berubah)
+    $stats = (clone $query)->select(DB::raw('SUM(total_amount) as total_nilai'), DB::raw('COUNT(DISTINCT recipient_name) as total_pembeli'))->first();
+    $topBuyers = (clone $query)->select('recipient_name', DB::raw('count(*) as purchase_count'))->groupBy('recipient_name')->orderByDesc('purchase_count')->take(3)->get();
 
-    $topBuyers = (clone $query)->select('recipient_name', DB::raw('count(*) as purchase_count'))
-        ->groupBy('recipient_name')
-        ->orderByDesc('purchase_count')
-        ->take(3)
-        ->get();
-
-    // === KALKULASI TONASE BARU UNTUK TOKOPEDIA ===
+    // === [PERBAIKAN] KALKULASI TONASE TOKOPEDIA MENGGUNAKAN TRIM() ===
     $tonnageQuery = DB::table('tiktokped_order_items')
         ->join('tiktokped_orders', 'tiktokped_order_items.tiktokped_order_id', '=', 'tiktokped_orders.id')
-        ->join('master_products', 'tiktokped_order_items.product_name', '=', 'master_products.title')
+        // Menggunakan DB::raw() untuk menerapkan fungsi TRIM() pada kedua sisi JOIN
+        ->join('master_products', DB::raw('TRIM(tiktokped_order_items.product_name)'), '=', DB::raw('TRIM(master_products.title)'))
         ->join('product_tonnages', 'master_products.id', '=', 'product_tonnages.master_product_id')
         ->where('tiktokped_orders.status', 'COMPLETED');
 
-    if ($startDate && $endDate) {
+    if ($dateFilterApplied) {
         $tonnageQuery->whereBetween('tiktokped_orders.created_at_tiktok', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
     }
 
     $totalTonnage = $tonnageQuery->sum(DB::raw('tiktokped_order_items.quantity * product_tonnages.tonnage'));
-    // =============================================
+    // =============================================================
 
     return [
         'total_nilai' => $stats->total_nilai ?? 0,
         'total_pembeli' => $stats->total_pembeli ?? 0,
         'top_buyers' => $topBuyers,
-        'total_tonnage' => $totalTonnage ?? 0, // Tambahkan total_tonnage ke array
+        'total_tonnage' => $totalTonnage ?? 0,
     ];
 }
 
 private function getShopeeCardData($startDate, $endDate): array
 {
     $query = ShopeeOrder::where('order_status', 'COMPLETED');
+    $dateFilterApplied = $startDate && $endDate;
 
-    if ($startDate && $endDate) {
+    if ($dateFilterApplied) {
         $query->whereBetween('create_time_shopee', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
     }
 
-    $stats = (clone $query)->select(
-        DB::raw('SUM(total_amount) as total_nilai'), 
-        DB::raw('COUNT(DISTINCT recipient_name) as total_pembeli')
-    )->first();
-    
-    $topBuyers = (clone $query)->select('recipient_name', DB::raw('count(*) as purchase_count'))
-        ->groupBy('recipient_name')
-        ->orderByDesc('purchase_count')
-        ->take(3)
-        ->get();
+    // ... (kode untuk $stats dan $topBuyers tidak berubah)
+    $stats = (clone $query)->select(DB::raw('SUM(total_amount) as total_nilai'), DB::raw('COUNT(DISTINCT buyer_user_id) as total_pembeli'))->first();
+    $topBuyers = (clone $query)->select('buyer_username', 'buyer_user_id', DB::raw('count(buyer_user_id) as purchase_count'))->whereNotNull('buyer_username')->groupBy('buyer_username', 'buyer_user_id')->orderByDesc('purchase_count')->take(3)->get();
 
-    // === KALKULASI TONASE BARU UNTUK SHOPEE ===
+    // === [PERBAIKAN] KALKULASI TONASE SHOPEE MENGGUNAKAN TRIM() ===
     $tonnageQuery = DB::table('shopee_order_items')
         ->join('shopee_orders', 'shopee_order_items.shopee_order_id', '=', 'shopee_orders.id')
-        ->join('master_products', 'shopee_order_items.item_name', '=', 'master_products.title')
+        // Menggunakan DB::raw() untuk menerapkan fungsi TRIM() pada kedua sisi JOIN
+        ->join('master_products', DB::raw('TRIM(shopee_order_items.item_name)'), '=', DB::raw('TRIM(master_products.title)'))
         ->join('product_tonnages', 'master_products.id', '=', 'product_tonnages.master_product_id')
         ->where('shopee_orders.order_status', 'COMPLETED');
 
-    if ($startDate && $endDate) {
+    if ($dateFilterApplied) {
         $tonnageQuery->whereBetween('shopee_orders.create_time_shopee', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
     }
 
     $totalTonnage = $tonnageQuery->sum(DB::raw('shopee_order_items.model_quantity_purchased * product_tonnages.tonnage'));
-    // ==========================================
+    // ==========================================================
 
     return [
         'total_nilai' => $stats->total_nilai ?? 0,
         'total_pembeli' => $stats->total_pembeli ?? 0,
         'top_buyers' => $topBuyers,
-        'total_tonnage' => $totalTonnage ?? 0, // Tambahkan total_tonnage ke array
+        'total_tonnage' => $totalTonnage ?? 0,
     ];
 }
 

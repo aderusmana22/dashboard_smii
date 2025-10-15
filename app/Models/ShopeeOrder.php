@@ -30,6 +30,8 @@ class ShopeeOrder extends Model
         'ship_by_date',
         'create_time_shopee',
         'raw_data',
+        'buyer_user_id',
+        'buyer_username',
     ];
 
     protected $casts = [

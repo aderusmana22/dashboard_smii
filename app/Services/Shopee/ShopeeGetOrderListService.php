@@ -77,10 +77,21 @@ class ShopeeGetOrderListService
 
         foreach ($orderSnChunks as $index => $chunk) {
             Log::info('SYNC-SHOPEE: Mengambil detail batch ke-' . ($index + 1));
+
+            // === PERUBAHAN UTAMA DI SINI ===
+            // Daftar field yang ingin diminta dari API.
+            $optionalFields = [
+                'item_list', 'total_amount', 'recipient_address', 'payment_method',
+                'shipping_carrier', 'pay_time', 'ship_by_date', 'create_time', 'cod',
+                'region', 'currency', 'estimated_shipping_fee', 'actual_shipping_fee',
+                'buyer_user_id', 'buyer_username' // <-- DATA BARU YANG DIMINTA
+            ];
+
             $params = [
                 'order_sn_list' => implode(',', $chunk),
-                'response_optional_fields' => 'item_list,total_amount,recipient_address,payment_method,shipping_carrier,pay_time,ship_by_date,create_time,cod,region,currency,estimated_shipping_fee,actual_shipping_fee',
+                'response_optional_fields' => implode(',', $optionalFields),
             ];
+            // =================================
 
             $response = $this->makeApiCall('/api/v2/order/get_order_detail', 'GET', $params);
 
@@ -132,7 +143,6 @@ class ShopeeGetOrderListService
         $response = Http::withHeaders(['Content-Type' => 'application/json']);
 
         if (strtoupper($method) === 'GET') {
-            // == PERBAIKAN UTAMA DI SINI: Mengganti `params` menjadi $params ==
             $response = $response->get($fullUrl, $params);
         } else {
             $response = $response->post($fullUrl, $params);

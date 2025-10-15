@@ -53,8 +53,12 @@ class ShopeeOrderController extends Controller
                             'recipient_phone' => $recipient['phone'] ?? null,
                             'recipient_full_address' => $recipient['full_address'] ?? null,
                             
-                            // == PERBAIKAN UTAMA DI SINI ==
-                            // Gunakan !empty() untuk menangani timestamp bernilai 0 dari API
+                            // === PERUBAHAN UTAMA DI SINI ===
+                            // Menyimpan data baru ke kolom yang sudah dibuat
+                            'buyer_user_id' => $orderData['buyer_user_id'] ?? null,
+                            'buyer_username' => $orderData['buyer_username'] ?? null,
+                            // =================================
+                            
                             'pay_time' => !empty($orderData['pay_time']) ? Carbon::createFromTimestamp($orderData['pay_time']) : null,
                             'ship_by_date' => !empty($orderData['ship_by_date']) ? Carbon::createFromTimestamp($orderData['ship_by_date']) : null,
                             'create_time_shopee' => !empty($orderData['create_time']) ? Carbon::createFromTimestamp($orderData['create_time']) : null,

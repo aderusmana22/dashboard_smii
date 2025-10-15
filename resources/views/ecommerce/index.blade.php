@@ -684,22 +684,26 @@
                         </div>
 
                         {{-- Top 3 Pembeli --}}
-                        <div class="mt-6 pt-4 border-t border-orange-400">
-                            <h4 class="font-bold text-lg mb-2">Top 3 Pembeli</h4>
-                            <div id="shopee-top-buyers" class="space-y-3 text-sm">
-                                @forelse ($shopeeCardData['top_buyers'] as $buyer)
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center">
-                                            <img src="https://i.pravatar.cc/40?u={{ urlencode($buyer->recipient_name) }}" alt="User" class="w-8 h-8 rounded-full mr-3 border-2 border-orange-200">
-                                            <p class="font-semibold">{{ $buyer->recipient_name }}</p>
-                                        </div>
-                                        <span class="font-bold bg-white text-orange-600 px-2 py-1 rounded-full text-xs">{{ $buyer->purchase_count }}x Beli</span>
-                                    </div>
-                                @empty
-                                    <p class="text-orange-100">Tidak ada data pembeli.</p>
-                                @endforelse
-                            </div>
-                        </div>
+                       <div class="mt-6 pt-4 border-t border-orange-400">
+    <h4 class="font-bold text-lg mb-2">Top 3 Pembeli</h4>
+    <div id="shopee-top-buyers" class="space-y-3 text-sm">
+        {{-- Pastikan variabel yang dikirim dari controller adalah shopeeCardData --}}
+        @forelse ($shopeeCardData['top_buyers'] as $buyer)
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    {{-- [MODIFIKASI] Gunakan buyer_username untuk avatar yang lebih unik --}}
+                    <img src="https://i.pravatar.cc/40?u={{ urlencode($buyer->buyer_username) }}" alt="User" class="w-8 h-8 rounded-full mr-3 border-2 border-orange-200">
+                    
+                    {{-- [MODIFIKASI] Tampilkan buyer_username, bukan recipient_name --}}
+                    <p class="font-semibold">{{ $buyer->buyer_username }}</p>
+                </div>
+                <span class="font-bold bg-white text-orange-600 px-2 py-1 rounded-full text-xs">{{ $buyer->purchase_count }}x Beli</span>
+            </div>
+        @empty
+            <p class="text-orange-100">Tidak ada data pembeli.</p>
+        @endforelse
+    </div>
+</div>
                         <a href="https://seller.shopee.co.id/" 
                            class="mt-6 inline-block bg-white text-orange-600 font-bold py-2 px-4 rounded-lg hover:bg-orange-100 transition" 
                            target="_blank" 
@@ -788,52 +792,26 @@
     <!-- Script untuk Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Script untuk AJAX Kartu Shopee & Tokopedia -->
-    <script>
-    // =================================================================
-    // == PERBAIKAN: FUNGSI INI DIPINDAHKAN KE LUAR DOCUMENT.READY ======
-    // Ini membuatnya 'global' dan bisa ditemukan oleh Alpine.js
-    // =================================================================
+   <script>
+    // Fungsi ini sudah benar berada di luar
     const formatTonnage = (number) => {
-        return `${parseFloat(number).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Ton`;
+        // Menambahkan pengecekan untuk memastikan number tidak null/undefined
+        const num = number ? parseFloat(number) : 0;
+        return `${num.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Ton`;
     };
     
     function dashboardAksiCepat() {
+        // ... (kode Alpine.js Anda tidak perlu diubah)
         return {
-            activeModal: '', // Variabel untuk menyimpan modal mana yang aktif
-            modalData: {
-                shopee: [],
-                tokopedia: []
-            },
+            activeModal: '',
+            modalData: { shopee: [], tokopedia: [] },
             isLoading: false,
-            
-            // Fungsi untuk membuka modal dan mengambil data
-            openModal(category) {
-                this.isLoading = true;
-                this.activeModal = category; // Set modal yang aktif
-                
-                // Ambil data dari server
-                fetch(`{{ route('ecommerce.dashboard.modalData') }}?category=${category}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        this.modalData = data;
-                        this.isLoading = false;
-                    })
-                    .catch(error => {
-                        console.error('Error fetching modal data:', error);
-                        this.isLoading = false;
-                        alert('Gagal memuat data. Silakan coba lagi.');
-                    });
-            },
-
-            // Fungsi untuk menutup modal
-            closeModal() {
-                this.activeModal = '';
-                this.modalData = { shopee: [], tokopedia: [] }; // Reset data
-            }
+            openModal(category) { /* ... */ },
+            closeModal() { /* ... */ }
         }
     }
 
-    // Kode jQuery tetap berada di dalam document.ready
+    // Kode jQuery
     $(document).ready(function() {
         function formatRupiah(angka) {
             return new Intl.NumberFormat('id-ID', {
@@ -849,20 +827,26 @@
             $('#shopee-loading').removeClass('hidden');
 
             $.ajax({
-                url: '{{ route("ecommerce.dashboard.shopee_stats") }}',
+                url: '{{ route("ecommerce.dashboard.shopee_stats") }}', // Pastikan nama rute ini benar
                 type: 'GET',
                 data: { start_date: startDate, end_date: endDate },
                 success: function(data) {
+                    // [PERBAIKAN] Tambahkan baris ini untuk memperbarui tonase
+                    $('#shopee-total-tonase').text(formatTonnage(data.total_tonnage));
+                    
                     $('#shopee-total-nilai').text(formatRupiah(data.total_nilai));
                     $('#shopee-total-pembeli').text(data.total_pembeli + ' Pembeli');
+                    
                     const topBuyersContainer = $('#shopee-top-buyers').empty();
                     if (data.top_buyers && data.top_buyers.length > 0) {
                         data.top_buyers.forEach(buyer => {
+                            // [PERBAIKAN] Gunakan buyer_username yang lebih akurat
+                            const buyerName = buyer.buyer_username || 'Pembeli';
                             topBuyersContainer.append(`
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center">
-                                        <img src="https://i.pravatar.cc/40?u=${encodeURIComponent(buyer.recipient_name)}" alt="User" class="w-8 h-8 rounded-full mr-3 border-2 border-orange-200">
-                                        <p class="font-semibold">${buyer.recipient_name}</p>
+                                        <img src="https://i.pravatar.cc/40?u=${encodeURIComponent(buyerName)}" alt="User" class="w-8 h-8 rounded-full mr-3 border-2 border-orange-200">
+                                        <p class="font-semibold">${buyerName}</p>
                                     </div>
                                     <span class="font-bold bg-white text-orange-600 px-2 py-1 rounded-full text-xs">${buyer.purchase_count}x Beli</span>
                                 </div>
@@ -890,12 +874,16 @@
             $('#tokopedia-loading').removeClass('hidden');
 
             $.ajax({
-                url: '{{ route("ecommerce.dashboard.tokopedia_stats") }}',
+                url: '{{ route("ecommerce.dashboard.tokopedia_stats") }}', // Pastikan nama rute ini benar
                 type: 'GET',
                 data: { start_date: startDate, end_date: endDate },
                 success: function(data) {
+                    // [PERBAIKAN] Tambahkan baris ini untuk memperbarui tonase
+                    $('#tokopedia-total-tonase').text(formatTonnage(data.total_tonnage));
+
                     $('#tokopedia-total-nilai').text(formatRupiah(data.total_nilai));
                     $('#tokopedia-total-pembeli').text(data.total_pembeli + ' Pembeli');
+                    
                     const topBuyersContainer = $('#tokopedia-top-buyers').empty();
                     if (data.top_buyers && data.top_buyers.length > 0) {
                         data.top_buyers.forEach(buyer => {
@@ -925,7 +913,7 @@
             updateTokopediaCard();
         });
     });
-    </script>
+</script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {

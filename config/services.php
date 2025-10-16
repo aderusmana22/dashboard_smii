@@ -25,5 +25,7 @@ return [
     'shopee' => [
         'partner_id' => env('SHOPEE_PARTNER_ID'),
         'partner_key' => env('SHOPEE_PARTNER_KEY'),
+        'webhook_key' => env('SHOPEE_WEBHOOK_KEY'),
     ],
+    
 ];

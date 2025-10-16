@@ -291,7 +291,14 @@ Route::post('/ecommerce/products/{product}/update-price', [ProductController::cl
         Route::get('/callback', [TiktokController::class, 'handleCallback'])->name('callback');
         Route::delete('/disconnect', [TiktokController::class, 'disconnect'])->name('disconnect');
     });
+Route::prefix('ecommerce/products')->name('ecommerce.products.')->group(function () {
+    // ======================================================================
+    // === PASTIKAN BARIS INI ADA DAN TIDAK ADA SALAH KETIK ===
+    // ======================================================================
+    Route::post('/{product}/add-stock', [ProductController::class, 'addStock'])->name('add.stock');
+    // ======================================================================
 
+});
     Route::prefix('ecommerce')->name('ecommerce.')->group(function () {
     // ... route ecommerce lainnya
     

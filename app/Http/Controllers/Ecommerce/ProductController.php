@@ -16,6 +16,7 @@ use Illuminate\Http\Request; // <-- Perhatikan penambahan ini
 use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
@@ -229,5 +230,70 @@ class ProductController extends Controller
         }
 
         return redirect()->route('ecommerce.products.index')->with('success', $feedbackMessage);
+    }
+
+     public function addStock(Request $request, MasterProduct $product): RedirectResponse
+    {
+        // 1. Validasi input: harus angka positif
+        $validated = $request->validate([
+            'additional_stock' => 'required|integer|min:1',
+        ]);
+        $stockToAdd = $validated['additional_stock'];
+        $errors = [];
+
+        try {
+            // 2. Gunakan transaksi database untuk memastikan konsistensi data
+            DB::transaction(function () use ($product, $stockToAdd, &$errors) {
+                // Kunci baris master product untuk mencegah race condition
+                $product = MasterProduct::lockForUpdate()->find($product->id);
+
+                // 3. Hitung stok baru
+                $currentStock = $product->total_stock;
+                $newMasterStock = $currentStock + $stockToAdd;
+
+                Log::info("Proses tambah stok untuk '{$product->title}': Stok saat ini {$currentStock}, ditambah {$stockToAdd}, menjadi {$newMasterStock}.");
+
+                // Muat relasi untuk efisiensi
+                $product->load(['tiktok_product', 'shopee_product']);
+
+                // 4. Update di TikTok jika terhubung
+                if ($product->tiktok_product) {
+                    try {
+                        $this->tiktokUpdateInventoryService->updateInventory($product->tiktok_product, $newMasterStock);
+                        // Update juga di tabel lokal kita
+                        $product->tiktok_product->update(['total_stock' => $newMasterStock]);
+                    } catch (\Exception $e) {
+                        Log::error("Gagal update stok TikTok untuk master product ID {$product->id}: " . $e->getMessage());
+                        $errors[] = 'Gagal update stok TikTok: ' . $e->getMessage();
+                        // Batalkan transaksi
+                        throw $e;
+                    }
+                }
+
+                // 5. Update di Shopee jika terhubung
+                if ($product->shopee_product) {
+                    try {
+                        $this->shopeeUpdateInventoryService->updateInventory($product->shopee_product, $newMasterStock);
+                        // Update juga di tabel lokal kita
+                        $product->shopee_product->update(['total_stock' => $newMasterStock]);
+                    } catch (\Exception $e) {
+                        Log::error("Gagal update stok Shopee untuk master product ID {$product->id}: " . $e->getMessage());
+                        $errors[] = 'Gagal update stok Shopee: ' . $e->getMessage();
+                        // Batalkan transaksi
+                        throw $e;
+                    }
+                }
+
+                // 6. Jika semua platform berhasil, update stok di tabel master
+                $product->update(['total_stock' => $newMasterStock]);
+            });
+        } catch (\Exception $e) {
+            // Jika ada error di dalam transaksi, kembalikan dengan pesan error
+            return redirect()->route('ecommerce.products.index')->with('error', 'Terjadi kesalahan: ' . implode('; ', $errors));
+        }
+
+        // 7. Jika transaksi berhasil, beri notifikasi sukses
+        $newStockAfterUpdate = $product->total_stock + $stockToAdd;
+        return redirect()->route('ecommerce.products.index')->with('success', "Berhasil menambah {$stockToAdd} stok untuk '{$product->title}'. Stok total sekarang {$newStockAfterUpdate}.");
     }
 }

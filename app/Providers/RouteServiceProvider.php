@@ -33,6 +33,10 @@ class RouteServiceProvider extends ServiceProvider
                 ->prefix('api')
                 ->group(base_path('routes/api.php'));
 
+            Route::middleware('api') // Menggunakan middleware 'api' agar stateless
+            ->prefix('api') // URL akan menjadi /api/webhooks/...
+            ->group(base_path('routes/webhooks.php'));
+
             Route::middleware('web')
                 ->group(base_path('routes/web.php'));
         });

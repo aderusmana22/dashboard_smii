@@ -4,54 +4,66 @@ namespace App\Services\Shopee;
 
 use App\Exceptions\ShopeeApiException;
 use App\Http\Controllers\Shopee\ShopeeApiTrait;
+use App\Models\EcommerceOrder;
+use App\Models\EcommerceSetting;
 use App\Models\ShopeeShop;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Carbon\Carbon;
 
 class ShopeeGetOrderListService
 {
     use ShopeeApiTrait;
 
     /**
-     * Mengambil semua detail pesanan dari API Shopee dalam 15 hari terakhir.
+     * Tugas utama: Mengambil pesanan yang diperbarui sejak sync terakhir dan menyimpannya ke DB.
      */
-    public function fetchAllOrders(): array
+    public function syncOrdersSinceLastUpdate(): void
     {
-        $orderSnList = $this->fetchOrderSnList();
+        // Langkah 1: Dapatkan daftar ID pesanan (order_sn) yang telah diperbarui.
+        $orderSnList = $this->fetchUpdatedOrderSnList();
 
         if (empty($orderSnList)) {
-            Log::info('SYNC-SHOPEE: Tidak ada order_sn yang ditemukan.');
-            return [];
+            Log::info('SYNC-SHOPEE: Tidak ada pesanan baru atau terupdate yang ditemukan.');
+            return;
         }
 
-        return $this->fetchOrderDetails($orderSnList);
+        // Langkah 2: Dapatkan detail lengkap untuk ID pesanan tersebut.
+        $allOrderDetails = $this->fetchOrderDetailsInBatches($orderSnList);
+
+        Log::info("SYNC-SHOPEE: Ditemukan " . count($allOrderDetails) . " detail pesanan untuk diproses.");
+        foreach ($allOrderDetails as $orderData) {
+            $this->saveOrUpdateOrder($orderData);
+        }
     }
 
     /**
-     * Langkah 1: Mengambil daftar order_sn dari endpoint get_order_list.
+     * HANYA mengambil daftar order_sn dari endpoint get_order_list berdasarkan waktu update.
      */
-    private function fetchOrderSnList(): array
+    private function fetchUpdatedOrderSnList(): array
     {
+        $lastSyncSetting = EcommerceSetting::find('shopee_orders_last_sync');
+        $timeFrom = $lastSyncSetting ? Carbon::parse($lastSyncSetting->value)->unix() : Carbon::now()->subDays(3)->unix();
+        $timeTo = Carbon::now()->unix();
+
+        Log::info("SYNC-SHOPEE (Step 1): Mengambil daftar order_sn yang diupdate antara " . date('Y-m-d H:i:s', $timeFrom) . " dan " . date('Y-m-d H:i:s', $timeTo));
+
         $allOrderSn = [];
         $cursor = "";
-        $timeTo = Carbon::now()->unix();
-        $timeFrom = Carbon::now()->subDays(15)->unix();
-
-        Log::info('SYNC-SHOPEE: Memulai pengambilan daftar order_sn.');
 
         do {
             $params = [
-                'time_range_field' => 'create_time',
+                'time_range_field' => 'update_time',
                 'time_from' => $timeFrom,
                 'time_to' => $timeTo,
                 'page_size' => 100,
                 'cursor' => $cursor,
             ];
-
+            
             $response = $this->makeApiCall('/api/v2/order/get_order_list', 'GET', $params);
 
             if (!empty($response['response']['order_list'])) {
+                // Ambil hanya kolom 'order_sn'
                 $orderSnFromPage = array_column($response['response']['order_list'], 'order_sn');
                 $allOrderSn = array_merge($allOrderSn, $orderSnFromPage);
             }
@@ -61,37 +73,26 @@ class ShopeeGetOrderListService
 
         } while ($more && !empty($cursor));
 
-        Log::info('SYNC-SHOPEE: Selesai mengambil daftar order_sn. Total: ' . count($allOrderSn));
         return array_unique($allOrderSn);
     }
 
     /**
-     * Langkah 2: Mengambil detail lengkap pesanan dari endpoint get_order_detail.
+     * Mengambil detail lengkap pesanan dari endpoint get_order_detail dalam batch.
      */
-    private function fetchOrderDetails(array $orderSnList): array
+    private function fetchOrderDetailsInBatches(array $orderSnList): array
     {
         $allOrderDetails = [];
+        // API Shopee merekomendasikan batch maksimal 50
         $orderSnChunks = array_chunk($orderSnList, 50);
 
-        Log::info('SYNC-SHOPEE: Memulai pengambilan detail untuk ' . count($orderSnList) . ' pesanan dalam ' . count($orderSnChunks) . ' batch.');
+        Log::info('SYNC-SHOPEE (Step 2): Mengambil detail untuk ' . count($orderSnList) . ' pesanan dalam ' . count($orderSnChunks) . ' batch.');
 
         foreach ($orderSnChunks as $index => $chunk) {
-            Log::info('SYNC-SHOPEE: Mengambil detail batch ke-' . ($index + 1));
-
-            // === PERUBAHAN UTAMA DI SINI ===
-            // Daftar field yang ingin diminta dari API.
-            $optionalFields = [
-                'item_list', 'total_amount', 'recipient_address', 'payment_method',
-                'shipping_carrier', 'pay_time', 'ship_by_date', 'create_time', 'cod',
-                'region', 'currency', 'estimated_shipping_fee', 'actual_shipping_fee',
-                'buyer_user_id', 'buyer_username' // <-- DATA BARU YANG DIMINTA
-            ];
-
             $params = [
                 'order_sn_list' => implode(',', $chunk),
-                'response_optional_fields' => implode(',', $optionalFields),
+                // Di sini kita BISA dan HARUS meminta item_list
+                'response_optional_fields' => 'item_list,order_status,order_sn',
             ];
-            // =================================
 
             $response = $this->makeApiCall('/api/v2/order/get_order_detail', 'GET', $params);
 
@@ -100,8 +101,29 @@ class ShopeeGetOrderListService
             }
         }
 
-        Log::info('SYNC-SHOPEE: Pengambilan detail pesanan selesai. Total detail didapat: ' . count($allOrderDetails));
         return $allOrderDetails;
+    }
+
+    /**
+     * Menyimpan atau memperbarui pesanan di tabel ecommerce_orders dan menandainya untuk diproses.
+     */
+    private function saveOrUpdateOrder(array $orderData): void
+    {
+        $orderSn = $orderData['order_sn'];
+        $newStatus = $orderData['order_status'];
+
+        $order = EcommerceOrder::updateOrCreate(
+            ['platform' => 'shopee', 'platform_order_id' => $orderSn],
+            ['platform_status' => $newStatus, 'line_items' => $orderData['item_list'] ?? []]
+        );
+
+        if ($order->wasRecentlyCreated) {
+            $order->stock_sync_status = 'PENDING';
+        } elseif ($order->stock_sync_status === 'PROCESSED' && $newStatus === 'CANCELLED') {
+            $order->stock_sync_status = 'PENDING';
+        }
+
+        $order->save();
     }
 
     /**
@@ -109,15 +131,9 @@ class ShopeeGetOrderListService
      */
     private function makeApiCall(string $path, string $method = 'GET', array $queryParams = []): array
     {
-        $shopConnection = ShopeeShop::first();
-        if (!$shopConnection) {
-            throw new ShopeeApiException('Koneksi toko Shopee tidak ditemukan.');
-        }
-
+        $shopConnection = ShopeeShop::firstOrFail();
         $this->initializeShopeeApi();
-        
         if ($shopConnection->access_token_expires_at->isPast()) {
-            Log::info('SYNC-SHOPEE: Access token kadaluarsa, mencoba untuk refresh.');
             $shopConnection = $this->refreshToken($shopConnection);
         }
 
@@ -130,34 +146,16 @@ class ShopeeGetOrderListService
         ];
 
         $params = array_merge($baseParams, $queryParams);
-
-        $params['sign'] = $this->generateApiSignature(
-            $path,
-            $timestamp,
-            $shopConnection->access_token,
-            (int)$shopConnection->shop_id
-        );
-
+        $params['sign'] = $this->generateApiSignature($path, $timestamp, $shopConnection->access_token, (int)$shopConnection->shop_id);
         $fullUrl = $this->apiBaseUrl . $path;
 
-        $response = Http::withHeaders(['Content-Type' => 'application/json']);
-
-        if (strtoupper($method) === 'GET') {
-            $response = $response->get($fullUrl, $params);
-        } else {
-            $response = $response->post($fullUrl, $params);
-        }
+        $response = Http::get($fullUrl, $params);
 
         if ($response->successful() && empty($response->json('error'))) {
             return $response->json();
         }
 
-        Log::error('SYNC-SHOPEE: Panggilan API gagal.', [
-            'url' => $fullUrl,
-            'params' => $params,
-            'response' => $response->body(),
-        ]);
-
+        Log::error('SYNC-SHOPEE: Panggilan API gagal.', ['url' => $fullUrl, 'params' => $params, 'response' => $response->body()]);
         throw new ShopeeApiException('Gagal mengambil data dari API Shopee: ' . $response->json('message', 'Unknown error'));
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\PPIC;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class MPSController extends Controller
 {
@@ -20,14 +21,20 @@ class MPSController extends Controller
         );
     }
 
-    public function getMPS(Request $request)
+    public function getMPS()
     {
         // Step 1: Fetch data from QAD server (getItemAutoNaim)
         $qxUrl = 'http://smii.qad:25079/wsa/smiiwsa';
         $timeout = 10;
         $domain = 'SMII';
-        $startDate = $request->input('start_date', date('Y-m-01'));
-        $endDate = $request->input('end_date', date('Y-m-d'));
+        $rangeType = request()->input('range', 'today');
+        $now = Carbon::now();
+        $startDate = $now->copy()->startOfMonth()->format('Y-m-d');
+        if ($rangeType === 'full') {
+            $endDate = $now->copy()->endOfMonth()->format('Y-m-d');
+        } else {
+            $endDate = $now->format('Y-m-d');
+        }
         $qdocRequest =
             '<Envelope xmlns="http://schemas.xmlsoap.org/soap/envelope/">
                 <Body>

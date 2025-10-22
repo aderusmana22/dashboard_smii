@@ -4,6 +4,8 @@ namespace App\Console;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use App\Jobs\FetchMPSDataJob;
+use App\Jobs\ExportDailyReportJob;
 
 class Kernel extends ConsoleKernel
 {
@@ -39,6 +41,12 @@ class Kernel extends ConsoleKernel
         $schedule->command('sync:run-all')
                  ->everyFifteenMinutes()
                  ->withoutOverlapping();
+
+        $schedule->job(new FetchMPSDataJob)->dailyAt('07:00');
+
+        // Job untuk memproses dan mengekspor data setiap hari jam 8 pagi.
+        // Diberi jeda 1 jam untuk memastikan data MPS sudah selesai diproses.
+        $schedule->job(new ExportDailyReportJob)->dailyAt('08:00');
     }
     
     /**

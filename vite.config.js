@@ -33,7 +33,7 @@ export default defineConfig({
         port: 5173,
         strictPort: true,
         hmr: {
-        host: 'vite-dev.yogaardiansyah.my.id',
+        // host: 'vite-dev.yogaardiansyah.my.id',
         protocol: 'wss',
         clientPort: 443,
         },

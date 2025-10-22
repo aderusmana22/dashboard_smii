@@ -38,6 +38,7 @@ use App\Http\Controllers\Ecommerce\SalesDashboardController;
 use App\Http\Controllers\Shopee\ShopeeController;
 use App\Http\Controllers\Ecommerce\ShopeeOrderController;
 use App\Http\Controllers\Ecommerce\ProductTonnageController;
+use App\Http\Controllers\PPIC\ForecastController;
 
 /*
 |--------------------------------------------------------------------------
@@ -336,6 +337,13 @@ Route::get('/dashboard/ecommerce/fetch-recent-transactions', [DashboardEcommerce
         Route::get('/email/reject-form', [\App\Http\Controllers\DevTestingController::class, 'previewRejectForm'])->name('email.reject_form');
     });
 
+    Route::prefix('ppic')->name('ppic.')->group(function () {
+        Route::get('forecast', [ForecastController::class, 'index'])->name('forecast.index');
+        Route::get('forecast/data', [ForecastController::class, 'fetchData'])->name('forecast.data');
+        Route::post('forecast/import', [ForecastController::class, 'import'])->name('forecast.import');
+        Route::get('forecast/template', [ForecastController::class, 'downloadTemplate'])->name('forecast.template');
+    });
+
 });
 
 
@@ -361,6 +369,8 @@ Route::get('/warehouse-data-filter', [InventoryController::class, 'warehouseFilt
 Route::get('/warehouse-dispatch-filter', [InventoryController::class, 'warehouseAreaDispatch']);
 Route::get('/warehouse-data', [InventoryController::class, 'getWarehouseDataCombined'])->name('warehouse.getWarehouseData');
 Route::get('/warehouse-temperature', [InventoryController::class, 'getWarehouseDataWithTemperature']);
+
+
 
 
 Route::group(['middleware' => ['role:super-admin|admin']], function () {

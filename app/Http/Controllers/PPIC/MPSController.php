@@ -27,14 +27,10 @@ class MPSController extends Controller
         $qxUrl = 'http://smii.qad:25079/wsa/smiiwsa';
         $timeout = 10;
         $domain = 'SMII';
-        $rangeType = request()->input('range', 'today');
+        // Always use start of month until today
         $now = Carbon::now();
         $startDate = $now->copy()->startOfMonth()->format('Y-m-d');
-        if ($rangeType === 'full') {
-            $endDate = $now->copy()->endOfMonth()->format('Y-m-d');
-        } else {
-            $endDate = $now->format('Y-m-d');
-        }
+        $endDate = $now->format('Y-m-d');
         $qdocRequest =
             '<Envelope xmlns="http://schemas.xmlsoap.org/soap/envelope/">
                 <Body>

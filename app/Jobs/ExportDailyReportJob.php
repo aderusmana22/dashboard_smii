@@ -10,9 +10,12 @@ use Illuminate\Queue\SerializesModels;
 use App\Models\MpsData;
 use App\Models\ForecastImport;
 use App\Models\DailyPpicReport;
+use App\Models\User;
 use App\Exports\PPICStockExport;
+use App\Mail\DailyReportMail;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 
@@ -22,7 +25,6 @@ class ExportDailyReportJob implements ShouldQueue
 
     public function __construct()
     {
-        //
     }
 
     public function handle(): void
@@ -33,7 +35,6 @@ class ExportDailyReportJob implements ShouldQueue
             $currentMonth = $now->month;
             $currentYear = $now->year;
 
-            // 1. Ambil data MPS untuk periode berjalan
             $mpsData = MpsData::where('month', $currentMonth)
                               ->where('year', $currentYear)
                               ->get();
@@ -43,7 +44,6 @@ class ExportDailyReportJob implements ShouldQueue
                 return;
             }
 
-            // 2. Ambil data Forecast untuk periode berjalan dan buat menjadi map untuk pencarian cepat
             $forecastDataMap = ForecastImport::where('month', $currentMonth)
                                           ->where('year', '>=', $currentYear)
                                           ->get()
@@ -56,12 +56,9 @@ class ExportDailyReportJob implements ShouldQueue
 
             $exportData = [];
 
-            // 3. Loop melalui data MPS dan cari pasangannya di data Forecast
             foreach ($mpsData as $mpsItem) {
-                // Cari forecast yang cocok berdasarkan item_number
                 $forecastItem = $forecastDataMap->get($mpsItem->item_number);
 
-                // HANYA jika data forecast DITEMUKAN, maka proses data ini
                 if ($forecastItem) {
                     $matchedData = [
                         'item_number'    => $mpsItem->item_number,
@@ -77,7 +74,6 @@ class ExportDailyReportJob implements ShouldQueue
                         'forecast_tonage'=> $forecastItem->tonage,
                     ];
 
-                    // 4. Simpan atau update data yang cocok ke tabel laporan harian
                     DailyPpicReport::updateOrCreate(
                         [
                             'item_number' => $mpsItem->item_number,
@@ -89,7 +85,6 @@ class ExportDailyReportJob implements ShouldQueue
                     
                     $exportData[] = $matchedData;
                 }
-                // Jika tidak ada pasangan forecast, $mpsItem akan diabaikan.
             }
 
             if (empty($exportData)) {
@@ -97,13 +92,33 @@ class ExportDailyReportJob implements ShouldQueue
                 return;
             }
 
-            // 5. Ekspor ke file Excel
             $date = $now->format('d F Y');
             $fileName = 'reports/Report_Stock_PPIC_' . $now->format('Ymd') . '.xlsx';
             
             Excel::store(new PPICStockExport($exportData, $date), $fileName, 'local');
+            $filePath = Storage::disk('local')->path($fileName);
+            Log::info('File laporan sementara berhasil dibuat di: ' . $filePath);
 
-            Log::info('Job ekspor laporan harian berhasil. File disimpan di: ' . Storage::path($fileName));
+
+            $users = User::role('data-emails')->get();
+
+            if ($users->isEmpty()) {
+                Log::warning('Tidak ada user dengan role "data-emails" yang ditemukan. Email tidak dikirim.');
+            } else {
+                foreach ($users as $user) {
+                    try {
+                        Mail::to($user->email)->send(new DailyReportMail($user->name, $now->format('d-M-Y'), $filePath));
+                        Log::info('Email laporan berhasil dikirim ke: ' . $user->email);
+                    } catch (\Exception $e) {
+                        Log::error('Gagal mengirim email ke ' . $user->email . ': ' . $e->getMessage());
+                    }
+                }
+            }
+
+            if (Storage::disk('local')->exists($fileName)) {
+                Storage::disk('local')->delete($fileName);
+                Log::info('File laporan sementara berhasil dihapus: ' . $fileName);
+            }
 
         } catch (\Exception $e) {
             Log::error('Terjadi kesalahan pada job ekspor laporan harian: ' . $e->getMessage());

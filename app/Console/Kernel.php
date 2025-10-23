@@ -22,39 +22,35 @@ class Kernel extends ConsoleKernel
         // Menjadwalkan perintah fetch-shipments setiap 30 menit
         $schedule->command('qad:fetch-shipments')->everyThirtyMinutes();
 
-          // BAGIAN 2: SIKLUS SINKRONISASI PRODUK (PRODUK -> MASTER)
+        // BAGIAN 2: SIKLUS SINKRONISASI PRODUK (PRODUK -> MASTER)
         $schedule->command('sync:shopee-products')
-                 ->everyThirtyMinutes()
-                 ->withoutOverlapping()
-                 ->onSuccess(function () {
-                     $this->call('sync:master-products');
-                 });
+            ->everyThirtyMinutes()
+            ->withoutOverlapping()
+            ->onSuccess(function () {
+                $this->call('sync:master-products');
+            });
 
         $schedule->command('sync:tiktok-products')
-                 ->everyThirtyMinutes()
-                 ->withoutOverlapping()
-                 ->onSuccess(function () {
-                     $this->call('sync:master-products');
-                 });
+            ->everyThirtyMinutes()
+            ->withoutOverlapping()
+            ->onSuccess(function () {
+                $this->call('sync:master-products');
+            });
 
         // BAGIAN 3: SIKLUS SINKRONISASI PESANAN & STOK (PESANAN -> STOK)
         $schedule->command('sync:run-all')
-                 ->everyFifteenMinutes()
-                 ->withoutOverlapping();
+            ->everyFifteenMinutes()
+            ->withoutOverlapping();
 
-        $schedule->job(new FetchMPSDataJob)->dailyAt('07:00');
-
-        // Job untuk memproses dan mengekspor data setiap hari jam 8 pagi.
-        // Diberi jeda 1 jam untuk memastikan data MPS sudah selesai diproses.
-        $schedule->job(new ExportDailyReportJob)->dailyAt('08:00');
+        $schedule->command('qad:fetch-mps')->dailyAt('07:00');
     }
-    
+
     /**
      * Register the commands for the application.
      */
     protected function commands(): void
     {
-        $this->load(__DIR__.'/Commands');
+        $this->load(__DIR__ . '/Commands');
 
         require base_path('routes/console.php');
     }

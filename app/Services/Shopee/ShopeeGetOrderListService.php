@@ -15,74 +15,93 @@ class ShopeeGetOrderListService
 {
     use ShopeeApiTrait;
 
-    /**
-     * Tugas utama: Mengambil pesanan yang diperbarui sejak sync terakhir dan menyimpannya ke DB.
-     */
     public function syncOrdersSinceLastUpdate(): void
     {
-        // Langkah 1: Dapatkan daftar ID pesanan (order_sn) yang telah diperbarui.
         $orderSnList = $this->fetchUpdatedOrderSnList();
 
         if (empty($orderSnList)) {
-            Log::info('SYNC-SHOPEE: Tidak ada pesanan baru atau terupdate yang ditemukan.');
             return;
         }
 
-        // Langkah 2: Dapatkan detail lengkap untuk ID pesanan tersebut.
         $allOrderDetails = $this->fetchOrderDetailsInBatches($orderSnList);
 
         Log::info("SYNC-SHOPEE: Ditemukan " . count($allOrderDetails) . " detail pesanan untuk diproses.");
         foreach ($allOrderDetails as $orderData) {
             $this->saveOrUpdateOrder($orderData);
         }
+
+        EcommerceSetting::updateOrCreate(
+            ['key' => 'shopee_orders_last_sync'],
+            ['value' => Carbon::now()->toDateTimeString()]
+        );
+        Log::info('SYNC-SHOPEE: Sinkronisasi selesai. Waktu sync terakhir telah diperbarui ke hari ini.');
     }
 
     /**
-     * HANYA mengambil daftar order_sn dari endpoint get_order_list berdasarkan waktu update.
+     * Mengambil daftar order_sn dengan memecah permintaan menjadi interval 14 hari
+     * untuk mematuhi batasan API Shopee.
      */
     private function fetchUpdatedOrderSnList(): array
     {
         $lastSyncSetting = EcommerceSetting::find('shopee_orders_last_sync');
-        $timeFrom = $lastSyncSetting ? Carbon::parse($lastSyncSetting->value)->unix() : Carbon::now()->subDays(3)->unix();
-        $timeTo = Carbon::now()->unix();
+        // <-- PERUBAHAN LOGIKA DI SINI
+        // Cek apakah sinkronisasi sudah berjalan dalam 3 hari terakhir.
+        if ($lastSyncSetting && Carbon::parse($lastSyncSetting->value)->greaterThan(Carbon::now()->subDays(3))) {
+            Log::info('SYNC-SHOPEE: Sinkronisasi sudah dijalankan dalam 3 hari terakhir. Proses dilewati.');
+            return [];
+        }
 
-        Log::info("SYNC-SHOPEE (Step 1): Mengambil daftar order_sn yang diupdate antara " . date('Y-m-d H:i:s', $timeFrom) . " dan " . date('Y-m-d H:i:s', $timeTo));
+        Log::info("SYNC-SHOPEE (Full Sync): Menjalankan sinkronisasi penuh karena belum ada sinkronisasi dalam 3 hari terakhir.");
 
         $allOrderSn = [];
-        $cursor = "";
+        $endDate = Carbon::now();
+        $currentStartDate = Carbon::now()->subYear();
 
-        do {
-            $params = [
-                'time_range_field' => 'update_time',
-                'time_from' => $timeFrom,
-                'time_to' => $timeTo,
-                'page_size' => 100,
-                'cursor' => $cursor,
-            ];
-            
-            $response = $this->makeApiCall('/api/v2/order/get_order_list', 'GET', $params);
+        Log::info("SYNC-SHOPEE (Step 1): Memulai pengambilan order_sn dari {$currentStartDate->toDateString()} hingga {$endDate->toDateString()}.");
 
-            if (!empty($response['response']['order_list'])) {
-                // Ambil hanya kolom 'order_sn'
-                $orderSnFromPage = array_column($response['response']['order_list'], 'order_sn');
-                $allOrderSn = array_merge($allOrderSn, $orderSnFromPage);
+        while ($currentStartDate->lessThan($endDate)) {
+            $currentEndDate = $currentStartDate->copy()->addDays(14);
+            if ($currentEndDate->greaterThan($endDate)) {
+                $currentEndDate = $endDate;
             }
 
-            $cursor = $response['response']['next_cursor'] ?? '';
-            $more = $response['response']['more'] ?? false;
+            Log::info("SYNC-SHOPEE: Mengambil potongan data antara {$currentStartDate->toDateTimeString()} dan {$currentEndDate->toDateTimeString()}.");
 
-        } while ($more && !empty($cursor));
+            $timeFrom = $currentStartDate->unix();
+            $timeTo = $currentEndDate->unix();
+            $cursor = "";
 
+            do {
+                $params = [
+                    'time_range_field' => 'update_time',
+                    'time_from' => $timeFrom,
+                    'time_to' => $timeTo,
+                    'page_size' => 100,
+                    'cursor' => $cursor,
+                ];
+                
+                $response = $this->makeApiCall('/api/v2/order/get_order_list', 'GET', $params);
+
+                if (!empty($response['response']['order_list'])) {
+                    $orderSnFromPage = array_column($response['response']['order_list'], 'order_sn');
+                    $allOrderSn = array_merge($allOrderSn, $orderSnFromPage);
+                }
+
+                $cursor = $response['response']['next_cursor'] ?? '';
+                $more = $response['response']['more'] ?? false;
+
+            } while ($more && !empty($cursor));
+
+            $currentStartDate = $currentEndDate->copy()->addSecond();
+        }
+
+        Log::info("SYNC-SHOPEE (Step 1 Selesai): Total " . count($allOrderSn) . " order_sn unik ditemukan.");
         return array_unique($allOrderSn);
     }
 
-    /**
-     * Mengambil detail lengkap pesanan dari endpoint get_order_detail dalam batch.
-     */
     private function fetchOrderDetailsInBatches(array $orderSnList): array
     {
         $allOrderDetails = [];
-        // API Shopee merekomendasikan batch maksimal 50
         $orderSnChunks = array_chunk($orderSnList, 50);
 
         Log::info('SYNC-SHOPEE (Step 2): Mengambil detail untuk ' . count($orderSnList) . ' pesanan dalam ' . count($orderSnChunks) . ' batch.');
@@ -90,7 +109,6 @@ class ShopeeGetOrderListService
         foreach ($orderSnChunks as $index => $chunk) {
             $params = [
                 'order_sn_list' => implode(',', $chunk),
-                // Di sini kita BISA dan HARUS meminta item_list
                 'response_optional_fields' => 'item_list,order_status,order_sn',
             ];
 
@@ -104,9 +122,6 @@ class ShopeeGetOrderListService
         return $allOrderDetails;
     }
 
-    /**
-     * Menyimpan atau memperbarui pesanan di tabel ecommerce_orders dan menandainya untuk diproses.
-     */
     private function saveOrUpdateOrder(array $orderData): void
     {
         $orderSn = $orderData['order_sn'];
@@ -126,9 +141,6 @@ class ShopeeGetOrderListService
         $order->save();
     }
 
-    /**
-     * Fungsi pembungkus untuk melakukan panggilan API dengan otentikasi.
-     */
     private function makeApiCall(string $path, string $method = 'GET', array $queryParams = []): array
     {
         $shopConnection = ShopeeShop::firstOrFail();

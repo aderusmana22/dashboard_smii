@@ -15,33 +15,56 @@ class TiktokGetOrderListService
 {
     use TiktokApiTrait;
 
-    /**
-     * Tugas utama: Mengambil pesanan yang diperbarui sejak sync terakhir dan menyimpannya ke DB.
-     */
     public function syncOrdersSinceLastUpdate(): void
     {
         $lastSyncSetting = EcommerceSetting::find('tiktok_last_sync');
-        $timeFrom = $lastSyncSetting ? Carbon::parse($lastSyncSetting->value)->unix() : Carbon::now()->subDays(3)->unix();
-        $timeTo = Carbon::now()->unix();
-
-        Log::info("SYNC-TIKTOK: Mengambil pesanan yang diupdate antara " . date('Y-m-d H:i:s', $timeFrom) . " dan " . date('Y-m-d H:i:s', $timeTo));
-
-        $allOrders = $this->fetchAllUpdatedOrders($timeFrom, $timeTo);
-
-        if (empty($allOrders)) {
-            Log::info('SYNC-TIKTOK: Tidak ada pesanan baru atau terupdate yang ditemukan.');
+        // <-- PERUBAHAN LOGIKA DI SINI
+        // Cek apakah sinkronisasi sudah berjalan dalam 3 hari terakhir.
+        if ($lastSyncSetting && Carbon::parse($lastSyncSetting->value)->greaterThan(Carbon::now()->subDays(3))) {
+            Log::info('SYNC-TIKTOK: Sinkronisasi sudah dijalankan dalam 3 hari terakhir. Proses dilewati.');
             return;
         }
 
-        Log::info("SYNC-TIKTOK: Ditemukan " . count($allOrders) . " pesanan untuk diproses.");
-        foreach ($allOrders as $orderData) {
-            $this->saveOrUpdateOrder($orderData);
+        Log::info("SYNC-TIKTOK (Full Sync): Menjalankan sinkronisasi penuh karena belum ada sinkronisasi dalam 3 hari terakhir.");
+        
+        $endDate = Carbon::now();
+        $currentStartDate = Carbon::now()->subYear();
+        
+        Log::info("SYNC-TIKTOK: Memulai pengambilan pesanan dari {$currentStartDate->toDateString()} hingga {$endDate->toDateString()}.");
+
+        $allOrders = [];
+        while($currentStartDate->lessThan($endDate)) {
+            $currentEndDate = $currentStartDate->copy()->addDays(89);
+            if ($currentEndDate->greaterThan($endDate)) {
+                $currentEndDate = $endDate;
+            }
+
+            Log::info("SYNC-TIKTOK: Mengambil potongan data antara {$currentStartDate->toDateTimeString()} dan {$currentEndDate->toDateTimeString()}.");
+
+            $ordersInChunk = $this->fetchAllUpdatedOrders($currentStartDate->unix(), $currentEndDate->unix());
+            if (!empty($ordersInChunk)) {
+                $allOrders = array_merge($allOrders, $ordersInChunk);
+            }
+
+            $currentStartDate = $currentEndDate->copy()->addSecond();
         }
+
+        if (empty($allOrders)) {
+            Log::info('SYNC-TIKTOK: Tidak ada pesanan baru atau terupdate yang ditemukan dalam rentang waktu penuh.');
+        } else {
+             Log::info("SYNC-TIKTOK: Ditemukan " . count($allOrders) . " pesanan untuk diproses.");
+            foreach ($allOrders as $orderData) {
+                $this->saveOrUpdateOrder($orderData);
+            }
+        }
+        
+        EcommerceSetting::updateOrCreate(
+            ['key' => 'tiktok_last_sync'],
+            ['value' => Carbon::now()->toDateTimeString()]
+        );
+        Log::info('SYNC-TIKTOK: Sinkronisasi selesai. Waktu sync terakhir telah diperbarui ke hari ini.');
     }
 
-    /**
-     * Mengambil semua pesanan dari API TikTok berdasarkan rentang waktu update.
-     */
     private function fetchAllUpdatedOrders(int $timeFrom, int $timeTo): array
     {
         $allOrders = [];
@@ -71,9 +94,6 @@ class TiktokGetOrderListService
         return $allOrders;
     }
 
-    /**
-     * Menyimpan atau memperbarui pesanan di tabel ecommerce_orders dan menandainya untuk diproses.
-     */
     private function saveOrUpdateOrder(array $orderData): void
     {
         $orderId = $orderData['id'];
@@ -93,9 +113,6 @@ class TiktokGetOrderListService
         $order->save();
     }
 
-    /**
-     * Fungsi pembungkus untuk melakukan panggilan API.
-     */
     public function getOrderListPage(array $queryParams = []): ?array
     {
         $shopConnection = TiktokShop::firstOrFail();
@@ -131,10 +148,6 @@ class TiktokGetOrderListService
         throw new TiktokApiException('Gagal mengambil halaman daftar pesanan dari TikTok API: ' . $response->json('message'));
     }
 
-    /**
-     * Mengambil shop_cipher yang valid dari API TikTok.
-     * INI ADALAH PERBAIKANNYA.
-     */
     private function getShopCipher(TiktokShop $shopConnection): string
     {
         $path = '/authorization/202309/shops';
@@ -146,11 +159,9 @@ class TiktokGetOrderListService
                         ->get($this->apiBaseUrl . $path, $params);
 
         if ($response->successful() && $response->json('code') === 0 && !empty($response->json('data.shops'))) {
-            // Ambil cipher dari toko pertama yang terdaftar
             return $response->json('data.shops')[0]['cipher'];
         }
 
-        // Jika gagal, lemparkan exception agar proses berhenti dan error tercatat.
         throw new TiktokApiException('Gagal mendapatkan informasi toko (shop_cipher). Response: ' . $response->body());
     }
 }

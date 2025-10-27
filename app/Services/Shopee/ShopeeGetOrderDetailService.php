@@ -23,24 +23,32 @@ class ShopeeGetOrderDetailService
 
         $path = '/api/v2/order/get_order_detail';
         $timestamp = time();
-        $sign = $this->generateApiSignature($path, $timestamp, $shop->access_token, (int) $shop->shop_id);
-        $optionalFields = 'item_list,buyer_user_id';
+        
+        // =================================================================
+        // <-- KODE YANG DIPERBAIKI ADA DI SINI -->
+        // Meminta semua field yang dibutuhkan untuk penyimpanan data.
+        $optionalFields = 'item_list,recipient_address,total_amount,payment_method,shipping_carrier,create_time,pay_time,currency';
+        // =================================================================
 
-        $response = Http::get($this->apiBaseUrl . $path, [
+        $params = [
             'partner_id' => (int) $this->partnerId,
             'timestamp' => $timestamp,
             'access_token' => $shop->access_token,
             'shop_id' => (int) $shop->shop_id,
-            'sign' => $sign,
             'order_sn_list' => $orderSn,
             'response_optional_fields' => $optionalFields,
-        ]);
+        ];
+        
+        $params['sign'] = $this->generateApiSignature($path, $timestamp, $shop->access_token, (int) $shop->shop_id);
+
+        $response = Http::get($this->apiBaseUrl . $path, $params);
 
         if ($response->failed() || !empty($response->json('error'))) {
             $errorMsg = $response->json('message', 'Unknown Shopee API error');
             Log::error("Gagal mengambil detail pesanan Shopee {$orderSn}", ['response' => $response->body()]);
             throw new ShopeeApiException("Gagal mengambil detail pesanan Shopee: {$errorMsg}");
         }
+        
         return $response->json('response.order_list.0');
     }
 }

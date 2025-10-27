@@ -26,8 +26,8 @@ class ShopeeGetOrderDetailService
         
         // =================================================================
         // <-- KODE YANG DIPERBAIKI ADA DI SINI -->
-        // Meminta semua field yang dibutuhkan untuk penyimpanan data.
-        $optionalFields = 'item_list,recipient_address,total_amount,payment_method,shipping_carrier,create_time,pay_time,currency';
+        // Menambahkan buyer_user_id dan buyer_username ke dalam daftar.
+        $optionalFields = 'item_list,recipient_address,total_amount,payment_method,shipping_carrier,create_time,pay_time,currency,buyer_user_id,buyer_username';
         // =================================================================
 
         $params = [

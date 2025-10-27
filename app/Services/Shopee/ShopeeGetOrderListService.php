@@ -26,6 +26,7 @@ class ShopeeGetOrderListService
         $this->orderDetailService = $orderDetailService;
     }
 
+    // ... (Metode syncOrdersSinceLastUpdate dan orkestrasinya tidak berubah) ...
     public function syncOrdersSinceLastUpdate(): void
     {
         $orderSnList = $this->fetchUpdatedOrderSnList();
@@ -66,6 +67,9 @@ class ShopeeGetOrderListService
 
     private function saveToShopeeTables(array $orderData): ShopeeOrder
     {
+        // =================================================================
+        // <-- KODE YANG DIPERBAIKI ADA DI SINI -->
+        // Menambahkan buyer_user_id dan buyer_username ke dalam data yang disimpan.
         $shopeeOrder = ShopeeOrder::updateOrCreate(
             ['order_sn' => data_get($orderData, 'order_sn')],
             [
@@ -76,18 +80,19 @@ class ShopeeGetOrderListService
                 'recipient_name' => data_get($orderData, 'recipient_address.name'),
                 'recipient_phone' => data_get($orderData, 'recipient_address.phone'),
                 'recipient_full_address' => data_get($orderData, 'recipient_address.full_address'),
+                'buyer_user_id' => data_get($orderData, 'buyer_user_id'), // <-- DITAMBAHKAN
+                'buyer_username' => data_get($orderData, 'buyer_username'), // <-- DITAMBAHKAN
                 'create_time_shopee' => Carbon::createFromTimestamp(data_get($orderData, 'create_time')),
                 'pay_time' => data_get($orderData, 'pay_time') ? Carbon::createFromTimestamp(data_get($orderData, 'pay_time')) : null,
                 'raw_data' => json_encode($orderData),
             ]
         );
+        // =================================================================
 
         $shopeeOrder->items()->delete();
 
         $items = data_get($orderData, 'item_list', []);
         foreach ($items as $item) {
-            // =================================================================
-            // <-- INI ADALAH PERBAIKAN UNTUK ERROR TERAKHIR ANDA -->
             $originalPrice = data_get($item, 'model_original_price', data_get($item, 'original_price'));
             $discountedPrice = data_get($item, 'model_discounted_price', data_get($item, 'discounted_price'));
 
@@ -103,9 +108,8 @@ class ShopeeGetOrderListService
                 'model_quantity_purchased' => data_get($item, 'model_quantity_purchased'),
                 'model_original_price' => $originalPrice ?? $discountedPrice ?? 0,
                 'model_discounted_price' => $discountedPrice ?? 0,
-                'image_url' => data_get($item, 'image_info.image_url'), // Path yang benar sesuai dokumentasi
+                'image_url' => data_get($item, 'image_info.image_url'),
             ]);
-            // =================================================================
         }
 
         return $shopeeOrder;
@@ -135,6 +139,7 @@ class ShopeeGetOrderListService
         $order->save();
     }
 
+    // ... (Sisa kode tetap sama) ...
     private function fetchUpdatedOrderSnList(): array
     {
         $maxPullDays = 30;

@@ -236,5 +236,13 @@
             </ul>
         </li>
 
+     
+    <li class="{{ request()->routeIs('oil.index') ? 'current' : '' }}">
+        <a href="{{ route('oil.index') }}" style="font-size: 18px;">
+            <i data-feather="droplet" style="width: 18px; height: 18px;"></i>
+            Oil Monitoring
+        </a>
+    </li>
+
     </ul>
 </nav>

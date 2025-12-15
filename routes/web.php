@@ -39,7 +39,7 @@ use App\Http\Controllers\Shopee\ShopeeController;
 use App\Http\Controllers\Ecommerce\ShopeeOrderController;
 use App\Http\Controllers\Ecommerce\ProductTonnageController;
 use App\Http\Controllers\PPIC\ForecastController;
-
+use App\Http\Controllers\OilController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -344,7 +344,15 @@ Route::get('/dashboard/ecommerce/fetch-recent-transactions', [DashboardEcommerce
         Route::get('forecast/template', [ForecastController::class, 'downloadTemplate'])->name('forecast.template');
     });
 
+    Route::get('/oil-monitoring', [OilController::class, 'index'])->name('oil.index');
+
+// Route untuk menangani request AJAX pemuatan komponen
+Route::get('/oil/load-component/{componentName}', [OilController::class, 'loadComponent'])->name('oil.loadComponent');
+
 });
+
+
+// Route untuk menampilkan halaman utama
 
 
 // approval email

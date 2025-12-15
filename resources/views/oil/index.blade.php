@@ -51,11 +51,11 @@
                     
                     {{-- Gap dikurangi jadi gap-2 agar lebih rapat --}}
                     <div class="flex flex-wrap gap-2" id="button-container">
-                        <button type="button" class="component-btn group" data-component="tank_yard_bdt">
-                            <i class="mdi mdi-silo mr-1.5"></i> Tank Yard 80T
+                        <button type="button" class="component-btn group" data-component="tank_yard_80t">
+                            Tank Yard 80T
                         </button>
                         <button type="button" class="component-btn group" data-component="batch_refinery">
-                            <i class="mdi mdi-factory mr-1.5"></i> Batch Refinery
+                            Batch Refinery
                         </button>
                         <button type="button" class="component-btn group" data-component="fat_blend_tank">
                             <i class="mdi mdi-beaker-outline mr-1.5"></i> Fat Blend Tank

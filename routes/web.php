@@ -249,7 +249,7 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
     Route::get('/ecommerce/settings', [EcommerceSettingsController::class, 'index'])->name('ecommerce.settings.index');
     Route::post('/ecommerce/settings', [EcommerceSettingsController::class, 'update'])->name('ecommerce.settings.update');
     Route::get('/ecommerce/tokopedia/orders-data', [SalesDashboardController::class, 'getPaginatedOrders'])->name('ecommerce.tokopedia.orders.data');
-Route::get('/ecommerce/shopee/orders-data', [SalesDashboardController::class, 'getPaginatedShopeeOrders'])->name('ecommerce.shopee.orders.data');
+    Route::get('/ecommerce/shopee/orders-data', [SalesDashboardController::class, 'getPaginatedShopeeOrders'])->name('ecommerce.shopee.orders.data');
 
 
     Route::get('/ecommerce/products', [ProductController::class, 'index'])->name('ecommerce.products.index');
@@ -258,14 +258,14 @@ Route::get('/ecommerce/shopee/orders-data', [SalesDashboardController::class, 'g
 
 
     Route::prefix('ecommerce')->name('ecommerce.')->group(function () {
-    // ... rute produk Anda yang lain
-    
-    // Rute untuk Halaman Tonnage Mapper
-    Route::get('/products/tonnage', [ProductTonnageController::class, 'index'])->name('products.tonnage.index');
-    Route::post('/products/tonnage', [ProductTonnageController::class, 'store'])->name('products.tonnage.store');
-});
+        // ... rute produk Anda yang lain
 
-            // === BAGIAN YANG PERLU DIPERBAIKI / DITAMBAHKAN ===
+        // Rute untuk Halaman Tonnage Mapper
+        Route::get('/products/tonnage', [ProductTonnageController::class, 'index'])->name('products.tonnage.index');
+        Route::post('/products/tonnage', [ProductTonnageController::class, 'store'])->name('products.tonnage.store');
+    });
+
+    // === BAGIAN YANG PERLU DIPERBAIKI / DITAMBAHKAN ===
     // Route untuk memicu sinkronisasi TikTok
     Route::post('ecommerce/products/sync-tiktok', [ProductController::class, 'syncTiktok'])->name('ecommerce.products.sync.tiktok');
 
@@ -277,39 +277,39 @@ Route::get('/ecommerce/shopee/orders-data', [SalesDashboardController::class, 'g
     Route::post('ecommerce/products/{product}/update-stock', [ProductController::class, 'updateStock'])->name('products.stock.update');
 
     // Route AJAX untuk statistik kartu
-Route::get('/ecommerce/dashboard/tokopedia-stats', [DashboardEcommerceController::class, 'fetchTokopediaStats'])->name('ecommerce.dashboard.tokopedia_stats');
+    Route::get('/ecommerce/dashboard/tokopedia-stats', [DashboardEcommerceController::class, 'fetchTokopediaStats'])->name('ecommerce.dashboard.tokopedia_stats');
 
-// == ROUTE BARU UNTUK AJAX KARTU SHOPEE ==
-Route::get('/ecommerce/dashboard/shopee-stats', [DashboardEcommerceController::class, 'fetchShopeeStats'])->name('ecommerce.dashboard.shopee_stats');
+    // == ROUTE BARU UNTUK AJAX KARTU SHOPEE ==
+    Route::get('/ecommerce/dashboard/shopee-stats', [DashboardEcommerceController::class, 'fetchShopeeStats'])->name('ecommerce.dashboard.shopee_stats');
 
     Route::get('/ecommerce/dashboard/tokopedia-stats', [DashboardEcommerceController::class, 'fetchTokopediaStats'])->name('ecommerce.dashboard.tokopedia_stats');
     Route::get('/ecommerce/sales/fetch-data', [SalesDashboardController::class, 'fetchSalesData'])->name('ecommerce.sales.fetch_data');
-Route::get('/ecommerce/dashboard/chart-data', [DashboardEcommerceController::class, 'fetchChartData'])->name('ecommerce.dashboard.chart_data');
-Route::post('/ecommerce/products/{product}/update-price', [ProductController::class, 'updatePrice'])
-    ->name('ecommerce.products.price.update');
+    Route::get('/ecommerce/dashboard/chart-data', [DashboardEcommerceController::class, 'fetchChartData'])->name('ecommerce.dashboard.chart_data');
+    Route::post('/ecommerce/products/{product}/update-price', [ProductController::class, 'updatePrice'])
+        ->name('ecommerce.products.price.update');
     Route::prefix('tiktok')->name('tiktok.')->group(function () {
         Route::get('/auth', [TiktokController::class, 'redirectToAuth'])->name('auth');
         Route::get('/callback', [TiktokController::class, 'handleCallback'])->name('callback');
         Route::delete('/disconnect', [TiktokController::class, 'disconnect'])->name('disconnect');
     });
-Route::prefix('ecommerce/products')->name('ecommerce.products.')->group(function () {
-    // ======================================================================
-    // === PASTIKAN BARIS INI ADA DAN TIDAK ADA SALAH KETIK ===
-    // ======================================================================
-    Route::post('/{product}/add-stock', [ProductController::class, 'addStock'])->name('add.stock');
-    // ======================================================================
+    Route::prefix('ecommerce/products')->name('ecommerce.products.')->group(function () {
+        // ======================================================================
+        // === PASTIKAN BARIS INI ADA DAN TIDAK ADA SALAH KETIK ===
+        // ======================================================================
+        Route::post('/{product}/add-stock', [ProductController::class, 'addStock'])->name('add.stock');
+        // ======================================================================
 
-});
+    });
     Route::prefix('ecommerce')->name('ecommerce.')->group(function () {
-    // ... route ecommerce lainnya
-    
-    // == ROUTE BARU UNTUK MODAL AKSI CEPAT ==
-    Route::get('/dashboard/modal-data', [App\Http\Controllers\Ecommerce\DashboardEcommerceController::class, 'fetchModalData'])->name('dashboard.modalData');
-    
-});
+        // ... route ecommerce lainnya
 
-Route::get('/dashboard/ecommerce/fetch-top-products', [DashboardEcommerceController::class, 'fetchTopProducts'])->name('dashboard.ecommerce.fetchTopProducts');
-Route::get('/dashboard/ecommerce/fetch-recent-transactions', [DashboardEcommerceController::class, 'fetchRecentTransactions'])->name('dashboard.ecommerce.fetchRecentTransactions');
+        // == ROUTE BARU UNTUK MODAL AKSI CEPAT ==
+        Route::get('/dashboard/modal-data', [App\Http\Controllers\Ecommerce\DashboardEcommerceController::class, 'fetchModalData'])->name('dashboard.modalData');
+
+    });
+
+    Route::get('/dashboard/ecommerce/fetch-top-products', [DashboardEcommerceController::class, 'fetchTopProducts'])->name('dashboard.ecommerce.fetchTopProducts');
+    Route::get('/dashboard/ecommerce/fetch-recent-transactions', [DashboardEcommerceController::class, 'fetchRecentTransactions'])->name('dashboard.ecommerce.fetchRecentTransactions');
 
     Route::prefix('shopee')->name('shopee.')->group(function () {
         Route::get('/auth', [ShopeeController::class, 'redirectToAuth'])->name('auth');
@@ -318,11 +318,11 @@ Route::get('/dashboard/ecommerce/fetch-recent-transactions', [DashboardEcommerce
     });
 
     Route::post('/ecommerce/shopee/orders/sync', [ShopeeOrderController::class, 'syncOrders'])
-    ->name('ecommerce.shopee.orders.sync');
+        ->name('ecommerce.shopee.orders.sync');
     // Route untuk sinkronisasi (pastikan sudah ada)\
     Route::post('/ecommerce/tiktok/orders/sync', [OrderListController::class, 'syncOrders'])->name('ecommerce.tiktok.orders.sync');
 
-  
+
     Route::get('/tiktok/orders', [OrderListController::class, 'index'])->name('tiktok.orders.data');
 
     Route::post('/ecommerce/tiktok/sync', [OrderListController::class, 'syncOrders'])->name('ecommerce.tiktok.sync');
@@ -345,10 +345,9 @@ Route::get('/dashboard/ecommerce/fetch-recent-transactions', [DashboardEcommerce
     });
 
     Route::get('/oil-monitoring', [OilController::class, 'index'])->name('oil.index');
-
-// Route untuk menangani request AJAX pemuatan komponen
-Route::get('/oil/load-component/{componentName}', [OilController::class, 'loadComponent'])->name('oil.loadComponent');
-
+    Route::get('/oil/load-component/{componentName}', [OilController::class, 'loadComponent'])->name('oil.loadComponent');
+    Route::get('/oil/get-tank-data', [OilController::class, 'getTankData'])->name('oil.getTankData');
+    Route::get('/oil/get-refinery-data', [OilController::class, 'getRefineryData'])->name('oil.getRefineryData');
 });
 
 

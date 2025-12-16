@@ -348,6 +348,12 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
     Route::get('/oil/load-component/{componentName}', [OilController::class, 'loadComponent'])->name('oil.loadComponent');
     Route::get('/oil/get-tank-data', [OilController::class, 'getTankData'])->name('oil.getTankData');
     Route::get('/oil/get-refinery-data', [OilController::class, 'getRefineryData'])->name('oil.getRefineryData');
+    Route::get('/oil/get-fat-blend-data', [OilController::class, 'getFatBlendData'])->name('oil.getFatBlendData');
+    Route::get('/oil/get-yard-1t-data', [OilController::class, 'getYard1tData'])->name('oil.getYard1tData');
+    Route::get('/oil/get-bleached-oil-data', [OilController::class, 'getBleachedOilData'])->name('oil.getBleachedOilData');
+    Route::get('/oil/get-packing-data', [OilController::class, 'getPackingData'])->name('oil.getPackingData');
+    Route::get('/oil/get-current-stock-data', [OilController::class, 'getCurrentStockData'])->name('oil.getCurrentStockData');
+    Route::get('/oil/get-utility-gas-data', [OilController::class, 'getUtilityGasData'])->name('oil.getUtilityGasData');
 });
 
 

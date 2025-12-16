@@ -1,0 +1,23 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('bleached_oil_tanks', function (Blueprint $table) {
+            $table->id();
+            $table->string('tank_code')->unique();
+            $table->unsignedInteger('capacity_kg');
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('bleached_oil_tanks');
+    }
+};

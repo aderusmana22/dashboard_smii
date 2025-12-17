@@ -40,6 +40,8 @@ use App\Http\Controllers\Ecommerce\ShopeeOrderController;
 use App\Http\Controllers\Ecommerce\ProductTonnageController;
 use App\Http\Controllers\PPIC\ForecastController;
 use App\Http\Controllers\OilController;
+use App\Http\Controllers\InwardDashboardController;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -354,6 +356,9 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
     Route::get('/oil/get-packing-data', [OilController::class, 'getPackingData'])->name('oil.getPackingData');
     Route::get('/oil/get-current-stock-data', [OilController::class, 'getCurrentStockData'])->name('oil.getCurrentStockData');
     Route::get('/oil/get-utility-gas-data', [OilController::class, 'getUtilityGasData'])->name('oil.getUtilityGasData');
+
+
+    Route::get('/inward-dashboard', [InwardDashboardController::class, 'index'])->name('inward.dashboard');
 });
 
 

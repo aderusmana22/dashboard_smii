@@ -20,7 +20,7 @@
                                     class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>Dashboard
                                 Production</a></li>
                     @endcan
-                    @can('view sales dashboard')
+                     @can('view sales dashboard')
                         <li><a href="{{ route('dashboard.dashboardSales') }}"
                                 class="{{ request()->is('dashboard/dashboard-sales') ? 'current' : '' }}"><i
                                     class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>Dashboard
@@ -32,6 +32,14 @@
                                     class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>Dashboard
                                 Warehouse</a></li>
                     @endcan
+                    
+                    <li>
+                        <a href="{{ route('inward.dashboard') }}" class="{{ request()->is('inward-dashboard') ? 'current' : '' }}">
+                            <i class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>
+                            Inward Dashboard
+                        </a>
+                    </li>
+
                 </ul>
             </li>
         @endcan

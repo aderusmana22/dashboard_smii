@@ -1,26 +1,38 @@
 <div class="w-full font-sans">
     <div class="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-            <h2 class="text-2xl font-bold text-slate-800">Utility Gas Monitoring</h2>
-            <p class="text-slate-500 text-sm">Pemantauan Stok & Tren Gas Pendukung Produksi</p>
-        </div>
-        <div class="flex items-center gap-3">
-            <input type="date" id="gasDateStart" class="bg-white border-slate-200 text-sm rounded-lg p-2.5 shadow-sm" title="Tanggal Mulai Tren">
-            <input type="date" id="gasDateEnd" class="bg-white border-slate-200 text-sm rounded-lg p-2.5 shadow-sm" title="Tanggal Akhir Snapshot & Tren">
-            <button id="btnUpdateGasData" class="text-sm bg-yellow-700 text-white px-4 py-2.5 rounded-lg transition shadow-md">Tampilkan Data</button>
-        </div>
+    <!-- Bagian Judul (Tidak ada perubahan) -->
+    <div>
+        <h2 class="text-2xl font-bold text-slate-800">Utility Gas Monitoring</h2>
+        <p class="text-slate-500 text-sm">Pemantauan Stok & Tren Gas Pendukung Produksi</p>
     </div>
+
+    <!-- 
+        BAGIAN FILTER YANG DIMODIFIKASI
+        - Container utama diubah menjadi flex-col untuk menumpuk item secara vertikal.
+        - Diberi w-full sm:w-auto agar responsif.
+    -->
+    <div class="flex flex-col gap-2 w-full sm:w-auto">
+        <!-- Baris 1: Grup untuk input tanggal -->
+        <div class="flex gap-3">
+            <input type="date" id="gasDateStart" class="w-full card border-slate-200 text-sm rounded-lg p-2.5 shadow-sm" title="Tanggal Mulai Tren">
+            <input type="date" id="gasDateEnd" class="w-full card border-slate-200 text-sm rounded-lg p-2.5 shadow-sm" title="Tanggal Akhir Snapshot & Tren">
+        </div>
+        
+        <!-- Baris 2: Tombol -->
+        <button id="btnUpdateGasData" class="w-full text-sm bg-yellow-700 text-white px-4 py-2.5 rounded-lg transition shadow-md">Tampilkan Data</button>
+    </div>
+</div>
 
     <!-- BAGIAN 1: SNAPSHOT -->
     <h3 class="text-lg font-bold text-slate-600 mb-4 border-l-4 border-slate-400 pl-3">Snapshot Kondisi Terkini</h3>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <!-- 1. HYDROGEN SNAPSHOT -->
-        <div class="bg-white rounded-xl shadow-lg border border-slate-100 flex flex-col">
+        <div class="card rounded-xl shadow-lg border border-slate-100 flex flex-col">
             <div class="bg-gradient-to-r from-red-600 to-rose-600 px-6 py-4"><h5 class="text-white font-bold flex items-center gap-2"><i class="mdi mdi-flash"></i> Hydrogen (H2)</h5></div>
             <div class="p-6 flex-grow"><div id="hydrogenTableContainer" class="overflow-hidden rounded-lg border border-slate-200"></div></div>
         </div>
         <!-- 2. NITROGEN SNAPSHOT -->
-        <div class="bg-white rounded-xl shadow-lg border border-slate-100 flex flex-col">
+        <div class="card rounded-xl shadow-lg border border-slate-100 flex flex-col">
             <div class="bg-gradient-to-r from-blue-600 to-cyan-600 px-6 py-4"><h5 class="text-white font-bold flex items-center gap-2"><i class="mdi mdi-snowflake"></i> Nitrogen (N2)</h5></div>
             <div class="p-6 flex-grow">
                 <div class="text-center mb-6"><span class="block text-sm text-slate-500 mb-1">Current Stock</span><div id="nitrogenValue" class="text-5xl font-bold text-blue-600">...</div><span class="text-sm font-medium text-slate-400">Inch Water</span></div>
@@ -28,7 +40,7 @@
             </div>
         </div>
         <!-- 3. AMMONIA SNAPSHOT -->
-        <div class="bg-white rounded-xl shadow-lg border border-slate-100 flex flex-col">
+        <div class="card rounded-xl shadow-lg border border-slate-100 flex flex-col">
             <div class="bg-gradient-to-r from-emerald-600 to-teal-600 px-6 py-4"><h5 class="text-white font-bold flex items-center gap-2"><i class="mdi mdi-test-tube"></i> Ammonia (NH3)</h5></div>
             <div class="p-6 flex-grow flex flex-col">
                 <div id="ammoniaStatsContainer" class="grid grid-cols-2 gap-4 mb-4"></div>
@@ -41,9 +53,9 @@
     <!-- BAGIAN 2: GRAFIK TREN -->
     <h3 class="text-lg font-bold text-slate-600 mb-4 border-l-4 border-slate-400 pl-3">Grafik Tren Harian</h3>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="bg-white rounded-xl shadow-lg border border-slate-100 p-4 h-[300px]"><canvas id="hydrogenTrendChart"></canvas></div>
-        <div class="bg-white rounded-xl shadow-lg border border-slate-100 p-4 h-[300px]"><canvas id="nitrogenTrendChart"></canvas></div>
-        <div class="bg-white rounded-xl shadow-lg border border-slate-100 p-4 h-[300px]"><canvas id="ammoniaTrendChart"></canvas></div>
+        <div class="card rounded-xl shadow-lg border border-slate-100 p-4 h-[300px]"><canvas id="hydrogenTrendChart"></canvas></div>
+        <div class="card rounded-xl shadow-lg border border-slate-100 p-4 h-[300px]"><canvas id="nitrogenTrendChart"></canvas></div>
+        <div class="card rounded-xl shadow-lg border border-slate-100 p-4 h-[300px]"><canvas id="ammoniaTrendChart"></canvas></div>
     </div>
 </div>
 
@@ -53,7 +65,7 @@ $(function() {
 
     function updateSnapshot(data) {
         const h2Table = $('#hydrogenTableContainer');
-        let h2Html = `<table class="w-full text-sm"><thead class="bg-slate-50 text-xs uppercase"><tr><th class="px-4 py-2">Torpedo</th><th class="px-4 py-2 text-right">Pressure</th></tr></thead><tbody class="divide-y">`;
+        let h2Html = `<table class="w-full text-sm"><thead class="card text-xs uppercase"><tr><th class="px-4 py-2">Torpedo</th><th class="px-4 py-2 text-right">Pressure</th></tr></thead><tbody class="divide-y">`;
         if (data.hydrogen) {
             data.hydrogen.forEach(item => {
                 const val = item.value > 0 ? `<td class="px-4 py-2 text-right font-mono text-red-600 font-bold">${item.value} Bar</td>` : `<td class="px-4 py-2 text-right text-slate-400">Empty</td>`;

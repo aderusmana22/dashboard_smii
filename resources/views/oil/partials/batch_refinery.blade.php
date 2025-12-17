@@ -2,14 +2,14 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
 
         <!-- KOLOM KIRI: DATA TABLE -->
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-slate-100 h-full flex flex-col">
+        <div class="card rounded-xl shadow-lg overflow-hidden border border-slate-100 h-full flex flex-col">
             <div class="bg-blue-500 px-6 py-4 flex justify-between items-center shrink-0">
                 <h4 class="text-white font-semibold text-lg flex items-center gap-2"><i class="mdi mdi-bottle-tonic-outline"></i> Data Batch Refinery</h4>
-                <span id="filterStatusBadge" class="bg-white/20 text-white text-xs px-2 py-1 rounded">Loading...</span>
+                <span id="filterStatusBadge" class="card/20 text-white text-xs px-2 py-1 rounded">Loading...</span>
             </div>
             <div class="overflow-x-auto max-h-[650px] overflow-y-auto custom-scrollbar flex-grow">
                 <table class="w-full text-sm text-left">
-                    <thead class="text-xs text-slate-500 uppercase bg-slate-50 sticky top-0 z-10 shadow-sm">
+                    <thead class="text-xs text-slate-500 uppercase card sticky top-0 z-10 shadow-sm">
                         <tr>
                             <th class="px-6 py-3 font-bold">Tank Name</th>
                             <th class="px-6 py-3 font-bold text-right">Capacity (Kg)</th>
@@ -25,23 +25,23 @@
 
         <!-- KOLOM KANAN: CONTROLLER & CHART -->
         <div class="flex flex-col gap-6">
-            <div class="bg-white rounded-xl shadow-lg border border-slate-100 p-6">
+            <div class="card rounded-xl shadow-lg border border-slate-100 p-6">
                 <h5 class="text-lg font-bold text-slate-700 mb-4 border-l-4 border-emerald-500 pl-3">⚙️ Filter & Kontrol</h5>
                 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label for="dateStartFilter" class="block mb-1 text-xs font-semibold text-slate-500 uppercase">Tanggal Mulai</label>
-                        <input type="date" id="dateStartFilter" class="w-full bg-slate-50 border-slate-200 text-sm rounded-lg p-2.5">
+                        <input type="date" id="dateStartFilter" class="w-full card border-slate-200 text-sm rounded-lg p-2.5">
                     </div>
                      <div>
                         <label for="dateEndFilter" class="block mb-1 text-xs font-semibold text-slate-500 uppercase">Tanggal Akhir</label>
-                        <input type="date" id="dateEndFilter" class="w-full bg-slate-50 border-slate-200 text-sm rounded-lg p-2.5">
+                        <input type="date" id="dateEndFilter" class="w-full card border-slate-200 text-sm rounded-lg p-2.5">
                     </div>
                 </div>
 
                 <div class="mb-5">
                     <label for="groupSelector" class="block mb-1 text-xs font-semibold text-slate-500 uppercase">Tampilkan Grup di Grafik</label>
-                    <select id="groupSelector" class="w-full bg-slate-50 border-slate-200 text-sm rounded-lg p-2.5">
+                    <select id="groupSelector" class="w-full card border-slate-200 text-sm rounded-lg p-2.5">
                         <option value="SUMMARY">📊 Tampilkan Semua Grup</option>
                         <option value="CRYSTALIZER">❄️ Hanya Crystalizers</option>
                         <option value="DROPTANK">💧 Hanya Drop Tanks</option>
@@ -54,8 +54,8 @@
                 <button type="button" id="btnApplyRefineryFilter" class="w-full text-white bg-blue-600 hover:bg-blue-700 font-medium rounded-lg text-sm px-5 py-2.5 shadow-md">Terapkan Filter</button>
             </div>
 
-            <div class="bg-white rounded-xl shadow-lg border border-slate-100 flex-grow flex flex-col">
-                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50">
+            <div class="card rounded-xl shadow-lg border border-slate-100 flex-grow flex flex-col">
+                <div class="px-6 py-4 border-b border-slate-100 card">
                     <h5 id="chartTitle" class="font-bold text-slate-700">Tren Stok Harian per Grup (Kg)</h5>
                 </div>
                 <div class="p-4 flex-grow relative min-h-[300px]"><canvas id="refineryLineChart"></canvas></div>
@@ -63,7 +63,7 @@
                 <!-- ==================================================== -->
                 <!-- ============ BAGIAN SNAPSHOT GRUP BARU ============ -->
                 <!-- ==================================================== -->
-                <div class="p-4 border-t border-slate-100 bg-slate-50/50">
+                <div class="p-4 border-t border-slate-100 card/50">
                     <h6 id="snapshotTitle" class="font-bold text-slate-600 text-sm mb-3">Ringkasan Stok Grup</h6>
                     <div id="groupSnapshotContainer" class="grid grid-cols-2 md:grid-cols-3 gap-3">
                         <!-- Kartu snapshot akan di-generate oleh JavaScript di sini -->
@@ -184,7 +184,7 @@ $(function () {
                 const config = groupConfig[groupName];
 
                 const cardHtml = `
-                    <div class="bg-white p-3 rounded-lg border-l-4 shadow-sm" style="border-color: ${config.border};">
+                    <div class="card p-3 rounded-lg border-l-4 shadow-sm" style="border-color: ${config.border};">
                         <div class="flex items-center justify-between mb-1">
                             <p class="font-bold text-slate-700 text-sm">${groupName}</p>
                             <span class="text-lg">${config.icon}</span>
@@ -234,7 +234,7 @@ $(function () {
                 // PANGGIL FUNGSI BARU DI SINI
                 renderGroupSnapshots(res.summaryData, data.end_date);
 
-                badge.text("Data Dimuat").attr('class', 'bg-white/20 text-white text-xs px-2 py-1 rounded');
+                badge.text("Data Dimuat").attr('class', 'card/20 text-white text-xs px-2 py-1 rounded');
             },
             error: function() { 
                 alert('Gagal memuat data refinery.'); 

@@ -1,15 +1,15 @@
 <div class="w-full font-sans">
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         <!-- KOLOM KIRI: TABEL DATA -->
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-slate-100 h-full flex flex-col">
+        <div class="card rounded-xl shadow-lg overflow-hidden border border-slate-100 h-full flex flex-col">
             <div class=" bg-pink-600 px-6 py-4 flex justify-between items-center">
                 <h4 class="text-white font-semibold text-lg flex items-center gap-2"><i class="mdi mdi-table-large"></i>
                     Data Inventaris</h4>
-                <span id="bleachedTotal" class="bg-white/20 text-white text-xs px-2 py-1 rounded"></span>
+                <span id="bleachedTotal" class="card/20 text-white text-xs px-2 py-1 rounded"></span>
             </div>
             <div class="overflow-x-auto max-h-[650px] overflow-y-auto custom-scrollbar">
                 <table class="w-full text-sm text-left">
-                    <thead class="text-xs text-slate-500 uppercase bg-slate-50 sticky top-0 z-10 shadow-sm">
+                    <thead class="text-xs text-slate-500 uppercase card sticky top-0 z-10 shadow-sm">
                         <tr>
                             <th class="px-6 py-3 font-bold">Tank Code</th>
                             <th class="px-6 py-3 font-bold text-right">Capacity (Kg)</th>
@@ -24,7 +24,7 @@
 
         <!-- KOLOM KANAN: FILTER & CHART -->
         <div class="flex flex-col gap-6">
-            <div class="bg-white rounded-xl shadow-lg border border-slate-100 p-6">
+            <div class="card rounded-xl shadow-lg border border-slate-100 p-6">
                 <h5 class="text-lg font-bold text-slate-700 mb-4 border-l-4 border-rose-500 pl-3">🎚️ Filter &
                     Visualisasi</h5>
 
@@ -34,13 +34,13 @@
                         <label for="bleachedDateStart"
                             class="block mb-1 text-xs font-semibold text-slate-500 uppercase">Tanggal Mulai</label>
                         <input type="date" id="bleachedDateStart"
-                            class="w-full bg-slate-50 border-slate-200 text-sm rounded-lg p-2.5">
+                            class="w-full card border-slate-200 text-sm rounded-lg p-2.5">
                     </div>
                     <div>
                         <label for="bleachedDateEnd"
                             class="block mb-1 text-xs font-semibold text-slate-500 uppercase">Tanggal Akhir</label>
                         <input type="date" id="bleachedDateEnd"
-                            class="w-full bg-slate-50 border-slate-200 text-sm rounded-lg p-2.5">
+                            class="w-full card border-slate-200 text-sm rounded-lg p-2.5">
                     </div>
                 </div>
 
@@ -49,7 +49,7 @@
                     <label for="bleachedGroupSelector"
                         class="block mb-1 text-xs font-semibold text-slate-500 uppercase">Tampilkan Kelompok</label>
                     <select id="bleachedGroupSelector"
-                        class="w-full bg-slate-50 border-slate-200 text-sm rounded-lg p-2.5">
+                        class="w-full card border-slate-200 text-sm rounded-lg p-2.5">
                         <option value="ALL">Semua Tangki</option>
                         <option value="SMALL">Hanya Tangki Kecil</option>
                         <option value="LARGE">Hanya Tangki Besar (6T15)</option>
@@ -61,8 +61,8 @@
                     Tren</button>
             </div>
 
-            <div class="bg-white rounded-xl shadow-lg border border-slate-100 flex-grow">
-                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50">
+            <div class="card rounded-xl shadow-lg border border-slate-100 flex-grow">
+                <div class="px-6 py-4 border-b border-slate-100 card">
                     <h5 class="font-bold text-slate-700">Tren Level Stok Harian (Kg)</h5>
                 </div>
                 <div class="p-4 h-[450px] w-full"><canvas id="bleachedOilTankChart"></canvas></div>
@@ -121,7 +121,7 @@
             $('#bleachedTotal').text(`Total: ${tableData.length} Tanks`);
             tableData.forEach(row => {
                 const isAvailable = row.description === 'Available';
-                const rowClass = isAvailable ? 'bg-slate-50' : 'hover:bg-rose-50/50';
+                const rowClass = isAvailable ? 'card' : 'hover:bg-rose-50/50';
                 const textClass = isAvailable ? 'text-slate-400' : 'text-slate-700';
                 const descBadge = `<span class="px-2 py-1 rounded text-xs font-bold ${descColors[row.description] || 'bg-gray-100 text-gray-800'}">${row.description || '-'}</span>`;
                 tableBody.append(`<tr class="${rowClass} transition"><td class="px-6 py-3 font-semibold ${textClass}">${row.tank_code}</td><td class="px-6 py-3 text-right font-mono ${textClass}">${row.capacity_kg}</td><td class="px-6 py-3 ${textClass}">${row.oil_code || '-'}</td><td class="px-6 py-3">${descBadge}</td></tr>`);

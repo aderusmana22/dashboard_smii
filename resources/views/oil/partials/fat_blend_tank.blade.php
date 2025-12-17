@@ -1,14 +1,14 @@
 <div class="w-full font-sans">
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         <!-- KOLOM KIRI: TABEL DATA -->
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-slate-100 h-full flex flex-col">
+        <div class="card rounded-xl shadow-lg overflow-hidden border border-slate-100 h-full flex flex-col">
             <div class="bg-indigo-600 px-6 py-4 flex justify-between items-center">
                 <h4 class="text-white font-semibold text-lg flex items-center gap-2"><i class="mdi mdi-blender-software"></i> Data Tangki Blending</h4>
-                <span id="fatBlendTotal" class="bg-white/20 text-white text-xs px-2 py-1 rounded"></span>
+                <span id="fatBlendTotal" class="card/20 text-white text-xs px-2 py-1 rounded"></span>
             </div>
             <div class="overflow-x-auto max-h-[600px] overflow-y-auto custom-scrollbar">
                 <table class="w-full text-sm text-left">
-                    <thead class="text-xs text-slate-500 uppercase bg-slate-50 sticky top-0 z-10 shadow-sm">
+                    <thead class="text-xs text-slate-500 uppercase card sticky top-0 z-10 shadow-sm">
                         <tr>
                             <th class="px-6 py-3 font-bold">Tank Code</th>
                             <th class="px-6 py-3 font-bold text-right">Capacity (Kg)</th>
@@ -22,26 +22,26 @@
 
         <!-- KOLOM KANAN: CONTROLLER & CHART -->
         <div class="flex flex-col gap-6">
-            <div class="bg-white rounded-xl shadow-lg border border-slate-100 p-6">
+            <div class="card rounded-xl shadow-lg border border-slate-100 p-6">
                 <h5 class="text-lg font-bold text-slate-700 mb-4 border-l-4 border-violet-500 pl-3">🎛️ Panel Kontrol</h5>
                 
                 {{-- FILTER RENTANG TANGGAL BARU --}}
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label for="fatBlendDateStart" class="block mb-1 text-xs font-semibold text-slate-500 uppercase">Tanggal Mulai</label>
-                        <input type="date" id="fatBlendDateStart" class="w-full bg-slate-50 border-slate-200 text-sm rounded-lg p-2.5">
+                        <input type="date" id="fatBlendDateStart" class="w-full card border-slate-200 text-sm rounded-lg p-2.5">
                     </div>
                     <div>
                         <label for="fatBlendDateEnd" class="block mb-1 text-xs font-semibold text-slate-500 uppercase">Tanggal Akhir</label>
-                        <input type="date" id="fatBlendDateEnd" class="w-full bg-slate-50 border-slate-200 text-sm rounded-lg p-2.5">
+                        <input type="date" id="fatBlendDateEnd" class="w-full card border-slate-200 text-sm rounded-lg p-2.5">
                     </div>
                 </div>
 
                 {{-- FILTER DROPDOWN LAMA DIHAPUS, GANTI DENGAN TOMBOL --}}
                 <button type="button" id="btnApplyFatBlendFilter" class="w-full text-white bg-indigo-600 hover:bg-indigo-700 font-medium rounded-lg text-sm px-5 py-2.5 shadow-md">Tampilkan Tren</button>
             </div>
-            <div class="bg-white rounded-xl shadow-lg border border-slate-100 flex-grow">
-                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+            <div class="card rounded-xl shadow-lg border border-slate-100 flex-grow">
+                <div class="px-6 py-4 border-b border-slate-100 card flex justify-between items-center">
                     <h5 class="font-bold text-slate-700">Tren Level Tangki Harian</h5>
                     <span class="text-xs text-slate-400 font-mono">Max: 25,000 Kg</span>
                 </div>

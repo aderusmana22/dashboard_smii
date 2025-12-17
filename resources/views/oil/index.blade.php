@@ -16,7 +16,7 @@
 
             {{-- Modern Breadcrumb --}}
             <nav class="flex" aria-label="Breadcrumb">
-                <ol class="inline-flex items-center space-x-1 md:space-x-2 bg-white px-4 py-2 rounded-full shadow-sm border border-gray-100">
+                <ol class="inline-flex items-center space-x-1 md:space-x-2 px-4 py-2 rounded-full shadow-sm border border-gray-100 card">
                     <li class="inline-flex items-center">
                         <a href="{{ route('dashboard') }}" class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-blue-600 transition-colors">
                             <i class="mdi mdi-home-outline text-lg"></i>
@@ -43,7 +43,7 @@
 
     {{-- Main Content --}}
     <section class="px-2 pb-12">
-        <div class="w-full bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+        <div class="w-full card rounded-xl shadow-lg border border-gray-100 overflow-hidden">
             <div class="p-6">
                 
                 {{-- Component Navigation --}}
@@ -192,7 +192,7 @@
                 });
 
                 // Load Default
-                const defaultButton = $('.component-btn[data-component="tank_yard_bdt"]');
+                const defaultButton = $('.component-btn[data-component="tank_yard_80t"]');
                 if (defaultButton.length) {
                     defaultButton.trigger('click');
                 }

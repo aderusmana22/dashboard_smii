@@ -10,8 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\View;
-use App\Jobs\SendJobCompletedEmail; // <-- Impor kelas Job
-use App\Models\MarshoUser;
+use App\Jobs\SendJobCompletedEmail;
 
 class JobController extends Controller
 {
@@ -19,13 +18,18 @@ class JobController extends Controller
     {
         $user = Auth::user();
         $jobs = JobMarsho::with(['pengaju', 'area', 'latestRoute.toDepartment', 'routes.fromDepartment', 'routes.toDepartment', 'routes.creator', 'attachments', 'notes.creator'])->latest()->get();
-        $openJobs = $jobs->where('status', 'open');
-        $onProcessJobs = $jobs->where('status', 'on_process');
+        
+        $toBeScheduledJobs = $jobs->where('status', 'to_be_scheduled');
+        $scheduledJobs = $jobs->where('status', 'scheduled');
+        $preparationJobs = $jobs->where('status', 'preparation');
+        $onGoingJobs = $jobs->where('status', 'on_going');
         $completedJobs = $jobs->where('status', 'completed');
         $closedJobs = $jobs->where('status', 'closed');
+
         $departments = MarshoDepartment::pluck('department_name', 'id');
         $areas = Area::pluck('name', 'id');
-        return view('jobs.index', compact('openJobs', 'onProcessJobs', 'completedJobs', 'closedJobs', 'user', 'departments', 'areas'));
+
+        return view('jobs.index', compact('toBeScheduledJobs', 'scheduledJobs', 'preparationJobs', 'onGoingJobs', 'completedJobs', 'closedJobs', 'user', 'departments', 'areas'));
     }
 
     private function prepareJobResponse(JobMarsho $job, string $message)
@@ -40,8 +44,8 @@ class JobController extends Controller
     {
         $request->validate(['area_id' => 'required|exists:areas,id', 'list_job' => 'required|string', 'to_department_id' => 'required|exists:marsho_departments,id', 'note' => 'nullable|string|max:500', 'attachments' => 'nullable|array|max:3', 'attachments.*' => 'file|mimes:jpg,jpeg,png,gif,bmp,svg,webp,pdf,doc,docx|max:5120']);
         $jobIdString = JobMarsho::generateJobId();
-        $job = JobMarsho::create(['id_job' => $jobIdString, 'pengaju_id' => Auth::id(), 'area_id' => $request->area_id, 'list_job' => $request->list_job, 'tanggal_job_mulai' => Carbon::now(), 'status' => 'open']);
-        $route = $job->routes()->create(['to_department_id' => $request->to_department_id, 'note' => $request->note ?: 'Job created and assigned.', 'created_by' => Auth::id()]);
+        $job = JobMarsho::create(['id_job' => $jobIdString, 'pengaju_id' => Auth::id(), 'area_id' => $request->area_id, 'list_job' => $request->list_job, 'tanggal_job_mulai' => Carbon::now(), 'status' => 'to_be_scheduled']);
+        $route = $job->routes()->create(['to_department_id' => $request->to_department_id, 'note' => $request->note ?: 'Job created.', 'created_by' => Auth::id()]);
         if ($request->hasFile('attachments')) {
             $attachmentNumber = 1;
             foreach ($request->file('attachments') as $file) {
@@ -54,10 +58,22 @@ class JobController extends Controller
         return $this->prepareJobResponse($job, 'Job created successfully!');
     }
 
+    public function setScheduled(JobMarsho $job)
+    {
+        $job->update(['status' => 'scheduled']);
+        return $this->prepareJobResponse($job, 'Job marked as Scheduled.');
+    }
+
+    public function setPreparation(JobMarsho $job)
+    {
+        $job->update(['status' => 'preparation']);
+        return $this->prepareJobResponse($job, 'Job moved to Preparation.');
+    }
+
     public function start(JobMarsho $job)
     {
-        $job->update(['status' => 'on_process']);
-        return $this->prepareJobResponse($job, 'Job status updated to On Process!');
+        $job->update(['status' => 'on_going']);
+        return $this->prepareJobResponse($job, 'Job status updated to On Going!');
     }
 
     public function forward(Request $request, JobMarsho $job)
@@ -82,10 +98,7 @@ class JobController extends Controller
                 $attachmentNumber++;
             }
         }
-
-        // Dispatch job untuk mengirim email
         SendJobCompletedEmail::dispatch($job);
-
         return $this->prepareJobResponse($job, 'Job marked as completed!');
     }
 

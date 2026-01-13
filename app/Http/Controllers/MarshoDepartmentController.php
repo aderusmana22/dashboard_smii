@@ -15,7 +15,7 @@ class MarshoDepartmentController extends Controller
     public function index()
     {
         $departments = MarshoDepartment::withCount('marshoUsers')->latest()->get();
-        return view('resources.departments.index', compact('departments'));
+        return view('jobs.departments.index', compact('departments'));
     }
 
     /**

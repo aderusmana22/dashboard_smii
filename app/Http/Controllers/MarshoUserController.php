@@ -34,7 +34,7 @@ class MarshoUserController extends Controller
         }
 
         // Jika ini adalah request awal (load halaman), kirim ke view
-        return view('resources.marsho_users.index', compact('users', 'marshoDepartments'));
+        return view('jobs.marsho_users.index', compact('users', 'marshoDepartments'));
     }
 
     /**

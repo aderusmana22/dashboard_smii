@@ -203,11 +203,14 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
     // Rute untuk Job Kanban
     Route::get('/jobs', [JobController::class, 'index'])->name('jobs.index');
     Route::post('/jobs', [JobController::class, 'store'])->name('jobs.store');
+     Route::patch('/jobs/{job}/schedule', [JobController::class, 'setScheduled'])->name('jobs.schedule');
+    Route::patch('/jobs/{job}/prepare', [JobController::class, 'setPreparation'])->name('jobs.prepare');
     Route::patch('/jobs/{job}/start', [JobController::class, 'start'])->name('jobs.start');
+    
     Route::post('/jobs/{job}/forward', [JobController::class, 'forward'])->name('jobs.forward');
     Route::patch('/jobs/{job}/complete', [JobController::class, 'complete'])->name('jobs.complete');
-    Route::post('/jobs/{job}/close', [JobController::class, 'close'])->name('jobs.close'); // Gunakan POST karena FormData
-
+    Route::post('/jobs/{job}/close', [JobController::class, 'close'])->name('jobs.close');
+    
     // Rute untuk mengelola Resources (Area dan Departemen)
     // Route ini sudah menangani GET (index) dan POST (store)
     Route::resource('areas', AreaController::class)->except(['create', 'show', 'edit']);

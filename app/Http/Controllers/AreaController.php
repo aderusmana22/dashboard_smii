@@ -12,7 +12,7 @@ class AreaController extends Controller
     {
         // Data awal masih dikirim seperti biasa saat halaman pertama kali dimuat
         $areas = Area::latest()->get(); 
-        return view('resources.areas.index', compact('areas'));
+        return view('jobs.areas.index', compact('areas'));
     }
 
     public function store(Request $request)

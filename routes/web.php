@@ -210,7 +210,10 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
     Route::post('/jobs/{job}/forward', [JobController::class, 'forward'])->name('jobs.forward');
     Route::patch('/jobs/{job}/complete', [JobController::class, 'complete'])->name('jobs.complete');
     Route::post('/jobs/{job}/close', [JobController::class, 'close'])->name('jobs.close');
-    
+
+    Route::patch('/jobs/{job}/change-status', [JobController::class, 'changeStatus'])->name('jobs.changeStatus');
+    Route::get('/jobs/{job}/details', [JobController::class, 'showDetails'])->name('jobs.details');
+        
     // Rute untuk mengelola Resources (Area dan Departemen)
     // Route ini sudah menangani GET (index) dan POST (store)
     Route::resource('areas', AreaController::class)->except(['create', 'show', 'edit']);

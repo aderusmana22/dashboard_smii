@@ -28,139 +28,95 @@
                     </button>
                 </div>
 
-                <!-- CONTAINER UTAMA -->
-                <!-- flex-nowrap: Agar tidak turun ke bawah -->
-                <!-- items-stretch: Agar tinggi semua kolom sama -->
+                <!-- CONTAINER UTAMA KANBAN -->
                 <div class="flex flex-nowrap overflow-x-auto gap-3 pb-4 items-stretch min-h-[calc(100vh-250px)]">
+                    @php $columnClass = "flex-none w-[85vw] md:w-1/2 lg:w-[calc(100%/3-10px)]"; @endphp
 
-                    <!-- SETTING LEBAR KOLOM (Responsive) -->
-                    <!-- w-[85vw] : Di HP lebar hampir full (85%) agar fokus -->
-                    <!-- md:w-1/2 : Di Tablet lebar 50% (2 kolom) -->
-                    <!-- lg:w-1/3 : Di Desktop lebar 33.3% (3 kolom pas) -->
-                    <!-- flex-none : Mencegah kolom mengecil/gepeng -->
-                    
-                    @php
-                        $columnClass = "flex-none w-[85vw] md:w-1/2 lg:w-[calc(100%/3-10px)]";
-                    @endphp
-
-                    <!-- 1. To Be Scheduled -->
+                    <!-- To Be Scheduled -->
                     <div class="{{ $columnClass }}">
                         <div class="flex flex-col rounded-lg shadow-lg h-full bg-gray-100 dark:bg-gray-700">
                             <div class="bg-gray-500 dark:bg-gray-600 p-3 rounded-t-lg">
                                 <h3 class="text-sm font-bold text-white text-center uppercase">To Be Scheduled</h3>
                             </div>
                             <div id="to-be-scheduled-column" class="p-3 space-y-3 kanban-column-body flex-1">
-                                @forelse($toBeScheduledJobs as $job)
-                                    @include('jobs.partials.job_card', ['job' => $job])
-                                @empty
-                                    <div class="flex items-center justify-center h-20">
-                                        <p class="text-center text-xs text-gray-500">No jobs.</p>
-                                    </div>
-                                @endforelse
+                                @forelse($toBeScheduledJobs as $job) @include('jobs.partials.job_card', ['job' => $job]) @empty <div class="flex items-center justify-center h-20"><p class="text-center text-xs text-gray-500">No jobs.</p></div> @endforelse
                             </div>
                         </div>
                     </div>
 
-                    <!-- 2. Scheduled -->
+                    <!-- Scheduled -->
                     <div class="{{ $columnClass }}">
                         <div class="flex flex-col rounded-lg shadow-lg h-full bg-indigo-50 dark:bg-gray-700">
                             <div class="bg-indigo-500 dark:bg-indigo-600 p-3 rounded-t-lg">
                                 <h3 class="text-sm font-bold text-white text-center uppercase">Scheduled</h3>
                             </div>
                             <div id="scheduled-column" class="p-3 space-y-3 kanban-column-body flex-1">
-                                @forelse($scheduledJobs as $job)
-                                    @include('jobs.partials.job_card', ['job' => $job])
-                                @empty
-                                    <div class="flex items-center justify-center h-20">
-                                        <p class="text-center text-xs text-gray-500">No jobs.</p>
-                                    </div>
-                                @endforelse
+                                @forelse($scheduledJobs as $job) @include('jobs.partials.job_card', ['job' => $job]) @empty <div class="flex items-center justify-center h-20"><p class="text-center text-xs text-gray-500">No jobs.</p></div> @endforelse
                             </div>
                         </div>
                     </div>
 
-                    <!-- 3. Preparation -->
+                    <!-- Preparation -->
                     <div class="{{ $columnClass }}">
                         <div class="flex flex-col rounded-lg shadow-lg h-full bg-yellow-50 dark:bg-gray-700">
                             <div class="bg-yellow-500 dark:bg-yellow-600 p-3 rounded-t-lg">
                                 <h3 class="text-sm font-bold text-white text-center uppercase">Preparation</h3>
                             </div>
                             <div id="preparation-column" class="p-3 space-y-3 kanban-column-body flex-1">
-                                @forelse($preparationJobs as $job)
-                                    @include('jobs.partials.job_card', ['job' => $job])
-                                @empty
-                                    <div class="flex items-center justify-center h-20">
-                                        <p class="text-center text-xs text-gray-500">No jobs.</p>
-                                    </div>
-                                @endforelse
+                                @forelse($preparationJobs as $job) @include('jobs.partials.job_card', ['job' => $job]) @empty <div class="flex items-center justify-center h-20"><p class="text-center text-xs text-gray-500">No jobs.</p></div> @endforelse
                             </div>
                         </div>
                     </div>
 
-                    <!-- 4. On Going -->
+                    <!-- On Going -->
                     <div class="{{ $columnClass }}">
                         <div class="flex flex-col rounded-lg shadow-lg h-full bg-blue-100 dark:bg-gray-700">
                             <div class="bg-blue-600 dark:bg-blue-700 p-3 rounded-t-lg">
                                 <h3 class="text-sm font-bold text-white text-center uppercase">On Going</h3>
                             </div>
                             <div id="on-going-column" class="p-3 space-y-3 kanban-column-body flex-1">
-                                @forelse($onGoingJobs as $job)
-                                    @include('jobs.partials.job_card', ['job' => $job])
-                                @empty
-                                    <div class="flex items-center justify-center h-20">
-                                        <p class="text-center text-xs text-gray-500">No jobs.</p>
-                                    </div>
-                                @endforelse
+                                @forelse($onGoingJobs as $job) @include('jobs.partials.job_card', ['job' => $job]) @empty <div class="flex items-center justify-center h-20"><p class="text-center text-xs text-gray-500">No jobs.</p></div> @endforelse
                             </div>
                         </div>
                     </div>
 
-                    <!-- 5. Completed -->
+                    <!-- Completed -->
                     <div class="{{ $columnClass }}">
                         <div class="flex flex-col rounded-lg shadow-lg h-full bg-green-100 dark:bg-gray-700">
                             <div class="bg-green-600 dark:bg-green-700 p-3 rounded-t-lg">
                                 <h3 class="text-sm font-bold text-white text-center uppercase">Completed</h3>
                             </div>
                             <div id="completed-column" class="p-3 space-y-3 kanban-column-body flex-1">
-                                @forelse($completedJobs as $job)
-                                    @include('jobs.partials.job_card', ['job' => $job])
-                                @empty
-                                    <div class="flex items-center justify-center h-20">
-                                        <p class="text-center text-xs text-gray-500">No jobs.</p>
-                                    </div>
-                                @endforelse
+                                @forelse($completedJobs as $job) @include('jobs.partials.job_card', ['job' => $job]) @empty <div class="flex items-center justify-center h-20"><p class="text-center text-xs text-gray-500">No jobs.</p></div> @endforelse
                             </div>
                         </div>
                     </div>
 
-                    <!-- 6. Closed -->
+                    <!-- Closed -->
                     <div class="{{ $columnClass }}">
                         <div class="flex flex-col rounded-lg shadow-lg h-full bg-gray-200 dark:bg-gray-800">
                             <div class="bg-gray-800 dark:bg-black p-3 rounded-t-lg">
                                 <h3 class="text-sm font-bold text-white text-center uppercase">Closed</h3>
                             </div>
                             <div id="closed-column" class="p-3 space-y-3 kanban-column-body flex-1">
-                                @forelse($closedJobs as $job)
-                                    @include('jobs.partials.job_card', ['job' => $job])
-                                @empty
-                                    <div class="flex items-center justify-center h-20">
-                                        <p class="text-center text-xs text-gray-500">No jobs.</p>
-                                    </div>
-                                @endforelse
+                                @forelse($closedJobs as $job) @include('jobs.partials.job_card', ['job' => $job]) @empty <div class="flex items-center justify-center h-20"><p class="text-center text-xs text-gray-500">No jobs.</p></div> @endforelse
                             </div>
                         </div>
                     </div>
-
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- INCLUDE MODALS -->
     @include('jobs.modals.create')
+    @include('jobs.modals.move_stage')
     @include('jobs.modals.forward')
     @include('jobs.modals.complete')
     @include('jobs.modals.close')
+    @include('jobs.modals.detail')
 
+    <!-- Global Spinner -->
     <div id="global-spinner" class="hidden fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center">
         <div class="flex flex-col items-center">
             <div class="w-16 h-16 border-4 border-white border-t-blue-500 rounded-full animate-spin"></div>
@@ -171,21 +127,11 @@
     @push('styles')
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
     <style>
-        .kanban-column-body { 
-            /* Perubahan di sini: hapus min-height 400px agar mengikuti tinggi parent */
-            overflow-y: auto; 
-            /* scrollbar custom agar cantik */
-            scrollbar-width: thin;
-        }
-        .job_card { transition: opacity 0.3s ease-in-out; }
-        
-        /* Custom Scrollbar untuk Container Utama */
+        .kanban-column-body { overflow-y: auto; scrollbar-width: thin; }
         .overflow-x-auto::-webkit-scrollbar { height: 12px; }
         .overflow-x-auto::-webkit-scrollbar-track { background: #e5e7eb; border-radius: 6px; }
         .overflow-x-auto::-webkit-scrollbar-thumb { background: #9ca3af; border-radius: 6px; }
         .overflow-x-auto::-webkit-scrollbar-thumb:hover { background: #6b7280; }
-
-        /* Custom Scrollbar untuk Kolom */
         .kanban-column-body::-webkit-scrollbar { width: 6px; }
         .kanban-column-body::-webkit-scrollbar-track { background: transparent; }
         .kanban-column-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -201,19 +147,22 @@
     document.addEventListener('DOMContentLoaded', function() {
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         const spinner = document.getElementById('global-spinner');
+        
+        // Helper Spinner
         const showSpinner = () => spinner.classList.remove('hidden');
         const hideSpinner = () => spinner.classList.add('hidden');
 
+        // --- Helper: Update UI ---
         function updateKanbanUI(job, html) {
             const oldCard = document.getElementById(`job-card-${job.id}`);
             if (oldCard) oldCard.remove();
 
-            const targetStatus = job.status.replace(/_/g, '-');
+            const targetStatus = job.status.replace(/_/g, '-'); 
             const targetColumn = document.getElementById(`${targetStatus}-column`);
 
             if (targetColumn) {
-                const placeholder = targetColumn.querySelector('.no-jobs-placeholder') || targetColumn.querySelector('.text-center.text-xs');
-                if (placeholder) placeholder.closest('div')?.remove() || placeholder.remove();
+                const placeholder = targetColumn.querySelector('.text-center.text-xs');
+                if (placeholder && placeholder.closest('div.flex')) placeholder.closest('div.flex').remove();
 
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = html;
@@ -221,6 +170,7 @@
             }
         }
 
+        // --- Helper: Submit Form ---
         async function handleFormSubmit(url, formData) {
             showSpinner();
             try {
@@ -229,149 +179,170 @@
                     headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept': 'application/json' }
                 });
                 const data = await response.json();
+                
                 if (!response.ok) {
-                    let errorHtml = data.message || 'An unknown error occurred.';
+                    let errorHtml = data.message || 'Error occurred.';
                     if (response.status === 422 && data.errors) {
                         errorHtml = '<ul class="text-left list-disc list-inside mt-2">';
                         for (const field in data.errors) { errorHtml += `<li>${data.errors[field][0]}</li>`; }
                         errorHtml += '</ul>';
                     }
-                    Swal.fire({ icon: 'error', title: 'Operation Failed', html: errorHtml });
+                    Swal.fire({ icon: 'error', title: 'Failed', html: errorHtml });
                     return;
                 }
+
                 Swal.fire({
                     toast: true, position: 'top-end', icon: 'success',
                     title: data.message, showConfirmButton: false, timer: 3000
                 });
                 
-                if (!window.Echo) {
-                     updateKanbanUI(data.job, data.html);
-                }
+                if (!window.Echo) updateKanbanUI(data.job, data.html);
             } catch (error) {
                 console.error('Error:', error);
-                Swal.fire('Error', 'Could not connect to the server.', 'error');
+                Swal.fire('Error', 'Connection failed.', 'error');
             } finally {
                 hideSpinner();
             }
         }
 
         if (window.Echo) {
-            window.Echo.channel('jobs')
-                .listen('JobUpdated', (data) => {
-                    updateKanbanUI(data.job, data.html);
-                });
+            window.Echo.channel('jobs').listen('JobUpdated', (data) => updateKanbanUI(data.job, data.html));
         }
 
-        function openModal(modalEl) { if (modalEl) modalEl.classList.remove('hidden'); }
-        function closeModal(modalEl) { if (modalEl) modalEl.classList.add('hidden'); }
+        // --- Modal Helpers ---
+        function openModal(id) { 
+            const el = document.getElementById(id);
+            if(el) el.classList.remove('hidden'); 
+            else console.error('Modal not found:', id);
+        }
+        function closeModal(id) { document.getElementById(id)?.classList.add('hidden'); }
 
-        const fileHandlers = new Map();
-        function setupAdvancedFileInput(modalId) {
-            const modal = document.getElementById(modalId);
-            if (!modal) return;
-            const triggerButton = modal.querySelector('.trigger-file-input');
-            const fileInput = modal.querySelector('.file-input');
-            const previewContainer = modal.querySelector('.file-preview-container');
-            let selectedFiles = new Map();
-            fileHandlers.set(modalId, selectedFiles);
-
-            triggerButton.addEventListener('click', () => fileInput.click());
+        // --- EVENT DELEGATION UTAMA ---
+        document.body.addEventListener('click', function(e) {
             
-            fileInput.addEventListener('change', (event) => {
-                const files = event.target.files;
-                let currentFileCount = selectedFiles.size;
-                for (const file of files) {
-                    if (currentFileCount >= 3) {
-                        Swal.fire('Limit Reached', 'Max 3 files.', 'warning');
-                        break;
-                    }
-                    if (!selectedFiles.has(file.name)) {
-                        selectedFiles.set(file.name, file);
-                        const wrapper = document.createElement('div');
-                        wrapper.className = 'flex items-center justify-between p-2 bg-gray-100 dark:bg-gray-700 rounded-md';
-                        wrapper.innerHTML = `<span class="truncate text-sm">${file.name}</span><button type="button" class="text-red-500" onclick="this.parentElement.remove()">x</button>`;
-                        wrapper.querySelector('button').addEventListener('click', () => selectedFiles.delete(file.name));
-                        previewContainer.appendChild(wrapper);
-                        currentFileCount++;
-                    }
+            // 1. CEK TOMBOL UNIVERSAL (Set Schedule, Prep, Start)
+            const moveBtn = e.target.closest('.move-stage-btn');
+            
+            if (moveBtn) {
+                e.preventDefault();
+                const jobId = moveBtn.dataset.jobId;
+                const targetStatus = moveBtn.dataset.targetStatus;
+                const title = moveBtn.dataset.title;
+
+                const modal = document.getElementById('moveStageModal');
+                if(modal) {
+                    modal.querySelector('#move_job_id').value = jobId;
+                    modal.querySelector('#move_target_status').value = targetStatus;
+                    const titleEl = modal.querySelector('#moveStageTitle');
+                    if(titleEl) titleEl.innerText = title || 'Move Stage';
+
+                    openModal('moveStageModal');
                 }
-                fileInput.value = '';
-            });
-        }
+                return;
+            }
+            
+            // 2. Tombol Forward
+            const fwdBtn = e.target.closest('.forward-job-btn');
+            if (fwdBtn) {
+                e.preventDefault();
+                const modal = document.getElementById('forwardJobModal');
+                modal.querySelector('#forward_job_id').value = fwdBtn.dataset.jobId;
+                openModal('forwardJobModal');
+                return;
+            }
 
-        setupAdvancedFileInput('createJobModal');
-        setupAdvancedFileInput('completeJobModal');
+            // 3. Tombol Complete
+            const completeBtn = e.target.closest('.complete-job-btn');
+            if (completeBtn) {
+                e.preventDefault();
+                const modal = document.getElementById('completeJobModal');
+                modal.querySelector('#complete_job_id').value = completeBtn.dataset.jobId;
+                openModal('completeJobModal');
+                return;
+            }
 
-        document.getElementById('openCreateJobModalBtn')?.addEventListener('click', () => openModal(document.getElementById('createJobModal')));
-        document.querySelectorAll('.cancel-modal-btn').forEach(btn => btn.addEventListener('click', () => closeModal(btn.closest('.fixed'))));
+            // 4. Tombol Close Job
+            const closeBtn = e.target.closest('.close-job-btn');
+            if (closeBtn) {
+                e.preventDefault();
+                const modal = document.getElementById('closeJobModal');
+                modal.querySelector('#close_job_id').value = closeBtn.dataset.jobId;
+                openModal('closeJobModal');
+                return;
+            }
+
+            // 5. Tombol Show Detail
+            const detailBtn = e.target.closest('.show-detail-btn');
+            if (detailBtn) {
+                e.preventDefault();
+                const jobId = detailBtn.dataset.jobId;
+                const content = document.getElementById('jobDetailContent');
+                openModal('jobDetailModal');
+                content.innerHTML = '<div class="flex justify-center p-10"><div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div></div>';
+                
+                fetch(`/jobs/${jobId}/details`)
+                    .then(res => res.json())
+                    .then(data => { content.innerHTML = data.html; })
+                    .catch(() => { content.innerHTML = '<p class="text-red-500 text-center">Failed to load details.</p>'; });
+                return;
+            }
+
+            // 6. Tombol Cancel Modal
+            if (e.target.closest('.cancel-modal-btn') || e.target.closest('.close-detail-btn')) {
+                e.preventDefault();
+                const modal = e.target.closest('.fixed');
+                if(modal) modal.classList.add('hidden');
+            }
+        });
+
+        // --- FORM HANDLERS ---
+        
+        // Create Job
+        const createBtn = document.getElementById('openCreateJobModalBtn');
+        if(createBtn) createBtn.addEventListener('click', () => openModal('createJobModal'));
 
         document.getElementById('createJobForm')?.addEventListener('submit', function(e) {
             e.preventDefault();
-            const formData = new FormData(this);
-            fileHandlers.get('createJobModal')?.forEach(file => formData.append('attachments[]', file));
-            closeModal(document.getElementById('createJobModal'));
-            handleFormSubmit('{{ route("jobs.store") }}', formData);
+            closeModal('createJobModal');
+            handleFormSubmit('{{ route("jobs.store") }}', new FormData(this));
             this.reset();
-            document.querySelector('#createJobModal .file-preview-container').innerHTML = '';
-            fileHandlers.get('createJobModal').clear();
         });
 
+        // Move Stage (Universal Form)
+        document.getElementById('moveStageForm')?.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const jobId = this.querySelector('#move_job_id').value;
+            closeModal('moveStageModal');
+            handleFormSubmit(`/jobs/${jobId}/change-status`, new FormData(this));
+            this.reset();
+        });
+
+        // Forward
         document.getElementById('forwardJobForm')?.addEventListener('submit', function(e) {
             e.preventDefault();
             const jobId = this.querySelector('#forward_job_id').value;
-            closeModal(document.getElementById('forwardJobModal'));
+            closeModal('forwardJobModal');
             handleFormSubmit(`/jobs/${jobId}/forward`, new FormData(this));
             this.reset();
         });
 
+        // Complete
         document.getElementById('completeJobForm')?.addEventListener('submit', function(e) {
             e.preventDefault();
             const jobId = this.querySelector('#complete_job_id').value;
             const formData = new FormData(this);
-            fileHandlers.get('completeJobModal')?.forEach(file => formData.append('attachments[]', file));
             formData.append('_method', 'PATCH');
-            closeModal(document.getElementById('completeJobModal'));
+            closeModal('completeJobModal');
             handleFormSubmit(`/jobs/${jobId}/complete`, formData);
             this.reset();
-            document.querySelector('#completeJobModal .file-preview-container').innerHTML = '';
-            fileHandlers.get('completeJobModal').clear();
         });
 
+        // Close
         document.getElementById('closeJobForm')?.addEventListener('submit', function(e) {
             e.preventDefault();
             const jobId = this.querySelector('#close_job_id').value;
-            closeModal(document.getElementById('closeJobModal'));
+            closeModal('closeJobModal');
             handleFormSubmit(`/jobs/${jobId}/close`, new FormData(this));
-        });
-
-        document.body.addEventListener('click', function(e) {
-            const target = e.target.closest('button[data-job-id]');
-            if (!target) return;
-            const jobId = target.dataset.jobId;
-            e.preventDefault();
-            const formData = new FormData();
-            formData.append('_method', 'PATCH');
-            formData.append('_token', csrfToken);
-
-            if (target.classList.contains('schedule-job-btn')) {
-                handleFormSubmit(`/jobs/${jobId}/schedule`, formData);
-            } else if (target.classList.contains('prepare-job-btn')) {
-                handleFormSubmit(`/jobs/${jobId}/prepare`, formData);
-            } else if (target.classList.contains('start-job-btn')) {
-                handleFormSubmit(`/jobs/${jobId}/start`, formData);
-            } else if (target.classList.contains('forward-job-btn')) {
-                const modal = document.getElementById('forwardJobModal');
-                modal.querySelector('#forward_job_id').value = jobId;
-                openModal(modal);
-            } else if (target.classList.contains('complete-job-btn')) {
-                const modal = document.getElementById('completeJobModal');
-                modal.querySelector('#complete_job_id').value = jobId;
-                openModal(modal);
-            } else if (target.classList.contains('close-job-btn')) {
-                const modal = document.getElementById('closeJobModal');
-                modal.querySelector('#close_job_id').value = jobId;
-                openModal(modal);
-            }
         });
     });
     </script>

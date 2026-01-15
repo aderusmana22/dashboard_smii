@@ -214,6 +214,8 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
     Route::patch('/jobs/{job}/change-status', [JobController::class, 'changeStatus'])->name('jobs.changeStatus');
     Route::get('/jobs/{job}/details', [JobController::class, 'showDetails'])->name('jobs.details');
         
+    Route::patch('/jobs/{job}/cancel', [JobController::class, 'cancel'])->name('jobs.cancel');
+    
     // Rute untuk mengelola Resources (Area dan Departemen)
     // Route ini sudah menangani GET (index) dan POST (store)
     Route::resource('areas', AreaController::class)->except(['create', 'show', 'edit']);

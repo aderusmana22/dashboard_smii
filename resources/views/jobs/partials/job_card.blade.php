@@ -6,204 +6,157 @@
     $latestRoute = $job->latestRoute;
     $currentDeptId = $latestRoute->to_department_id ?? null;
     $currentDeptName = trim($latestRoute->toDepartment->department_name ?? 'Default');
-    $initialAttachments = $job->initial_attachments;
-    $imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'];
     
-    // Authorization
+    // Logic Authorization
     $userMarshoDepartmentId = optional($user->marshoProfile)->marsho_department_id;
     $canAct = ($userMarshoDepartmentId == $currentDeptId) || $isSuperAdmin;
     $isRequester = $job->pengaju_id == $user->id;
 
-    // SLA & Deadline Logic
-    $daysInStage = \Carbon\Carbon::now()->diffInDays($job->last_stage_update);
-    $isStageOverdue = $daysInStage > 3; // Lebih dari 3 hari di tahap yang sama
-    $isDeadlineOverdue = \Carbon\Carbon::parse($job->deadline)->isPast() && $job->status !== 'completed' && $job->status !== 'closed';
-
-    // Color Coding
+    // Logic Warna Header (Sesuai Departemen)
     $departmentColors = [
-        'Engineering & Maintainance' => 'bg-blue-500 text-white dark:bg-blue-600',
-        'Finance Admin'              => 'bg-green-500 text-white dark:bg-green-600',
-        'HCD'                        => 'bg-pink-500 text-white dark:bg-pink-600 dark:text-white',
-        'Marsho'                     => 'bg-indigo-500 text-white dark:bg-indigo-600 dark:text-white',
-        'Batch'                      => 'bg-rose-500 text-white dark:bg-rose-600 dark:text-white',
-        'QM & HSE'                   => 'bg-red-500 text-white dark:bg-red-600 dark:text-white',
-        'R&D'                        => 'bg-purple-500 text-white dark:bg-purple-600 dark:text-white',
-        'Sales & Marketing'          => 'bg-sky-500 text-white dark:bg-sky-600 dark:text-white',
-        'PPIC'                       => 'bg-amber-500 text-white dark:bg-amber-600 dark:text-white',
-        'Inward Warehouse'           => 'bg-lime-500 text-white dark:bg-lime-600 dark:text-white',
-        'Outward Warehouse'          => 'bg-cyan-500 text-white dark:bg-cyan-600 dark:text-white',
-        'Purchasing'                 => 'bg-orange-500 text-white dark:bg-orange-600 dark:text-white',
-        'site service'               => 'bg-teal-500 text-white dark:bg-teal-600 dark:text-white',
-        'Default'                    => 'bg-gray-500 text-white dark:bg-gray-600 dark:text-white',
+        'Engineering & Maintainance' => 'bg-blue-600',
+        'Finance Admin'              => 'bg-green-600',
+        'HCD'                        => 'bg-pink-600',
+        'Marsho'                     => 'bg-indigo-600',
+        'Batch'                      => 'bg-rose-600',
+        'QM & HSE'                   => 'bg-red-600',
+        'R&D'                        => 'bg-purple-600',
+        'Sales & Marketing'          => 'bg-sky-600',
+        'PPIC'                       => 'bg-amber-600',
+        'Inward Warehouse'           => 'bg-lime-600',
+        'Outward Warehouse'          => 'bg-cyan-600',
+        'Purchasing'                 => 'bg-orange-600',
+        'site service'               => 'bg-teal-600',
+        'Default'                    => 'bg-gray-600',
     ];
-    $colorClasses = $departmentColors[$currentDeptName] ?? $departmentColors['Default'];
+    $headerColor = $departmentColors[$currentDeptName] ?? $departmentColors['Default'];
 @endphp
 
-<div class="job-card rounded-lg p-4 shadow-md flex flex-col {{ $colorClasses }} relative transition hover:shadow-lg"
-     id="job-card-{{ $job->id }}"
-     x-data="{
-         openAttachments: false,
-         imageModalOpen: false, 
-         imageGallery: [], 
-         currentImageIndex: 0,
-         showAttachment(event, clickedPath, isImage, imageGroup) {
-             if (isImage && imageGroup.length > 0) {
-                 event.preventDefault();
-                 this.imageGallery = imageGroup;
-                 this.currentImageIndex = this.imageGallery.indexOf(clickedPath);
-                 this.imageModalOpen = true;
-             }
-         }
-     }">
+<!-- Wrapper Card: Menggunakan warna dasar gelap seperti di gambar referensi -->
+<div class="rounded-xl overflow-hidden shadow-lg flex flex-col text-white relative group transition hover:shadow-2xl"
+     id="job-card-{{ $job->id }}">
 
-    {{-- SLA WARNING BADGE --}}
-    @if($isStageOverdue && $job->status != 'completed' && $job->status != 'closed')
-        <div class="absolute -top-2 -right-2 z-10">
-            <span class="flex h-6 w-6 relative">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span class="relative inline-flex rounded-full h-6 w-6 bg-red-600 text-white text-[10px] items-center justify-center font-bold border-2 border-white" title="Stuck for {{ $daysInStage }} days">
-                    !
-                </span>
-            </span>
+    {{-- HEADER CARD (Warna Departemen) --}}
+    <div class="{{ $headerColor }} p-3 flex justify-between items-start">
+        <div>
+            <span class="text-[10px] uppercase opacity-75 block tracking-wider">ID Job</span>
+            <h3 class="font-bold text-lg leading-tight">{{ $job->id_job }}</h3>
         </div>
-    @endif
+        <div class="bg-white/20 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide">
+            {{ str_replace('_', ' ', $job->status) }}
+        </div>
+    </div>
 
-    {{-- HEADER --}}
-    <div class="flex flex-col sm:flex-row justify-between items-start mb-3 pb-3 border-b border-current opacity-75">
-        <div class="flex-1">
-            <h3 class="font-bold text-lg">{{ $job->id_job }}</h3>
-            <p class="text-sm">
-                <span class="font-semibold">Req:</span> {{ $job->pengaju->name ?? 'N/A' }}
+    {{-- BODY CARD --}}
+    <div class="p-4 bg-white space-y-3 text-sm flex-1">
+        
+        <!-- Row 1: From & To -->
+        <div class="grid grid-cols-2 gap-2">
+            <div>
+                <span class="text-[10px] text-gray-400 block mb-0.5">From</span>
+                <p class="font-semibold text-black truncate" title="{{ $job->pengaju->name }}">{{ $job->pengaju->name }}</p>
+            </div>
+            <div>
+                <span class="text-[10px] text-gray-400 block mb-0.5">To Department</span>
+                <span class="bg-yellow-200 text-yellow-800 text-[10px] font-bold px-2 py-0.5 rounded-full truncate inline-block max-w-full">
+                    {{ $currentDeptName }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Row 2: Dates -->
+        <div class="grid grid-cols-2 gap-2 border-t border-gray-700 pt-2">
+            <div>
+                <span class="text-[10px] text-gray-400 block mb-0.5">Start</span>
+                <p class="font-medium text-black">{{ \Carbon\Carbon::parse($job->tanggal_job_mulai)->format('d M Y') }}</p>
+            </div>
+            <div>
+                <span class="text-[10px] text-gray-400 block mb-0.5 ">End (Deadline)</span>
+                <p class="font-medium{{ \Carbon\Carbon::parse($job->deadline)->isPast() && $job->status != 'completed' ? 'text-red-400' : 'text-gray-300' }}">
+                    {{ \Carbon\Carbon::parse($job->deadline)->format('d M Y') }}
+                </p>
+            </div>
+        </div>
+
+        <!-- Row 3: Processed By (Latest Route Creator) -->
+        <div class="border-t border-gray-700 pt-2">
+            <span class="text-[10px] text-gray-400 block mb-0.5">Processed by (Updated)</span>
+            <p class="font-medium text-black truncate">
+                {{ $latestRoute->creator->name ?? 'System' }} 
+                <span class="text-xs text-gray-500 font-normal ml-1">at {{ \Carbon\Carbon::parse($job->last_stage_update)->format('d M Y H:i') }}</span>
             </p>
         </div>
-        <div class="text-xs mt-2 sm:mt-0 text-left sm:text-right space-y-1">
-            <div>
-                <span class="font-semibold">Start:</span>
-                {{ \Carbon\Carbon::parse($job->tanggal_job_mulai)->format('d M') }}
+
+        <!-- Row 4: Location -->
+        <div class="border-t border-gray-700 pt-2">
+            <span class="text-[10px] text-gray-400 block mb-0.5">Location</span>
+            <p class="font-bold text-black">{{ $job->area->name ?? '-' }}</p>
+        </div>
+
+        <!-- Row 5: Description (Boxed) -->
+        <div>
+            <span class="text-[10px] text-gray-400 block mb-1">Description:</span>
+            <div class="p-2 bg-gray-900/50 text-xs text-gray-300 h-16 overflow-y-auto custom-scrollbar">
+                {{ $job->list_job }}
             </div>
-            <div class="{{ $isDeadlineOverdue ? 'bg-red-600 text-white px-1 rounded animate-pulse font-bold' : '' }}">
-                <span class="font-semibold">Deadline:</span>
-                {{ \Carbon\Carbon::parse($job->deadline)->format('d M') }}
-            </div>
-            @if($isStageOverdue && $job->status != 'completed' && $job->status != 'closed')
-                <div class="text-red-100 bg-red-800/50 px-1 rounded font-bold">
-                    Stuck: {{ $daysInStage }} Days
-                </div>
-            @endif
         </div>
     </div>
 
-    {{-- BODY --}}
-    <div class="mb-3">
-        <p class="mb-2 break-words text-sm">{{ Str::limit($job->list_job, 100) }}</p>
+    {{-- FOOTER BUTTONS --}}
+    <div class="p-3 {{ $headerColor }} flex justify-between items-center gap-2">
         
-        {{-- Tampilkan Note Terakhir Saja --}}
-        @php
-            $lastNote = $job->notes->last();
-            $displayText = $lastNote ? $lastNote->note : ($latestRoute->note ?? '-');
-        @endphp
-        
-        <div class="text-xs p-2 bg-black/10 rounded-md break-words border-l-2 border-white/50">
-            <span class="font-semibold text-[10px] uppercase opacity-70">Latest Note:</span><br>
-            {{ Str::limit($displayText, 80) }}
-        </div>
-    </div>
-
-    {{-- ATTACHMENTS (INITIAL) --}}
-    <div class="space-y-2 mb-4">
-        @if($initialAttachments->count() > 0)
-            @php
-                 $initialImagePaths = $initialAttachments
-                    ->filter(fn($att) => in_array(strtolower(pathinfo($att->file_name, PATHINFO_EXTENSION)), $imageExtensions))
-                    ->map(fn($att) => Storage::url($att->file_path))
-                    ->values();
-            @endphp
-            <div>
-                <button @click="openAttachments = !openAttachments" class="text-xs font-bold hover:underline flex items-center /20 px-2 py-1 rounded">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V8a2 2 0 00-2-2h-5L9 4H4z" /></svg>
-                    <span x-text="openAttachments ? 'Hide Initial Files' : 'Show Initial Files'"></span>
-                    <span class="ml-1 text-xs  text-black px-1.5 rounded-full">{{ $initialAttachments->count() }}</span>
-                </button>
-                <div x-show="openAttachments" style="display: none;" class="mt-2 p-2 bg-black/10 rounded-md text-xs space-y-1">
-                    @foreach($initialAttachments as $attachment)
-                        @php
-                            $isImage = in_array(strtolower(pathinfo($attachment->file_name, PATHINFO_EXTENSION)), $imageExtensions);
-                            $filePath = Storage::url($attachment->file_path);
-                        @endphp
-                        <a href="{{ $filePath }}" target="_blank" @click="showAttachment($event, '{{ $filePath }}', {{ $isImage ? 'true' : 'false' }}, {{ $isImage ? $initialImagePaths->toJson() : '[]' }})" class="block truncate hover:underline">
-                            {{ $attachment->file_name }}
-                        </a>
-                    @endforeach
-                </div>
-            </div>
-        @endif
-    </div>
-
-    {{-- FOOTER --}}
-    <div class="mt-auto pt-2 border-t border-current opacity-80 flex justify-between items-center">
-        {{-- Show More Button (Memicu Modal Detail) --}}
-        <button type="button" class="show-detail-btn text-xs /20 hover:/30 text-white font-semibold px-2 py-1 rounded transition-colors" data-job-id="{{ $job->id }}">
-            Show More
+        {{-- Tombol Show Detail (Icon Mata/Text) --}}
+        <button type="button" class="show-detail-btn text-white  hover:text-white text-xs underline" data-job-id="{{ $job->id }}">
+            Details & History
         </button>
 
-        {{-- Action Buttons --}}
-        <div class="flex flex-wrap gap-1 justify-end">
+        <div class="flex gap-2">
+            {{-- Tombol Cancel (Khusus Requester) --}}
+            @if($isRequester && !in_array($job->status, ['completed', 'closed', 'cancelled']))
+                <button class="cancel-job-btn bg-red-600 hover:bg-orange-700 text-white text-xs font-bold px-3 py-2 rounded shadow transition"
+                        data-job-id="{{ $job->id }}">
+                    Cancel
+                </button>
+            @endif
+
+            {{-- Tombol Action (Move/Complete) --}}
             @if($canAct)
-                {{-- Universal Move Stage Button Logic --}}
                 @if($job->status == 'scheduled')
-                    <button class="move-stage-btn text-xs  text-black hover:bg-gray-200 font-bold px-3 py-1 rounded shadow-sm" 
-                            data-job-id="{{ $job->id }}" 
-                            data-target-status="preparation" 
-                            data-title="Start Preparation">
+                    <button class="move-stage-btn bg-blue-600 hover:bg-blue-600 text-xs font-bold px-4 py-2 rounded shadow transition" 
+                            data-job-id="{{ $job->id }}" data-target-status="preparation" data-title="Start Preparation">
                         Start Prep
                     </button>
-                @endif
-
-                @if($job->status == 'preparation')
-                    <button class="move-stage-btn text-xs  text-black hover:bg-gray-200 font-bold px-3 py-1 rounded shadow-sm" 
-                            data-job-id="{{ $job->id }}" 
-                            data-target-status="on_going" 
-                            data-title="Start Job Execution">
+                @elseif($job->status == 'preparation')
+                    <button class="move-stage-btn bg-white text-purple-900 hover:bg-gray-200 text-xs font-bold px-4 py-2 rounded shadow transition" 
+                            data-job-id="{{ $job->id }}" data-target-status="on_going" data-title="Start Job">
                         Start Job
                     </button>
-                @endif
-
-                @if($job->status == 'on_going')
-                    <button class="forward-job-btn text-xs bg-yellow-400 text-black hover:bg-yellow-300 font-bold px-3 py-1 rounded shadow-sm" 
+                @elseif($job->status == 'on_going')
+                    <button class="forward-job-btn bg-yellow-500 hover:bg-yellow-600 text-white text-xs font-bold px-3 py-2 rounded shadow transition" 
                             data-job-id="{{ $job->id }}">
                         Forward
                     </button>
-                    <button class="complete-job-btn text-xs bg-green-500 text-white hover:bg-green-400 font-bold px-3 py-1 rounded shadow-sm" 
+                    <button class="complete-job-btn bg-green-600 hover:bg-emerald-600 text-white text-xs font-bold px-4 py-2 rounded shadow transition" 
                             data-job-id="{{ $job->id }}">
                         Complete
                     </button>
                 @endif
             @endif
 
+            {{-- Tombol Close (Completed) --}}
             @if($job->status == 'completed' && ($isRequester || $isSuperAdmin))
-                <button class="close-job-btn text-xs bg-gray-700 text-white hover:bg-gray-600 font-bold px-3 py-1 rounded shadow-sm" 
+                <button class="close-job-btn bg-gray-600 hover:bg-gray-500 text-white text-xs font-bold px-4 py-2 rounded shadow transition" 
                         data-job-id="{{ $job->id }}">
                     Close
                 </button>
             @endif
-            
-            {{-- Tombol Set Schedule manual jika Start Date hari ini tapi status masih To Be Scheduled (sebagai fallback command) --}}
-            @if($job->status == 'to_be_scheduled' && $canAct && \Carbon\Carbon::parse($job->tanggal_job_mulai)->isToday())
-                 <button class="move-stage-btn text-xs  text-black hover:bg-gray-200 font-bold px-3 py-1 rounded shadow-sm"
-                        data-job-id="{{ $job->id }}"
-                        data-target-status="scheduled"
-                        data-title="Set as Scheduled">
-                    Schedule Now
-                </button>
-            @endif
-        </div>
-    </div>
-
-    {{-- Simple Image Modal (AlpineJS) --}}
-    <div x-show="imageModalOpen" x-transition class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-90" style="display: none;">
-        <div class="relative max-w-full max-h-full" @click.stop>
-            <button @click="imageModalOpen = false" class="absolute -top-10 right-0 text-white text-2xl font-bold">&times;</button>
-            <img :src="imageGallery[currentImageIndex]" class="object-contain max-h-[85vh] rounded shadow-lg border border-white/20">
         </div>
     </div>
 </div>
+
+<style>
+    /* Scrollbar kecil untuk deskripsi */
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 2px; }
+</style>

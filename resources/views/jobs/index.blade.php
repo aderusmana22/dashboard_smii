@@ -29,81 +29,122 @@
                 </div>
 
                 <!-- CONTAINER UTAMA KANBAN -->
-                <div class="flex flex-nowrap overflow-x-auto gap-3 pb-4 items-stretch min-h-[calc(100vh-250px)]">
-                    @php $columnClass = "flex-none w-[85vw] md:w-1/2 lg:w-[calc(100%/3-10px)]"; @endphp
+                <!-- CONTAINER UTAMA KANBAN -->
+<div class="flex flex-nowrap overflow-x-auto gap-4 pb-4 items-stretch min-h-[calc(100vh-250px)] px-2">
+    @php 
+        $columnClass = "flex-none w-[85vw] md:w-1/2 lg:w-[calc(100%/3-10px)] flex flex-col"; 
+    @endphp
 
-                    <!-- To Be Scheduled -->
-                    <div class="{{ $columnClass }}">
-                        <div class="flex flex-col rounded-lg shadow-lg h-full bg-gray-100 dark:bg-gray-700">
-                            <div class="bg-gray-500 dark:bg-gray-600 p-3 rounded-t-lg">
-                                <h3 class="text-sm font-bold text-white text-center uppercase">To Be Scheduled</h3>
-                            </div>
-                            <div id="to-be-scheduled-column" class="p-3 space-y-3 kanban-column-body flex-1">
-                                @forelse($toBeScheduledJobs as $job) @include('jobs.partials.job_card', ['job' => $job]) @empty <div class="flex items-center justify-center h-20"><p class="text-center text-xs text-gray-500">No jobs.</p></div> @endforelse
-                            </div>
-                        </div>
-                    </div>
+    <!-- 1. To Be Scheduled (ROSE / MERAH MUDA) -->
+    <div class="{{ $columnClass }}">
+        <!-- Hapus dark:bg-gray-800 agar tetap pastel -->
+        <div class="flex flex-col rounded-xl shadow-md h-full bg-rose-50 border border-rose-100 overflow-hidden">
+            <div class="bg-rose-500 p-3 text-center">
+                <h3 class="text-sm font-bold text-white uppercase tracking-wider">To Be Scheduled</h3>
+            </div>
+            <div id="to-be-scheduled-column" class="p-3 space-y-3 kanban-column-body flex-1">
+                @forelse($toBeScheduledJobs as $job) 
+                    @include('jobs.partials.job_card', ['job' => $job]) 
+                @empty 
+                    <div class="flex items-center justify-center h-full opacity-60">
+                        <p class="text-xs text-rose-800 font-bold">No Jobs.</p>
+                    </div> 
+                @endforelse
+            </div>
+        </div>
+    </div>
 
-                    <!-- Scheduled -->
-                    <div class="{{ $columnClass }}">
-                        <div class="flex flex-col rounded-lg shadow-lg h-full bg-indigo-50 dark:bg-gray-700">
-                            <div class="bg-indigo-500 dark:bg-indigo-600 p-3 rounded-t-lg">
-                                <h3 class="text-sm font-bold text-white text-center uppercase">Scheduled</h3>
-                            </div>
-                            <div id="scheduled-column" class="p-3 space-y-3 kanban-column-body flex-1">
-                                @forelse($scheduledJobs as $job) @include('jobs.partials.job_card', ['job' => $job]) @empty <div class="flex items-center justify-center h-20"><p class="text-center text-xs text-gray-500">No jobs.</p></div> @endforelse
-                            </div>
-                        </div>
-                    </div>
+    <!-- 2. Scheduled (SKY / BIRU LANGIT) -->
+    <div class="{{ $columnClass }}">
+        <div class="flex flex-col rounded-xl shadow-md h-full bg-sky-50 border border-sky-100 overflow-hidden">
+            <div class="bg-sky-500 p-3 text-center">
+                <h3 class="text-sm font-bold text-white uppercase tracking-wider">Scheduled</h3>
+            </div>
+            <div id="scheduled-column" class="p-3 space-y-3 kanban-column-body flex-1">
+                @forelse($scheduledJobs as $job) 
+                    @include('jobs.partials.job_card', ['job' => $job]) 
+                @empty 
+                    <div class="flex items-center justify-center h-full opacity-60">
+                        <p class="text-xs text-sky-800 font-bold">No Jobs.</p>
+                    </div> 
+                @endforelse
+            </div>
+        </div>
+    </div>
 
-                    <!-- Preparation -->
-                    <div class="{{ $columnClass }}">
-                        <div class="flex flex-col rounded-lg shadow-lg h-full bg-yellow-50 dark:bg-gray-700">
-                            <div class="bg-yellow-500 dark:bg-yellow-600 p-3 rounded-t-lg">
-                                <h3 class="text-sm font-bold text-white text-center uppercase">Preparation</h3>
-                            </div>
-                            <div id="preparation-column" class="p-3 space-y-3 kanban-column-body flex-1">
-                                @forelse($preparationJobs as $job) @include('jobs.partials.job_card', ['job' => $job]) @empty <div class="flex items-center justify-center h-20"><p class="text-center text-xs text-gray-500">No jobs.</p></div> @endforelse
-                            </div>
-                        </div>
-                    </div>
+    <!-- 3. Preparation (PURPLE / UNGU) -->
+    <div class="{{ $columnClass }}">
+        <div class="flex flex-col rounded-xl shadow-md h-full bg-purple-50 border border-purple-100 overflow-hidden">
+            <div class="bg-purple-500 p-3 text-center">
+                <h3 class="text-sm font-bold text-white uppercase tracking-wider">Preparation</h3>
+            </div>
+            <div id="preparation-column" class="p-3 space-y-3 kanban-column-body flex-1">
+                @forelse($preparationJobs as $job) 
+                    @include('jobs.partials.job_card', ['job' => $job]) 
+                @empty 
+                    <div class="flex items-center justify-center h-full opacity-60">
+                        <p class="text-xs text-purple-800 font-bold">No Jobs.</p>
+                    </div> 
+                @endforelse
+            </div>
+        </div>
+    </div>
 
-                    <!-- On Going -->
-                    <div class="{{ $columnClass }}">
-                        <div class="flex flex-col rounded-lg shadow-lg h-full bg-blue-100 dark:bg-gray-700">
-                            <div class="bg-blue-600 dark:bg-blue-700 p-3 rounded-t-lg">
-                                <h3 class="text-sm font-bold text-white text-center uppercase">On Going</h3>
-                            </div>
-                            <div id="on-going-column" class="p-3 space-y-3 kanban-column-body flex-1">
-                                @forelse($onGoingJobs as $job) @include('jobs.partials.job_card', ['job' => $job]) @empty <div class="flex items-center justify-center h-20"><p class="text-center text-xs text-gray-500">No jobs.</p></div> @endforelse
-                            </div>
-                        </div>
-                    </div>
+    <!-- 4. On Going (AMBER / KUNING EMAS) -->
+    <div class="{{ $columnClass }}">
+        <div class="flex flex-col rounded-xl shadow-md h-full bg-amber-50 border border-amber-100 overflow-hidden">
+            <div class="bg-amber-500 p-3 text-center">
+                <h3 class="text-sm font-bold text-white uppercase tracking-wider">On Going</h3>
+            </div>
+            <div id="on-going-column" class="p-3 space-y-3 kanban-column-body flex-1">
+                @forelse($onGoingJobs as $job) 
+                    @include('jobs.partials.job_card', ['job' => $job]) 
+                @empty 
+                    <div class="flex items-center justify-center h-full opacity-60">
+                        <p class="text-xs text-amber-800 font-bold">No Jobs.</p>
+                    </div> 
+                @endforelse
+            </div>
+        </div>
+    </div>
 
-                    <!-- Completed -->
-                    <div class="{{ $columnClass }}">
-                        <div class="flex flex-col rounded-lg shadow-lg h-full bg-green-100 dark:bg-gray-700">
-                            <div class="bg-green-600 dark:bg-green-700 p-3 rounded-t-lg">
-                                <h3 class="text-sm font-bold text-white text-center uppercase">Completed</h3>
-                            </div>
-                            <div id="completed-column" class="p-3 space-y-3 kanban-column-body flex-1">
-                                @forelse($completedJobs as $job) @include('jobs.partials.job_card', ['job' => $job]) @empty <div class="flex items-center justify-center h-20"><p class="text-center text-xs text-gray-500">No jobs.</p></div> @endforelse
-                            </div>
-                        </div>
-                    </div>
+    <!-- 5. Completed (EMERALD / HIJAU SEGAR) -->
+    <div class="{{ $columnClass }}">
+        <div class="flex flex-col rounded-xl shadow-md h-full bg-emerald-50 border border-emerald-100 overflow-hidden">
+            <div class="bg-emerald-500 p-3 text-center">
+                <h3 class="text-sm font-bold text-white uppercase tracking-wider">Completed</h3>
+            </div>
+            <div id="completed-column" class="p-3 space-y-3 kanban-column-body flex-1">
+                @forelse($completedJobs as $job) 
+                    @include('jobs.partials.job_card', ['job' => $job]) 
+                @empty 
+                    <div class="flex items-center justify-center h-full opacity-60">
+                        <p class="text-xs text-emerald-800 font-bold">No Jobs.</p>
+                    </div> 
+                @endforelse
+            </div>
+        </div>
+    </div>
 
-                    <!-- Closed -->
-                    <div class="{{ $columnClass }}">
-                        <div class="flex flex-col rounded-lg shadow-lg h-full bg-gray-200 dark:bg-gray-800">
-                            <div class="bg-gray-800 dark:bg-black p-3 rounded-t-lg">
-                                <h3 class="text-sm font-bold text-white text-center uppercase">Closed</h3>
-                            </div>
-                            <div id="closed-column" class="p-3 space-y-3 kanban-column-body flex-1">
-                                @forelse($closedJobs as $job) @include('jobs.partials.job_card', ['job' => $job]) @empty <div class="flex items-center justify-center h-20"><p class="text-center text-xs text-gray-500">No jobs.</p></div> @endforelse
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <!-- 6. Closed (CYAN / BIRU TOSKA CERAH) -->
+    <div class="{{ $columnClass }}">
+        <div class="flex flex-col rounded-xl shadow-md h-full bg-cyan-50 border border-cyan-100 overflow-hidden">
+            <div class="bg-cyan-600 p-3 text-center">
+                <h3 class="text-sm font-bold text-white uppercase tracking-wider">Closed</h3>
+            </div>
+            <div id="closed-column" class="p-3 space-y-3 kanban-column-body flex-1">
+                @forelse($closedJobs as $job) 
+                    @include('jobs.partials.job_card', ['job' => $job]) 
+                @empty 
+                    <div class="flex items-center justify-center h-full opacity-60">
+                        <p class="text-xs text-cyan-800 font-bold">No Jobs.</p>
+                    </div> 
+                @endforelse
+            </div>
+        </div>
+    </div>
+</div>
+
             </div>
         </div>
     </div>
@@ -115,6 +156,7 @@
     @include('jobs.modals.complete')
     @include('jobs.modals.close')
     @include('jobs.modals.detail')
+    @include('jobs.modals.cancel')
 
     <!-- Global Spinner -->
     <div id="global-spinner" class="hidden fixed inset-0 z-50 bg-black bg-opacity-60 flex items-center justify-center">
@@ -293,6 +335,18 @@
                 const modal = e.target.closest('.fixed');
                 if(modal) modal.classList.add('hidden');
             }
+
+// 7. Tombol Cancel Job
+                   const cancelBtn = e.target.closest('.cancel-job-btn');
+if (cancelBtn) {
+    e.preventDefault();
+    const modal = document.getElementById('cancelJobModal');
+    if(modal) {
+        modal.querySelector('#cancel_job_id').value = cancelBtn.dataset.jobId;
+        modal.classList.remove('hidden');
+    }
+    return;
+}
         });
 
         // --- FORM HANDLERS ---
@@ -344,6 +398,49 @@
             closeModal('closeJobModal');
             handleFormSubmit(`/jobs/${jobId}/close`, new FormData(this));
         });
+
+        //cancel
+ 
+
+        document.getElementById('cancelJobForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const jobId = this.querySelector('#cancel_job_id').value;
+    const modal = document.getElementById('cancelJobModal');
+    
+    // Sembunyikan modal & Show Spinner
+    modal.classList.add('hidden');
+    const spinner = document.getElementById('global-spinner');
+    spinner.classList.remove('hidden');
+
+    const formData = new FormData(this);
+
+    fetch(`/jobs/${jobId}/cancel`, {
+        method: 'POST', // Method POST tapi di form ada @method('PATCH') jadi Laravel bacanya PATCH
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        spinner.classList.add('hidden');
+        if (data.job) {
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: data.message, showConfirmButton: false, timer: 3000 });
+            // Hapus kartu dari board karena statusnya cancelled (atau pindahkan ke kolom closed/cancelled jika ada)
+            const card = document.getElementById(`job-card-${data.job.id}`);
+            if(card) card.remove();
+        } else {
+             Swal.fire('Error', data.message || 'Failed to cancel', 'error');
+        }
+    })
+    .catch(err => {
+        spinner.classList.add('hidden');
+        console.error(err);
+        Swal.fire('Error', 'Connection error', 'error');
+    });
+});
+
     });
     </script>
 

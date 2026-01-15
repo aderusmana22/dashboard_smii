@@ -12,6 +12,10 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\DB;
 use App\Jobs\SendJobCompletedEmail;
+use App\Models\User; // Jangan lupa import User
+use Illuminate\Support\Facades\Mail;
+use App\Mail\JobCancelledNotification;
+
 
 class JobController extends Controller
 {
@@ -20,16 +24,16 @@ class JobController extends Controller
         $user = Auth::user();
         // Eager load history lengkap untuk modal "Show More"
         $jobs = JobMarsho::with([
-            'pengaju', 
-            'area', 
-            'latestRoute.toDepartment', 
-            'routes.fromDepartment', 
-            'routes.toDepartment', 
-            'routes.creator', 
-            'attachments', 
+            'pengaju',
+            'area',
+            'latestRoute.toDepartment',
+            'routes.fromDepartment',
+            'routes.toDepartment',
+            'routes.creator',
+            'attachments',
             'notes.creator'
         ])->latest()->get();
-        
+
         // Filtering status (sama seperti sebelumnya)
         $toBeScheduledJobs = $jobs->where('status', 'to_be_scheduled');
         $scheduledJobs = $jobs->where('status', 'scheduled');
@@ -69,10 +73,10 @@ class JobController extends Controller
         ]);
 
         $jobIdString = JobMarsho::generateJobId();
-        
+
         // Cek apakah start date hari ini? Jika ya langsung Scheduled, jika besok/lusa status To Be Scheduled
-        $status = Carbon::parse($request->start_date)->isPast() || Carbon::parse($request->start_date)->isToday() 
-            ? 'scheduled' 
+        $status = Carbon::parse($request->start_date)->isPast() || Carbon::parse($request->start_date)->isToday()
+            ? 'scheduled'
             : 'to_be_scheduled';
 
         DB::transaction(function () use ($request, $jobIdString, $status) {
@@ -104,7 +108,8 @@ class JobController extends Controller
     }
 
     // Helper untuk handle upload
-    private function handleAttachments($request, $job, $routeId) {
+    private function handleAttachments($request, $job, $routeId)
+    {
         if ($request->hasFile('attachments')) {
             $attachmentNumber = $job->attachments()->count() + 1;
             foreach ($request->file('attachments') as $file) {
@@ -141,7 +146,7 @@ class JobController extends Controller
         // Simpan Note & Attachment (Dikaitkan dengan Route terakhir agar rapi)
         // Atau buat JobNote baru jika tidak pindah departemen
         $latestRoute = $job->latestRoute;
-        
+
         // Kita simpan sebagai Note biasa tapi dikaitkan dengan route saat ini
         $job->notes()->create([
             'job_id' => $job->id,
@@ -161,7 +166,7 @@ class JobController extends Controller
     public function forward(Request $request, JobMarsho $job)
     {
         $request->validate([
-            'to_department_id' => 'required|exists:marsho_departments,id', 
+            'to_department_id' => 'required|exists:marsho_departments,id',
             'note' => 'required|string|max:500',
             'attachments' => 'nullable|array|max:3'
         ]);
@@ -185,23 +190,23 @@ class JobController extends Controller
     public function complete(Request $request, JobMarsho $job)
     {
         $request->validate(['note' => 'required|string', 'attachments' => 'nullable|array']);
-        
+
         $job->update([
-            'status' => 'completed', 
+            'status' => 'completed',
             'tanggal_job_selesai' => Carbon::now(),
             'last_stage_update' => Carbon::now()
         ]);
-        
+
         $latestRouteId = $job->latestRoute->id;
         $job->notes()->create([
-            'job_id' => $job->id, 
-            'job_route_id' => $latestRouteId, 
-            'note' => "COMPLETED: " . $request->note, 
+            'job_id' => $job->id,
+            'job_route_id' => $latestRouteId,
+            'note' => "COMPLETED: " . $request->note,
             'created_by' => Auth::id()
         ]);
-        
+
         $this->handleAttachments($request, $job, $latestRouteId);
-        
+
         SendJobCompletedEmail::dispatch($job);
         return $this->prepareJobResponse($job, 'Job marked as completed!');
     }
@@ -213,7 +218,7 @@ class JobController extends Controller
         $activities = collect();
 
         // 1. Masukkan Routes (Perpindahan Dept)
-        foreach($job->routes as $route) {
+        foreach ($job->routes as $route) {
             $activities->push([
                 'type' => 'route',
                 'timestamp' => $route->created_at,
@@ -223,14 +228,14 @@ class JobController extends Controller
         }
 
         // 2. Masukkan Notes (Update Status dalam Dept yg sama)
-        foreach($job->notes as $note) {
+        foreach ($job->notes as $note) {
             $activities->push([
                 'type' => 'note',
                 'timestamp' => $note->created_at,
                 'data' => $note,
                 // Files yang mungkin nempel di note ini (jika logika attachment diubah ke note_id)
                 // Di skema saat ini file nempel ke route_id, jadi kita anggap file di handle di route
-                'files' => collect() 
+                'files' => collect()
             ]);
         }
 
@@ -241,10 +246,60 @@ class JobController extends Controller
 
         return response()->json(['html' => $html]);
     }
-    
+
     // Close job
-    public function close(Request $request, JobMarsho $job) {
-         $job->update(['status' => 'closed', 'penutup_id' => Auth::id(), 'closed_at' => Carbon::now()]);
-         return $this->prepareJobResponse($job, 'Job closed.');
+    public function close(Request $request, JobMarsho $job)
+    {
+        $job->update(['status' => 'closed', 'penutup_id' => Auth::id(), 'closed_at' => Carbon::now()]);
+        return $this->prepareJobResponse($job, 'Job closed.');
+    }
+
+    // Tambahkan di JobController
+
+    public function cancel(Request $request, JobMarsho $job)
+    {
+        $user = Auth::user();
+
+        if ($job->pengaju_id !== $user->id) {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+
+        $request->validate(['reason' => 'required|string|max:500']);
+
+        // 1. Simpan perubahan status
+        $job->update([
+            'status' => 'cancelled',
+            'cancellation_reason' => $request->reason,
+            'closed_at' => \Carbon\Carbon::now()
+        ]);
+
+        // 2. Buat Note System
+        $job->notes()->create([
+            'job_id' => $job->id,
+            'job_route_id' => $job->latestRoute->id,
+            'note' => "JOB CANCELLED. Reason: " . $request->reason,
+            'created_by' => $user->id
+        ]);
+
+        // --- LOGIKA KIRIM EMAIL ---
+
+        // Ambil ID departemen yang sedang memegang job ini
+        $currentDeptId = $job->latestRoute->to_department_id ?? null;
+
+        if ($currentDeptId) {
+            // Cari semua user yang ada di departemen tersebut
+            $recipients = User::whereHas('marshoProfile', function ($q) use ($currentDeptId) {
+                $q->where('marsho_department_id', $currentDeptId);
+            })->get();
+
+            // Kirim email ke setiap anggota departemen
+            foreach ($recipients as $recipient) {
+                Mail::to($recipient->email)->send(
+                    new JobCancelledNotification($job, $request->reason, $user->name)
+                );
+            }
+        }
+
+        return $this->prepareJobResponse($job, 'Job has been cancelled and department notified.');
     }
 }

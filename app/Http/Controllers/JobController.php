@@ -6,35 +6,36 @@ use App\Events\JobUpdated;
 use App\Models\JobMarsho;
 use App\Models\MarshoDepartment;
 use App\Models\Area;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\Facades\DB;
-use App\Jobs\SendJobCompletedEmail;
-use App\Models\User; // Jangan lupa import User
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Mail;
+use App\Jobs\SendJobCompletedEmail;
 use App\Mail\JobCancelledNotification;
-
 
 class JobController extends Controller
 {
+    /**
+     * Menampilkan halaman utama Job Board (Kanban).
+     */
     public function index()
     {
         $user = Auth::user();
-        // Eager load history lengkap untuk modal "Show More"
+        
+        // Eager load relasi yang dibutuhkan untuk tampilan awal
         $jobs = JobMarsho::with([
             'pengaju',
             'area',
             'latestRoute.toDepartment',
-            'routes.fromDepartment',
-            'routes.toDepartment',
-            'routes.creator',
-            'attachments',
-            'notes.creator'
+            'latestRoute.creator', // Untuk menampilkan "Processed by" di card
+            'notes' // Untuk indikator note terakhir
         ])->latest()->get();
 
-        // Filtering status (sama seperti sebelumnya)
+        // Filtering status untuk kolom Kanban
         $toBeScheduledJobs = $jobs->where('status', 'to_be_scheduled');
         $scheduledJobs = $jobs->where('status', 'scheduled');
         $preparationJobs = $jobs->where('status', 'preparation');
@@ -45,28 +46,24 @@ class JobController extends Controller
         $departments = MarshoDepartment::pluck('department_name', 'id');
         $areas = Area::pluck('name', 'id');
 
-        return view('jobs.index', compact('toBeScheduledJobs', 'scheduledJobs', 'preparationJobs', 'onGoingJobs', 'completedJobs', 'closedJobs', 'user', 'departments', 'areas'));
+        return view('jobs.index', compact(
+            'toBeScheduledJobs', 'scheduledJobs', 'preparationJobs', 
+            'onGoingJobs', 'completedJobs', 'closedJobs', 
+            'user', 'departments', 'areas'
+        ));
     }
 
-    // Fungsi helper private untuk render partial view (AJAX response)
-    private function prepareJobResponse(JobMarsho $job, string $message)
-    {
-        // Reload relasi agar tampilan card update
-        $job->load(['pengaju', 'area', 'latestRoute.toDepartment', 'routes.fromDepartment', 'routes.toDepartment', 'attachments', 'notes.creator']);
-        $html = View::make('jobs.partials.job_card', ['job' => $job])->render();
-        JobUpdated::dispatch($job, $html);
-        return response()->json(['job' => $job, 'html' => $html, 'message' => $message]);
-    }
-
-    // CREATE JOB
+    /**
+     * Membuat Job Baru.
+     */
     public function store(Request $request)
     {
         $request->validate([
             'area_id' => 'required|exists:areas,id',
             'list_job' => 'required|string',
             'to_department_id' => 'required|exists:marsho_departments,id',
-            'start_date' => 'required|date', // Input Tanggal Mulai
-            'deadline' => 'required|date|after_or_equal:start_date', // Input Deadline Total
+            'start_date' => 'required|date',
+            'deadline' => 'required|date|after_or_equal:start_date',
             'note' => 'nullable|string|max:500',
             'attachments' => 'nullable|array|max:3',
             'attachments.*' => 'file|mimes:jpg,jpeg,png,pdf,doc,docx|max:5120'
@@ -74,7 +71,7 @@ class JobController extends Controller
 
         $jobIdString = JobMarsho::generateJobId();
 
-        // Cek apakah start date hari ini? Jika ya langsung Scheduled, jika besok/lusa status To Be Scheduled
+        // Otomatis status Scheduled jika start date hari ini/lewat
         $status = Carbon::parse($request->start_date)->isPast() || Carbon::parse($request->start_date)->isToday()
             ? 'scheduled'
             : 'to_be_scheduled';
@@ -86,14 +83,16 @@ class JobController extends Controller
                 'area_id' => $request->area_id,
                 'list_job' => $request->list_job,
                 'tanggal_job_mulai' => $request->start_date,
-                'deadline' => $request->deadline, // Simpan deadline
+                'deadline' => $request->deadline,
                 'status' => $status,
-                'last_stage_update' => Carbon::now(), // Mulai timer 3 hari
+                'last_stage_update' => Carbon::now(),
             ]);
 
+            // Buat Route Awal (Initial Dept)
+            $deptName = MarshoDepartment::find($request->to_department_id)->department_name;
             $route = $job->routes()->create([
                 'to_department_id' => $request->to_department_id,
-                'note' => $request->note ?: 'Job created.',
+                'note' => "JOB CREATED. Assigned to: {$deptName}\nNote: " . ($request->note ?: '-'),
                 'created_by' => Auth::id()
             ]);
 
@@ -101,68 +100,97 @@ class JobController extends Controller
             return $job;
         });
 
-        // Karena DB Transaction return $job, kita ambil instance terbaru diluar
         $job = JobMarsho::where('id_job', $jobIdString)->first();
-
         return $this->prepareJobResponse($job, 'Job created successfully!');
     }
 
-    // Helper untuk handle upload
-    private function handleAttachments($request, $job, $routeId)
-    {
-        if ($request->hasFile('attachments')) {
-            $attachmentNumber = $job->attachments()->count() + 1;
-            foreach ($request->file('attachments') as $file) {
-                $newFileName = "{$job->id_job}_{$attachmentNumber}_" . time() . "." . $file->getClientOriginalExtension();
-                $path = $file->storeAs('job_attachments', $newFileName, 'public');
-                $job->attachments()->create([
-                    'job_id' => $job->id,
-                    'job_route_id' => $routeId,
-                    'file_path' => $path,
-                    'file_name' => $newFileName,
-                    'uploaded_by' => Auth::id()
-                ]);
-                $attachmentNumber++;
-            }
-        }
-    }
-
-    // GENERIC METHOD UNTUK PINDAH STATUS (Schedule, Preparation, Ongoing)
-    // Sekarang semua butuh Request karena perlu Note & Attachments
+    /**
+     * METHOD UTAMA: Ganti Status (Bisa sekaligus Pindah Departemen).
+     */
     public function changeStatus(Request $request, JobMarsho $job)
     {
         $request->validate([
             'status' => 'required|in:scheduled,preparation,on_going',
-            'note' => 'required|string|max:1000', // Note wajib saat pindah
-            'attachments' => 'nullable|array|max:3', // Bukti foto/file
+            'to_department_id' => 'nullable|exists:marsho_departments,id', // Opsional: Target Dept
+            'note' => 'required|string|max:1000',
+            'attachments' => 'nullable|array|max:3',
             'attachments.*' => 'file|mimes:jpg,jpeg,png,pdf|max:5120'
         ]);
 
-        $job->update([
-            'status' => $request->status,
-            'last_stage_update' => Carbon::now() // Reset timer 3 hari
-        ]);
+        DB::transaction(function () use ($request, $job) {
+            $oldStatus = $job->status;
+            $newStatus = $request->status;
+            
+            // 1. Update Status Job & Timer SLA
+            $job->update([
+                'status' => $newStatus,
+                'last_stage_update' => Carbon::now()
+            ]);
 
-        // Simpan Note & Attachment (Dikaitkan dengan Route terakhir agar rapi)
-        // Atau buat JobNote baru jika tidak pindah departemen
-        $latestRoute = $job->latestRoute;
+            $latestRoute = $job->latestRoute;
+            $currentDeptId = $latestRoute ? $latestRoute->to_department_id : null;
+            $targetDeptId = $request->to_department_id; // ID Dept baru (jika dipilih user)
 
-        // Kita simpan sebagai Note biasa tapi dikaitkan dengan route saat ini
-        $job->notes()->create([
-            'job_id' => $job->id,
-            'job_route_id' => $latestRoute ? $latestRoute->id : null,
-            'note' => "Status changed to " . ucfirst(str_replace('_', ' ', $request->status)) . ". Note: " . $request->note,
-            'created_by' => Auth::id()
-        ]);
+            // Format Header Text
+            $statusChangeText = "STATUS CHANGE: " . ucfirst(str_replace('_', ' ', $oldStatus)) . " ➝ " . ucfirst(str_replace('_', ' ', $newStatus));
 
-        // Handle attachment (bukti pindah alur)
-        // Kita pakai route ID terakhir untuk mengelompokkan file
-        $this->handleAttachments($request, $job, $latestRoute ? $latestRoute->id : null);
+            // 2. CEK LOGIKA: Apakah User memilih pindah departemen?
+            if ($targetDeptId && $targetDeptId != $currentDeptId) {
+                
+                // --- SKENARIO A: PINDAH DEPARTEMEN SEKALIGUS GANTI STATUS ---
+                // Kita buat Route baru (akan muncul ikon Kuning/Panah di history)
+                
+                $fromDeptName = $latestRoute->toDepartment->department_name ?? 'Initial';
+                $toDeptName = MarshoDepartment::find($targetDeptId)->department_name;
 
-        return $this->prepareJobResponse($job, 'Job moved to ' . ucfirst($request->status));
+                // Gabungkan info Status Change + Dept Move
+                $finalNote = "{$statusChangeText}\nDEPARTMENT MOVE: {$fromDeptName} ➝ {$toDeptName}\n\nNote: " . $request->note;
+
+                $newRoute = $job->routes()->create([
+                    'job_id' => $job->id,
+                    'from_department_id' => $currentDeptId,
+                    'to_department_id' => $targetDeptId,
+                    'note' => $finalNote,
+                    'created_by' => Auth::id()
+                ]);
+
+                // Attachment ditempel ke Route baru ini
+                $this->handleAttachments($request, $job, $newRoute->id);
+
+            } else {
+                
+                // --- SKENARIO B: TETAP DI DEPARTEMEN SAMA (HANYA STATUS) ---
+                // Kita buat Note biasa (akan muncul ikon Biru/Pensil di history)
+
+                $finalNote = "{$statusChangeText}\n\nNote: " . $request->note;
+
+                $job->notes()->create([
+                    'job_id' => $job->id,
+                    'job_route_id' => $latestRoute ? $latestRoute->id : null,
+                    'note' => $finalNote,
+                    'created_by' => Auth::id()
+                ]);
+
+                // Attachment ditempel ke Route saat ini (nanti di showDetails dicocokkan via timestamp)
+                $this->handleAttachments($request, $job, $latestRoute ? $latestRoute->id : null);
+            }
+        });
+
+        // Refresh data job
+        $job->refresh();
+        
+        // Pesan respons kustom
+        $msg = 'Job moved to ' . ucfirst(str_replace('_', ' ', $request->status));
+        if ($request->to_department_id && $request->to_department_id != $job->latestRoute->from_department_id) {
+             $msg .= ' and forwarded to new department.';
+        }
+
+        return $this->prepareJobResponse($job, $msg);
     }
 
-    // Forward (Pindah Departemen) - Reset Timer juga
+    /**
+     * Forward Job (Hanya Pindah Departemen, Status Tetap).
+     */
     public function forward(Request $request, JobMarsho $job)
     {
         $request->validate([
@@ -171,22 +199,30 @@ class JobController extends Controller
             'attachments' => 'nullable|array|max:3'
         ]);
 
-        $job->update(['last_stage_update' => Carbon::now()]); // Reset timer
+        $oldRoute = $job->latestRoute;
+        $fromDeptName = $oldRoute->toDepartment->department_name ?? 'Initial';
+        $toDeptName = MarshoDepartment::find($request->to_department_id)->department_name;
 
+        // Reset timer SLA
+        $job->update(['last_stage_update' => Carbon::now()]);
+
+        // Buat Route Baru
         $route = $job->routes()->create([
             'job_id' => $job->id,
-            'from_department_id' => $job->latestRoute->to_department_id,
+            'from_department_id' => $oldRoute->to_department_id,
             'to_department_id' => $request->to_department_id,
-            'note' => $request->note,
+            'note' => "DEPARTMENT MOVE: {$fromDeptName} ➝ {$toDeptName}\nNote: " . $request->note,
             'created_by' => Auth::id()
         ]);
 
         $this->handleAttachments($request, $job, $route->id);
 
-        return $this->prepareJobResponse($job, 'Job forwarded successfully!');
+        return $this->prepareJobResponse($job, 'Job forwarded to ' . $toDeptName);
     }
 
-    // Complete
+    /**
+     * Complete Job.
+     */
     public function complete(Request $request, JobMarsho $job)
     {
         $request->validate(['note' => 'required|string', 'attachments' => 'nullable|array']);
@@ -198,64 +234,25 @@ class JobController extends Controller
         ]);
 
         $latestRouteId = $job->latestRoute->id;
+        
         $job->notes()->create([
             'job_id' => $job->id,
             'job_route_id' => $latestRouteId,
-            'note' => "COMPLETED: " . $request->note,
+            'note' => "COMPLETED: Job marked as done by " . Auth::user()->name . ".\nNote: " . $request->note,
             'created_by' => Auth::id()
         ]);
 
         $this->handleAttachments($request, $job, $latestRouteId);
 
+        // Kirim Email Notifikasi (Job Queue)
         SendJobCompletedEmail::dispatch($job);
+
         return $this->prepareJobResponse($job, 'Job marked as completed!');
     }
 
-    // API untuk mengambil detail lengkap (Timeline)
-    public function showDetails(JobMarsho $job)
-    {
-        // Ambil semua note, route, dan attachment, urutkan berdasarkan waktu
-        $activities = collect();
-
-        // 1. Masukkan Routes (Perpindahan Dept)
-        foreach ($job->routes as $route) {
-            $activities->push([
-                'type' => 'route',
-                'timestamp' => $route->created_at,
-                'data' => $route,
-                'files' => $job->attachments->where('job_route_id', $route->id)
-            ]);
-        }
-
-        // 2. Masukkan Notes (Update Status dalam Dept yg sama)
-        foreach ($job->notes as $note) {
-            $activities->push([
-                'type' => 'note',
-                'timestamp' => $note->created_at,
-                'data' => $note,
-                // Files yang mungkin nempel di note ini (jika logika attachment diubah ke note_id)
-                // Di skema saat ini file nempel ke route_id, jadi kita anggap file di handle di route
-                'files' => collect()
-            ]);
-        }
-
-        $activities = $activities->sortByDesc('timestamp')->values();
-
-        // Render partial view untuk isi modal
-        $html = View::make('jobs.partials.job_detail_content', compact('job', 'activities'))->render();
-
-        return response()->json(['html' => $html]);
-    }
-
-    // Close job
-    public function close(Request $request, JobMarsho $job)
-    {
-        $job->update(['status' => 'closed', 'penutup_id' => Auth::id(), 'closed_at' => Carbon::now()]);
-        return $this->prepareJobResponse($job, 'Job closed.');
-    }
-
-    // Tambahkan di JobController
-
+    /**
+     * Cancel Job (Hanya Requester).
+     */
     public function cancel(Request $request, JobMarsho $job)
     {
         $user = Auth::user();
@@ -266,33 +263,26 @@ class JobController extends Controller
 
         $request->validate(['reason' => 'required|string|max:500']);
 
-        // 1. Simpan perubahan status
         $job->update([
             'status' => 'cancelled',
             'cancellation_reason' => $request->reason,
-            'closed_at' => \Carbon\Carbon::now()
+            'closed_at' => Carbon::now()
         ]);
 
-        // 2. Buat Note System
         $job->notes()->create([
             'job_id' => $job->id,
             'job_route_id' => $job->latestRoute->id,
-            'note' => "JOB CANCELLED. Reason: " . $request->reason,
+            'note' => "JOB CANCELLED by Requester.\nReason: " . $request->reason,
             'created_by' => $user->id
         ]);
 
-        // --- LOGIKA KIRIM EMAIL ---
-
-        // Ambil ID departemen yang sedang memegang job ini
+        // Kirim notifikasi email ke departemen terakhir
         $currentDeptId = $job->latestRoute->to_department_id ?? null;
-
         if ($currentDeptId) {
-            // Cari semua user yang ada di departemen tersebut
             $recipients = User::whereHas('marshoProfile', function ($q) use ($currentDeptId) {
                 $q->where('marsho_department_id', $currentDeptId);
             })->get();
 
-            // Kirim email ke setiap anggota departemen
             foreach ($recipients as $recipient) {
                 Mail::to($recipient->email)->send(
                     new JobCancelledNotification($job, $request->reason, $user->name)
@@ -300,6 +290,117 @@ class JobController extends Controller
             }
         }
 
-        return $this->prepareJobResponse($job, 'Job has been cancelled and department notified.');
+        return $this->prepareJobResponse($job, 'Job cancelled.');
+    }
+
+    /**
+     * Close Job (Arsip).
+     */
+    public function close(Request $request, JobMarsho $job)
+    {
+        $job->update([
+            'status' => 'closed', 
+            'penutup_id' => Auth::id(), 
+            'closed_at' => Carbon::now()
+        ]);
+        return $this->prepareJobResponse($job, 'Job closed and archived.');
+    }
+
+    /**
+     * API untuk mengambil detail History (Timeline).
+     * LOGIKA PENTING: Matching attachment dengan aktivitas berdasarkan waktu.
+     */
+    public function showDetails(JobMarsho $job)
+    {
+        // Load semua data
+        $job->load([
+            'routes.fromDepartment', 
+            'routes.toDepartment', 
+            'routes.creator', 
+            'notes.creator', 
+            'attachments'
+        ]);
+
+        $activities = collect();
+        $allAttachments = $job->attachments;
+
+        // 1. Proses Routes (Perpindahan Departemen)
+        foreach ($job->routes as $route) {
+            // Cari file yang Route ID-nya sama DAN waktu upload berdekatan (toleransi 10 detik)
+            $relatedFiles = $allAttachments->filter(function ($att) use ($route) {
+                return $att->job_route_id == $route->id && 
+                       $att->created_at->diffInSeconds($route->created_at) <= 15;
+            });
+
+            $activities->push([
+                'type' => 'route', // Ikon Kuning
+                'timestamp' => $route->created_at,
+                'creator' => $route->creator,
+                'data' => $route,
+                'files' => $relatedFiles
+            ]);
+        }
+
+        // 2. Proses Notes (Update Status / Komentar)
+        foreach ($job->notes as $note) {
+            // Cari file yang Route ID-nya sama dengan posisi note
+            // DAN waktu upload berdekatan dengan waktu Note dibuat
+            $relatedFiles = $allAttachments->filter(function ($att) use ($note) {
+                return $att->job_route_id == $note->job_route_id && 
+                       $att->created_at->diffInSeconds($note->created_at) <= 15;
+            });
+
+            $activities->push([
+                'type' => 'note', // Ikon Biru
+                'timestamp' => $note->created_at,
+                'creator' => $note->creator,
+                'data' => $note,
+                'files' => $relatedFiles
+            ]);
+        }
+
+        // Urutkan dari Terbaru ke Terlama
+        $activities = $activities->sortByDesc('timestamp')->values();
+
+        $html = View::make('jobs.partials.job_detail_content', compact('job', 'activities'))->render();
+
+        return response()->json(['html' => $html]);
+    }
+
+    /**
+     * Helper: Menyiapkan respons JSON + HTML partial untuk update Kanban real-time.
+     */
+    private function prepareJobResponse(JobMarsho $job, string $message)
+    {
+        $job->load(['pengaju', 'area', 'latestRoute.toDepartment', 'routes.fromDepartment', 'routes.toDepartment', 'attachments', 'notes.creator']);
+        $html = View::make('jobs.partials.job_card', ['job' => $job])->render();
+        
+        // Trigger event untuk real-time update (Pusher/Echo)
+        JobUpdated::dispatch($job, $html);
+        
+        return response()->json(['job' => $job, 'html' => $html, 'message' => $message]);
+    }
+
+    /**
+     * Helper: Handle Upload File.
+     */
+    private function handleAttachments($request, $job, $routeId)
+    {
+        if ($request->hasFile('attachments')) {
+            $attachmentNumber = $job->attachments()->count() + 1;
+            foreach ($request->file('attachments') as $file) {
+                $newFileName = "{$job->id_job}_{$attachmentNumber}_" . time() . "." . $file->getClientOriginalExtension();
+                $path = $file->storeAs('job_attachments', $newFileName, 'public');
+                
+                $job->attachments()->create([
+                    'job_id' => $job->id,
+                    'job_route_id' => $routeId, // File dikaitkan ke Route saat ini
+                    'file_path' => $path,
+                    'file_name' => $newFileName,
+                    'uploaded_by' => Auth::id()
+                ]);
+                $attachmentNumber++;
+            }
+        }
     }
 }

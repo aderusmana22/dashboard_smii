@@ -264,24 +264,31 @@
             
             // 1. CEK TOMBOL UNIVERSAL (Set Schedule, Prep, Start)
             const moveBtn = e.target.closest('.move-stage-btn');
-            
-            if (moveBtn) {
-                e.preventDefault();
-                const jobId = moveBtn.dataset.jobId;
-                const targetStatus = moveBtn.dataset.targetStatus;
-                const title = moveBtn.dataset.title;
 
-                const modal = document.getElementById('moveStageModal');
-                if(modal) {
-                    modal.querySelector('#move_job_id').value = jobId;
-                    modal.querySelector('#move_target_status').value = targetStatus;
-                    const titleEl = modal.querySelector('#moveStageTitle');
-                    if(titleEl) titleEl.innerText = title || 'Move Stage';
+if (moveBtn) {
+    e.preventDefault();
+    const jobId = moveBtn.dataset.jobId;
+    const targetStatus = moveBtn.dataset.targetStatus;
+    const title = moveBtn.dataset.title;
 
-                    openModal('moveStageModal');
-                }
-                return;
-            }
+    const modal = document.getElementById('moveStageModal');
+    const form = document.getElementById('moveStageForm');
+    
+    if(modal && form) {
+        // Reset form dulu agar dropdown departemen bersih kembali
+        form.reset(); 
+
+        // Set value hidden input
+        modal.querySelector('#move_job_id').value = jobId;
+        modal.querySelector('#move_target_status').value = targetStatus;
+        
+        const titleEl = modal.querySelector('#moveStageTitle');
+        if(titleEl) titleEl.innerText = title || 'Move Stage';
+
+        openModal('moveStageModal');
+    }
+    return;
+}
             
             // 2. Tombol Forward
             const fwdBtn = e.target.closest('.forward-job-btn');
@@ -442,6 +449,8 @@ if (cancelBtn) {
 });
 
     });
+
+
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>

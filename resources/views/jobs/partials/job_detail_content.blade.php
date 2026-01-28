@@ -1,5 +1,3 @@
-{{-- File: jobs/partials/job_detail_content.blade.php (contoh nama file) --}}
-
 <div class="flex flex-col h-[60vh] bg-white rounded-lg">
 
     <div class="flex-shrink-0 p-6 space-y-4 border-b border-gray-200 z-10 bg-white rounded-t-lg">
@@ -93,13 +91,33 @@
                                 <p class="text-xs font-bold text-gray-500 mb-2">Attached Files:</p>
                                 <div class="flex flex-wrap gap-2">
                                     @foreach($activity['files'] as $file)
+                                        @php
+                                            $filePath = $file->file_path;
+                                            $fileExtension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+                                            $isImage = in_array($fileExtension, ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg']);
+                                        @endphp
 
-                                        <a href="{{ asset('storage/' . $file->file_path) }}" target="_blank"
-                                            class="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition">
-                                            <span class="text-xs text-blue-600 underline truncate max-w-[150px]">
-                                                {{ $file->file_name }}
-                                            </span>
-                                        </a>
+                                        @if($isImage)
+                                            <button
+                                                type="button"
+                                                @click="$dispatch('open-modal', { imageUrl: '{{ asset('storage/' . $filePath) }}' })"
+                                                class="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition"
+                                            >
+                                                <span class="text-xs text-blue-600 underline truncate max-w-[150px]">
+                                                    {{ $file->file_name }}
+                                                </span>
+                                            </button>
+                                        @else
+                                            <a
+                                                href="{{ asset('storage/' . $filePath) }}"
+                                                target="_blank"
+                                                class="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition"
+                                            >
+                                                <span class="text-xs text-blue-600 underline truncate max-w-[150px]">
+                                                    {{ $file->file_name }}
+                                                </span>
+                                            </a>
+                                        @endif
                                     @endforeach
                                 </div>
                             </div>
@@ -115,5 +133,36 @@
                 </div>
             @endforeach
         </div>
+    </div>
+</div>
+
+<div
+    x-data="{ show: false, imageUrl: '' }"
+    x-show="show"
+    x-on:open-modal.window="show = true; imageUrl = $event.detail.imageUrl"
+    x-on:keydown.escape.window="show = false"
+    x-transition:enter="transition ease-out duration-300"
+    x-transition:enter-start="opacity-0"
+    x-transition:enter-end="opacity-100"
+    x-transition:leave="transition ease-in duration-200"
+    x-transition:leave-start="opacity-100"
+    x-transition:leave-end="opacity-0"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4"
+    style="display: none; backdrop-filter: blur(8px); background-color: rgba(255, 255, 255, 0.5);"
+>
+
+    <div @click="show = false" class="absolute inset-0"></div>
+
+    <button
+        @click="show = false"
+        class="absolute top-4 right-4 text-gray-800 bg-white/50 rounded-full p-2 hover:bg-white/80 transition"
+    >
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+    </button>
+
+    <div class="relative max-w-4xl max-h-[90vh] w-full">
+        <img :src="imageUrl" alt="Image Preview" class="w-full h-full object-contain rounded-lg shadow-2xl">
     </div>
 </div>

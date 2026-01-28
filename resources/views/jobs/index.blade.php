@@ -318,6 +318,48 @@
     background: #6b7280; 
 }
 
+.dark-skin .bg-rose-100 { background-color: rgb(136 19 55 / 0.3) !important; }
+.dark-skin .text-rose-800 { color: rgb(251 113 133) !important; }
+
+.dark-skin .bg-sky-100 { background-color: rgb(14 116 144 / 0.3) !important; }
+.dark-skin .text-sky-800 { color: rgb(56 189 248) !important; }
+
+.dark-skin .bg-purple-100 { background-color: rgb(107 33 168 / 0.3) !important; }
+.dark-skin .text-purple-800 { color: rgb(192 132 252) !important; }
+
+.dark-skin .bg-amber-100 { background-color: rgb(180 83 9 / 0.3) !important; }
+.dark-skin .text-amber-800 { color: rgb(251 191 36) !important; }
+
+.dark-skin .bg-emerald-100 { background-color: rgb(5 102 63 / 0.3) !important; }
+.dark-skin .text-emerald-800 { color: rgb(52 211 153) !important; }
+
+.dark-skin .bg-cyan-100 { background-color: rgb(21 94 117 / 0.3) !important; }
+.dark-skin .text-cyan-800 { color: rgb(34 211 238) !important; }
+
+.dark-skin .bg-red-100 { background-color: rgb(153 27 27 / 0.3) !important; }
+.dark-skin .text-red-800 { color: rgb(248 113 113) !important; }
+
+.dark-skin .ring-white {
+    --tw-ring-color: rgb(31 41 55) !important; 
+}
+
+.dark-skin .text-yellow-700 { color: rgb(250 204 21) !important; }
+.dark-skin .text-blue-700 { color: rgb(96 165 250) !important; }
+
+.dark-skin .border-yellow-400 { border-color: rgb(250 204 21 / 0.7) !important; }
+.dark-skin .border-blue-400 { border-color: rgb(96 165 250 / 0.7) !important; }
+
+.dark-skin .bg-white\/50 {
+    background-color: rgb(17 24 39 / 0.7) !important; 
+}
+
+.dark-skin .text-gray-800 {
+    color: rgb(229 231 235) !important; 
+}
+.dark-skin .hover\:bg-white\/80:hover {
+    background-color: rgb(55 65 81 / 0.8) !important; 
+}
+
     </style>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

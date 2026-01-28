@@ -5,11 +5,11 @@
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-100 p-4 rounded-lg border border-gray-200">
             <div>
                 <span class="text-xs text-gray-500 uppercase tracking-wider">Job ID</span>
-                <p class="font-bold text-gray-900 text-lg">{{ $job->id_job }}</p>
+                <p class="font-bold text-gray-500 text-lg">{{ $job->id_job }}</p>
             </div>
             <div>
                 <span class="text-xs text-gray-500 uppercase tracking-wider">Requester</span>
-                <p class="font-bold text-gray-900">{{ $job->pengaju->name }}</p>
+                <p class="font-bold text-gray-500">{{ $job->pengaju->name }}</p>
             </div>
             <div>
                 <span class="text-xs text-gray-500 uppercase tracking-wider">Current Status</span>
@@ -20,7 +20,7 @@
             </div>
             <div>
                 <span class="text-xs text-gray-500 uppercase tracking-wider">Current Dept</span>
-                <p class="font-bold text-gray-900">
+                <p class="font-bold text-gray-500">
                     {{ $job->latestRoute->toDepartment->department_name ?? 'N/A' }}
                 </p>
             </div>
@@ -61,7 +61,7 @@
                                     <h5 class="text-sm font-bold text-yellow-700 uppercase tracking-wide">
                                         Department Transfer
                                     </h5>
-                                    <div class="mt-1 text-sm font-semibold text-gray-900 flex items-center gap-2 flex-wrap">
+                                    <div class="mt-1 text-sm font-semibold text-gray-500 flex items-center gap-2 flex-wrap">
                                         <span>{{ $activity['data']->fromDepartment->department_name ?? 'Requester' }}</span>
                                         <svg class="w-3 h-3 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
                                         <span>{{ $activity['data']->toDepartment->department_name }}</span>

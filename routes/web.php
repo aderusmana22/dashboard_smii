@@ -41,7 +41,8 @@ use App\Http\Controllers\Ecommerce\ProductTonnageController;
 use App\Http\Controllers\PPIC\ForecastController;
 use App\Http\Controllers\OilController;
 use App\Http\Controllers\InwardDashboardController;
-
+use App\Http\Controllers\OilUtilityGasInputController;
+use App\Http\Controllers\OilUtilityGasConfigController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -363,8 +364,21 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
     Route::get('/oil/get-bleached-oil-data', [OilController::class, 'getBleachedOilData'])->name('oil.getBleachedOilData');
     Route::get('/oil/get-packing-data', [OilController::class, 'getPackingData'])->name('oil.getPackingData');
     Route::get('/oil/get-current-stock-data', [OilController::class, 'getCurrentStockData'])->name('oil.getCurrentStockData');
-    Route::get('/oil/get-utility-gas-data', [OilController::class, 'getUtilityGasData'])->name('oil.getUtilityGasData');
 
+    Route::prefix('oil/utility-gas')->name('utility.gas.')->group(function () {
+        Route::get('/data', [OilController::class, 'getUtilityGasData'])->name('data');
+        Route::get('/input', [OilUtilityGasInputController::class, 'index'])->name('input');
+        Route::post('/store', [OilUtilityGasInputController::class, 'store'])->name('store');
+        Route::get('/logs', [OilUtilityGasInputController::class, 'logs'])->name('logs');
+
+         Route::get('/config', [OilUtilityGasConfigController::class, 'index'])->name('config.index');
+    Route::post('/config', [OilUtilityGasConfigController::class, 'store'])->name('config.store');
+    Route::put('/config/{id}', [OilUtilityGasConfigController::class, 'update'])->name('config.update');
+    Route::delete('/config/{id}', [OilUtilityGasConfigController::class, 'destroy'])->name('config.destroy');
+    });
+
+
+    
 
     Route::get('/inward-dashboard', [InwardDashboardController::class, 'index'])->name('inward.dashboard');
 });

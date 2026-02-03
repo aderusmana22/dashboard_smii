@@ -20,7 +20,7 @@
                                     class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>Dashboard
                                 Production</a></li>
                     @endcan
-                     @can('view sales dashboard')
+                    @can('view sales dashboard')
                         <li><a href="{{ route('dashboard.dashboardSales') }}"
                                 class="{{ request()->is('dashboard/dashboard-sales') ? 'current' : '' }}"><i
                                     class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>Dashboard
@@ -32,9 +32,10 @@
                                     class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>Dashboard
                                 Warehouse</a></li>
                     @endcan
-                    
+
                     <li>
-                        <a href="{{ route('inward.dashboard') }}" class="{{ request()->is('inward-dashboard') ? 'current' : '' }}">
+                        <a href="{{ route('inward.dashboard') }}"
+                            class="{{ request()->is('inward-dashboard') ? 'current' : '' }}">
                             <i class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>
                             Inward Dashboard
                         </a>
@@ -156,20 +157,34 @@
                 </ul>
             </li>
         @endcan
-   
-        <li class="{{ request()->is(['jobs*', 'areas*', 'marsho-departments*', 'marsho-users*', 'activity-logs*', 'reports/marsho-jobs*']) ? 'current' : '' }}">
-    <a href="#" style="font-size: 18px;">
-        <i data-feather="briefcase" style="width: 18px; height: 18px;"></i> Marsho JobBoard
-    </a>
-    <ul>
-        <li><a href="{{ route('jobs.index') }}" class="{{ request()->is('jobs*') ? 'current' : '' }}"><i class="icon-Layout-4-blocks"><span class="path1"></span><span class="path2"></span></i>Jobs Kanban</a></li>
-        <li><a href="{{ route('areas.index') }}" class="{{ request()->is('areas*') ? 'current' : '' }}"><i class="icon-Map-pin"><span class="path1"></span><span class="path2"></span></i>Manage Areas</a></li>
-        <li><a href="{{ route('marsho-departments.index') }}" class="{{ request()->is('marsho-departments*') ? 'current' : '' }}"><i class="icon-Users"><span class="path1"></span><span class="path2"></span></i>Manage Departments</a></li>
-        <li><a href="{{ route('marsho-users.index') }}" class="{{ request()->is('marsho-users*') ? 'current' : '' }}"><i class="icon-Users"><span class="path1"></span><span class="path2"></span></i>Manage Marsho Users</a></li>
-        <li><a href="{{ route('activity-logs.index') }}" class="{{ request()->is('activity-logs*') ? 'current' : '' }}"><i class="icon-History"><span class="path1"></span><span class="path2"></span></i>Activity Logs</a></li>
-        <li><a href="{{ route('reports.marsho-jobs.page') }}" class="{{ request()->is('reports/marsho-jobs*') ? 'current' : '' }}"><i class="icon-File_Export"><span class="path1"></span><span class="path2"></span></i>Marsho Jobs Export</a></li>
-    </ul>
-</li>
+
+        <li
+            class="{{ request()->is(['jobs*', 'areas*', 'marsho-departments*', 'marsho-users*', 'activity-logs*', 'reports/marsho-jobs*']) ? 'current' : '' }}">
+            <a href="#" style="font-size: 18px;">
+                <i data-feather="briefcase" style="width: 18px; height: 18px;"></i> Marsho JobBoard
+            </a>
+            <ul>
+                <li><a href="{{ route('jobs.index') }}" class="{{ request()->is('jobs*') ? 'current' : '' }}"><i
+                            class="icon-Layout-4-blocks"><span class="path1"></span><span class="path2"></span></i>Jobs
+                        Kanban</a></li>
+                <li><a href="{{ route('areas.index') }}" class="{{ request()->is('areas*') ? 'current' : '' }}"><i
+                            class="icon-Map-pin"><span class="path1"></span><span class="path2"></span></i>Manage
+                        Areas</a></li>
+                <li><a href="{{ route('marsho-departments.index') }}"
+                        class="{{ request()->is('marsho-departments*') ? 'current' : '' }}"><i class="icon-Users"><span
+                                class="path1"></span><span class="path2"></span></i>Manage Departments</a></li>
+                <li><a href="{{ route('marsho-users.index') }}"
+                        class="{{ request()->is('marsho-users*') ? 'current' : '' }}"><i class="icon-Users"><span
+                                class="path1"></span><span class="path2"></span></i>Manage Marsho Users</a></li>
+                <li><a href="{{ route('activity-logs.index') }}"
+                        class="{{ request()->is('activity-logs*') ? 'current' : '' }}"><i class="icon-History"><span
+                                class="path1"></span><span class="path2"></span></i>Activity Logs</a></li>
+                <li><a href="{{ route('reports.marsho-jobs.page') }}"
+                        class="{{ request()->is('reports/marsho-jobs*') ? 'current' : '' }}"><i
+                            class="icon-File_Export"><span class="path1"></span><span class="path2"></span></i>Marsho
+                        Jobs Export</a></li>
+            </ul>
+        </li>
         <li
             class="{{ request()->is('accidents-report*') || request()->is('dashboard/safety-board*') ? 'current' : '' }}">
             <a href="#" style="font-size: 18px;">
@@ -211,46 +226,70 @@
                         Dashboard
                     </a>
                 </li>
-        <li>
-            <a href="{{ route('ecommerce.products.index') }}" class="{{ request()->is('/ecommerce/products*') ? 'current' : '' }}">
-                <i class="icon-Box"></i>
-                Produk
-            </a>
-        </li>
-         <li>
-            <a href="{{ route('ecommerce.sales.index') }}" class="{{ request()->is('/ecommerce/sales*') ? 'current' : '' }}">
-                {{-- Ganti 'icon-Chart-line' jika perlu --}}
-                <i class="icon-Chart-line"></i>
-                Penjualan
-            </a>
-        </li>
+                <li>
+                    <a href="{{ route('ecommerce.products.index') }}"
+                        class="{{ request()->is('/ecommerce/products*') ? 'current' : '' }}">
+                        <i class="icon-Box"></i>
+                        Produk
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('ecommerce.sales.index') }}"
+                        class="{{ request()->is('/ecommerce/sales*') ? 'current' : '' }}">
+                        {{-- Ganti 'icon-Chart-line' jika perlu --}}
+                        <i class="icon-Chart-line"></i>
+                        Penjualan
+                    </a>
+                </li>
 
-        {{-- (TAMBAHAN) Link Navigasi Konfigurasi --}}
-        <li>
-            <a href="{{ route('ecommerce.settings.index') }}" class="{{ request()->is('/ecommerce/settings*') ? 'current' : '' }}">
-                {{-- Ganti 'icon-Gear' jika perlu --}}
-                <i class="icon-Gear"></i>
-                Konfigurasi
-            </a>
-        </li>
+                {{-- (TAMBAHAN) Link Navigasi Konfigurasi --}}
+                <li>
+                    <a href="{{ route('ecommerce.settings.index') }}"
+                        class="{{ request()->is('/ecommerce/settings*') ? 'current' : '' }}">
+                        {{-- Ganti 'icon-Gear' jika perlu --}}
+                        <i class="icon-Gear"></i>
+                        Konfigurasi
+                    </a>
+                </li>
 
-          <li>
-            <a href="{{ route('ecommerce.products.tonnage.index') }}" class="{{ request()->is('ecommerce/products/tonnage*') ? 'current' : '' }}">
-                {{-- Ganti 'icon-Gear' jika perlu --}}
-                <i class="icon-Gear"></i>
-                Tonase
-            </a>
-        </li>
+                <li>
+                    <a href="{{ route('ecommerce.products.tonnage.index') }}"
+                        class="{{ request()->is('ecommerce/products/tonnage*') ? 'current' : '' }}">
+                        {{-- Ganti 'icon-Gear' jika perlu --}}
+                        <i class="icon-Gear"></i>
+                        Tonase
+                    </a>
+                </li>
             </ul>
         </li>
 
-     
-    <li class="{{ request()->routeIs('oil.index') ? 'current' : '' }}">
-        <a href="{{ route('oil.index') }}" style="font-size: 18px;">
-            <i data-feather="droplet" style="width: 18px; height: 18px;"></i>
-            Oil Monitoring
-        </a>
-    </li>
+
+        <li class="{{ request()->routeIs('oil.index') ? 'current' : '' }}">
+            <a href="{{ route('oil.index') }}" style="font-size: 18px;">
+                <i data-feather="droplet" style="width: 18px; height: 18px;"></i>
+                Oil Monitoring
+            </a>
+        </li>
+
+
+        <li class="{{ request()->is('oil/utility-gas*') ? 'current' : '' }}">
+            <a href="#" style="font-size: 18px;">
+                <i data-feather="droplet" style="width: 18px; height: 18px;"></i>
+                Oil Input
+            </a>
+            <ul>
+                <li>
+                    <a href="{{ route('utility.gas.input') }}"
+                        class="{{ request()->routeIs('utility.gas.input') ? 'current' : '' }}">
+                        <i class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>
+                        Utility Gas Input
+                    </a>
+                </li>
+
+                <!-- Nanti jika ada input oil lain (misal: Solar, dll), tinggal tambahkan <li> baru di sini -->
+            </ul>
+        </li>
+
 
     </ul>
 </nav>

@@ -270,26 +270,5 @@
                 Oil Monitoring
             </a>
         </li>
-
-
-        <li class="{{ request()->is('oil/utility-gas*') ? 'current' : '' }}">
-            <a href="#" style="font-size: 18px;">
-                <i data-feather="droplet" style="width: 18px; height: 18px;"></i>
-                Oil Input
-            </a>
-            <ul>
-                <li>
-                    <a href="{{ route('utility.gas.input') }}"
-                        class="{{ request()->routeIs('utility.gas.input') ? 'current' : '' }}">
-                        <i class="icon-Commit"><span class="path1"></span><span class="path2"></span></i>
-                        Utility Gas Input
-                    </a>
-                </li>
-
-                <!-- Nanti jika ada input oil lain (misal: Solar, dll), tinggal tambahkan <li> baru di sini -->
-            </ul>
-        </li>
-
-
     </ul>
 </nav>

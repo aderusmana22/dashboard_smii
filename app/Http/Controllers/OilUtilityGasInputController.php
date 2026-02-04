@@ -12,21 +12,32 @@ use Carbon\Carbon;
 
 class OilUtilityGasInputController extends Controller
 {
+    /**
+     * FUNGSI LAMA UNTUK ADMIN PANEL (Tidak diubah)
+     * Tetap berfungsi jika diakses dari dalam sistem.
+     */
     public function index(Request $request)
     {
-        $date = $request->get('date', Carbon::now()->format('Y-m-d'));
+        $data = $this->prepareDataForInput($request);
+        return view('oil.gas_utility.input', $data);
+    }
+
+    /**
+     * FUNGSI BARU: Menyiapkan data untuk view.
+     * Dapat dipanggil oleh InputStationController.
+     */
+    public function prepareDataForInput(Request $request = null)
+    {
+        $date = $request ? $request->get('date', Carbon::now()->format('Y-m-d')) : Carbon::now()->format('Y-m-d');
         
-        // Ambil Master Data
         $masters = OilUtilityGasMaster::where('is_active', true)
             ->orderBy('sort_order')
             ->get()
             ->groupBy('gas_type');
 
-        // Cek data existing hari ini
         $existingReadings = OilUtilityGasReading::where('reading_date', $date)
             ->pluck('value', 'master_id');
 
-        // Logic Auto-fill: Ambil data terakhir jika hari ini kosong
         $lastReadings = [];
         if ($existingReadings->isEmpty()) {
             $lastData = OilUtilityGasReading::where('reading_date', '<', $date)
@@ -36,9 +47,12 @@ class OilUtilityGasInputController extends Controller
             $lastReadings = $lastData->pluck('value', 'master_id');
         }
 
-        return view('oil.gas_utility.input', compact('masters', 'existingReadings', 'lastReadings', 'date'));
+        return compact('masters', 'existingReadings', 'lastReadings', 'date');
     }
-
+    
+    /**
+     * DIUBAH: Redirect ke stasiun input utama setelah menyimpan data.
+     */
     public function store(Request $request)
     {
         $request->validate([
@@ -52,25 +66,21 @@ class OilUtilityGasInputController extends Controller
         DB::beginTransaction();
         try {
             foreach ($request->readings as $masterId => $value) {
-                // Skip jika kosong string (tapi terima 0)
                 if ($value === null || $value === '') continue;
 
                 $master = OilUtilityGasMaster::find($masterId);
                 
-                // Cek Data Lama untuk Log
                 $oldRecord = OilUtilityGasReading::where('master_id', $masterId)
                     ->where('reading_date', $date)
                     ->first();
                 $oldValue = $oldRecord ? $oldRecord->value : null;
 
-                // Simpan jika nilai berbeda
                 if ($oldValue != $value) {
                     OilUtilityGasReading::updateOrCreate(
                         ['master_id' => $masterId, 'reading_date' => $date],
                         ['value' => $value, 'created_by' => $user]
                     );
 
-                    // Catat Log
                     OilUtilityGasLog::create([
                         'user_name' => $user,
                         'action' => $oldRecord ? 'UPDATE' : 'INSERT',
@@ -82,10 +92,12 @@ class OilUtilityGasInputController extends Controller
                 }
             }
             DB::commit();
-            return redirect()->route('utility.gas.input', ['date' => $date])->with('success', 'Data Saved Successfully.');
+            // PERUBAHAN: Redirect ke halaman utama stasiun input
+            return redirect()->route('oil.input_station.index')->with('success', 'Data Utility Gas berhasil disimpan.');
+
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', $e->getMessage());
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
 

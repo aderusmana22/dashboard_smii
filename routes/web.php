@@ -43,6 +43,11 @@ use App\Http\Controllers\OilController;
 use App\Http\Controllers\InwardDashboardController;
 use App\Http\Controllers\OilUtilityGasInputController;
 use App\Http\Controllers\OilUtilityGasConfigController;
+use App\Http\Controllers\OilBatchRefineryController;
+use App\Http\Controllers\OilBatchRefineryInputController;
+use App\Http\Controllers\OilBatchRefineryConfigController;
+use App\Http\Controllers\InputStationController; 
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -204,19 +209,19 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
     // Rute untuk Job Kanban
     Route::get('/jobs', [JobController::class, 'index'])->name('jobs.index');
     Route::post('/jobs', [JobController::class, 'store'])->name('jobs.store');
-     Route::patch('/jobs/{job}/schedule', [JobController::class, 'setScheduled'])->name('jobs.schedule');
+    Route::patch('/jobs/{job}/schedule', [JobController::class, 'setScheduled'])->name('jobs.schedule');
     Route::patch('/jobs/{job}/prepare', [JobController::class, 'setPreparation'])->name('jobs.prepare');
     Route::patch('/jobs/{job}/start', [JobController::class, 'start'])->name('jobs.start');
-    
+
     Route::post('/jobs/{job}/forward', [JobController::class, 'forward'])->name('jobs.forward');
     Route::patch('/jobs/{job}/complete', [JobController::class, 'complete'])->name('jobs.complete');
     Route::post('/jobs/{job}/close', [JobController::class, 'close'])->name('jobs.close');
 
     Route::patch('/jobs/{job}/change-status', [JobController::class, 'changeStatus'])->name('jobs.changeStatus');
     Route::get('/jobs/{job}/details', [JobController::class, 'showDetails'])->name('jobs.details');
-        
+
     Route::patch('/jobs/{job}/cancel', [JobController::class, 'cancel'])->name('jobs.cancel');
-    
+
     // Rute untuk mengelola Resources (Area dan Departemen)
     // Route ini sudah menangani GET (index) dan POST (store)
     Route::resource('areas', AreaController::class)->except(['create', 'show', 'edit']);
@@ -371,14 +376,32 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
         Route::post('/store', [OilUtilityGasInputController::class, 'store'])->name('store');
         Route::get('/logs', [OilUtilityGasInputController::class, 'logs'])->name('logs');
 
-         Route::get('/config', [OilUtilityGasConfigController::class, 'index'])->name('config.index');
-    Route::post('/config', [OilUtilityGasConfigController::class, 'store'])->name('config.store');
-    Route::put('/config/{id}', [OilUtilityGasConfigController::class, 'update'])->name('config.update');
-    Route::delete('/config/{id}', [OilUtilityGasConfigController::class, 'destroy'])->name('config.destroy');
+        Route::get('/config', [OilUtilityGasConfigController::class, 'index'])->name('config.index');
+        Route::post('/config', [OilUtilityGasConfigController::class, 'store'])->name('config.store');
+        Route::put('/config/{id}', [OilUtilityGasConfigController::class, 'update'])->name('config.update');
+        Route::delete('/config/{id}', [OilUtilityGasConfigController::class, 'destroy'])->name('config.destroy');
     });
 
 
-    
+    Route::prefix('oil/batch-refinery')->name('oil.batch_refinery.')->group(function () {
+        Route::get('/', [OilBatchRefineryController::class, 'index'])->name('index');
+        Route::get('/data', [OilBatchRefineryController::class, 'getData'])->name('data');
+        Route::get('/logs', [OilBatchRefineryController::class, 'logs'])->name('logs');
+
+        Route::get('/input', [OilBatchRefineryInputController::class, 'index'])->name('input');
+        Route::post('/input/start', [OilBatchRefineryInputController::class, 'startSession'])->name('input.start');
+        Route::post('/input/store', [OilBatchRefineryInputController::class, 'storeStep'])->name('input.store');
+        Route::get('/input/reset', [OilBatchRefineryInputController::class, 'resetSession'])->name('input.reset');
+
+        Route::get('/config', [OilBatchRefineryConfigController::class, 'index'])->name('config.index');
+        Route::post('/config', [OilBatchRefineryConfigController::class, 'store'])->name('config.store');
+        Route::put('/config/{id}', [OilBatchRefineryConfigController::class, 'update'])->name('config.update');
+        Route::delete('/config/{id}', [OilBatchRefineryConfigController::class, 'destroy'])->name('config.destroy');
+    });
+
+    Route::get('/oil-input', [InputStationController::class, 'index'])->name('oil.input_station.index');
+
+
 
     Route::get('/inward-dashboard', [InwardDashboardController::class, 'index'])->name('inward.dashboard');
 });

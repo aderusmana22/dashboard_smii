@@ -115,51 +115,59 @@ class OilController extends Controller
             'end_date' => 'required|date|after_or_equal:start_date',
         ]);
 
-        $startDate = Carbon::parse($validated['start_date']);
-        $endDate = Carbon::parse($validated['end_date']);
+        $startDate = \Carbon\Carbon::parse($validated['start_date']);
+        $endDate = \Carbon\Carbon::parse($validated['end_date']);
 
-        // --- DATA UNTUK TABEL & BAR CHART (Snapshot di Tanggal Akhir) ---
-        $latestReadingIds = ProductionTankReading::select(DB::raw('max(id) as id'))
-            ->whereDate('reading_date', '<=', $endDate)
-            ->groupBy('production_tank_id');
-
-        $latestReadings = ProductionTankReading::with('productionTank')
-            ->whereIn('id', $latestReadingIds)
+        // --- 1. DATA TABEL (Snapshot) ---
+        // Kita ambil Tank Master dulu agar urutannya sesuai 'sort_order'
+        $tanks = \App\Models\OilBatchRefineryTank::orderBy('sort_order')
+            ->with([
+                'readings' => function ($q) use ($endDate) {
+                    // Ambil reading terakhir pada/sebelum tanggal filter
+                    $q->whereDate('reading_date', '<=', $endDate)
+                        ->orderBy('reading_date', 'desc')
+                        ->limit(1);
+                }
+            ])
             ->get();
 
-        $tableData = $latestReadings->map(fn($reading) => [
-            'name' => $reading->productionTank->name,
-            'capacity_kg' => number_format($reading->productionTank->capacity_kg),
-            'status' => $reading->status,
-            'group' => $reading->productionTank->group_name,
-        ]);
+        $tableData = $tanks->map(function ($tank) {
+            $reading = $tank->readings->first();
+            return [
+                'name' => $tank->name, // Nama Tangki
+                'capacity_kg' => number_format($tank->capacity_kg),
+                'status' => $reading ? $reading->status : 'N/A',
+                'group' => $tank->group_name, // Nama Grup Asli (Hydro, N.W.B, dll)
+            ];
+        });
 
-        // --- DATA BARU: Siapkan data ringkasan untuk Bar Chart ---
-        $summaryDataForBarChart = $latestReadings->groupBy('productionTank.group_name')
-            ->map(fn($groupReadings) => $groupReadings->sum('current_value_kg'));
+        // --- 2. DATA SNAPSHOT CARD (Ringkasan per Grup) ---
+        // Kelompokkan data snapshot berdasarkan nama grup asli
+        $summaryData = $tanks->groupBy('group_name')->map(function ($groupTanks) {
+            return $groupTanks->sum(fn($t) => $t->readings->first()?->current_value_kg ?? 0);
+        });
 
-
-        // --- DATA UNTUK GRAFIK GARIS & TOOLTIP (Data Selama Rentang Waktu) ---
-        $rangeReadings = ProductionTankReading::with('productionTank')
+        // --- 3. DATA CHART (Tren Harian) ---
+        $rangeReadings = \App\Models\OilBatchRefineryReading::with('tank')
             ->whereBetween('reading_date', [$startDate, $endDate])
             ->orderBy('reading_date')
             ->get();
 
+        // Grouping: Tanggal -> Nama Grup -> List Data
         $chartDetailData = $rangeReadings->groupBy(fn($item) => $item->reading_date->format('Y-m-d'))
             ->map(
-                fn($readingsOnDate) => $readingsOnDate->groupBy('productionTank.group_name')
-                    ->map(
-                        fn($readingsInGroup) => $readingsInGroup->map(fn($reading) => [
-                            'name' => $reading->productionTank->name,
-                            'value' => $reading->current_value_kg
-                        ])
-                    )
+                fn($readingsOnDate) =>
+                $readingsOnDate->groupBy('tank.group_name')
+                    ->map(fn($groupReadings) => $groupReadings->map(fn($r) => [
+                        'name' => $r->tank->name,
+                        'value' => $r->current_value_kg
+                    ]))
             );
 
         return response()->json([
             'tableData' => $tableData,
             'chartDetailData' => $chartDetailData,
-            'summaryData' => $summaryDataForBarChart // <-- KIRIM DATA BARU INI
+            'summaryData' => $summaryData
         ]);
     }
 
@@ -475,7 +483,7 @@ class OilController extends Controller
         ]);
     }
 
-public function getUtilityGasData(Request $request)
+    public function getUtilityGasData(Request $request)
     {
         // Validasi input tanggal
         $startDate = \Carbon\Carbon::parse($request->start_date);
@@ -490,6 +498,15 @@ public function getUtilityGasData(Request $request)
                     ->groupBy('master_id');
             })->get();
 
+        // --- TAMBAHAN BARU: AMBIL TANGGAL TERAKHIR (GLOBAL) ---
+        // Kita cari 1 record dengan reading_date paling baru di database
+        $lastRecord = \App\Models\OilUtilityGasReading::latest('reading_date')->first();
+
+        // Format tanggalnya (Contoh: "Monday, 03 Feb 2026")
+        $lastUpdateText = $lastRecord
+            ? \Carbon\Carbon::parse($lastRecord->reading_date)->format('l, d F Y')
+            : '-';
+
         $snapshotData = [
             'hydrogen' => $snapshotReadings->where('master.gas_type', 'HYDROGEN')->map(fn($r) => [
                 'unit_name' => $r->master->name,
@@ -499,7 +516,7 @@ public function getUtilityGasData(Request $request)
             'nitrogen' => $snapshotReadings->where('master.gas_type', 'NITROGEN')->map(fn($r) => [
                 'unit_name' => $r->master->name,
                 'value' => $r->value
-            ])->first(), 
+            ])->first(),
             'ammonia' => $snapshotReadings->where('master.gas_type', 'AMMONIA')->map(fn($r) => [
                 'unit_name' => $r->master->name,
                 'value' => $r->value
@@ -515,7 +532,7 @@ public function getUtilityGasData(Request $request)
         // FIX ERROR: Pastikan tanggal diparsing ke Carbon sebelum di-format
         $labels = $rangeReadings->pluck('reading_date')
             ->unique()
-            ->map(fn($d) => \Carbon\Carbon::parse($d)->format('Y-m-d')) 
+            ->map(fn($d) => \Carbon\Carbon::parse($d)->format('Y-m-d'))
             ->sort()
             ->values();
 
@@ -523,23 +540,23 @@ public function getUtilityGasData(Request $request)
         // Kita gunakan $searchName (opsional) untuk filter nama spesifik
         $prepareData = function ($gasType, $searchName = null) use ($rangeReadings, $labels) {
             $q = $rangeReadings->where('master.gas_type', $gasType);
-            
+
             // Filter nama jika ada (Loose search menggunakan str_contains PHP)
             if ($searchName) {
-                $q = $q->filter(function($item) use ($searchName) {
+                $q = $q->filter(function ($item) use ($searchName) {
                     return stripos($item->master->name, $searchName) !== false;
                 });
             }
 
             // FIX ERROR: KeyBy menggunakan parsing Carbon yang aman
             $map = $q->keyBy(fn($i) => \Carbon\Carbon::parse($i->reading_date)->format('Y-m-d'));
-            
+
             // Mapping value sesuai urutan label tanggal
             return $labels->map(fn($d) => $map[$d]->value ?? null)->all();
         };
 
         // --- Dynamic Series Generation ---
-        
+
         // A. Hydrogen (Semua item HYDROGEN jadi series terpisah)
         $h2Masters = \App\Models\OilUtilityGasMaster::where('gas_type', 'HYDROGEN')->where('is_active', 1)->get();
         $h2Trends = [];
@@ -547,9 +564,9 @@ public function getUtilityGasData(Request $request)
             // Kita ambil data spesifik berdasarkan nama master persis
             $data = $rangeReadings->where('master_id', $master->id)
                 ->keyBy(fn($i) => \Carbon\Carbon::parse($i->reading_date)->format('Y-m-d'));
-            
+
             $h2Trends[] = [
-                'label' => $master->name, 
+                'label' => $master->name,
                 'data' => $labels->map(fn($d) => $data[$d]->value ?? null)->all()
             ];
         }
@@ -558,7 +575,7 @@ public function getUtilityGasData(Request $request)
         // Kita cari master data Nitrogen yang aktif
         $n2Master = \App\Models\OilUtilityGasMaster::where('gas_type', 'NITROGEN')->where('is_active', 1)->first();
         $n2Data = [];
-        if($n2Master) {
+        if ($n2Master) {
             $q = $rangeReadings->where('master_id', $n2Master->id)
                 ->keyBy(fn($i) => \Carbon\Carbon::parse($i->reading_date)->format('Y-m-d'));
             $n2Data = $labels->map(fn($d) => $q[$d]->value ?? null)->all();
@@ -566,7 +583,7 @@ public function getUtilityGasData(Request $request)
 
         // C. Ammonia (Cari yang namanya mengandung 'Full' dan 'Empty')
         // Ini agar jika nama di DB "Ammonia Full" atau "Full Cylinders", tetap terbaca
-        $ammoniaFullData = $prepareData('AMMONIA', 'Full'); 
+        $ammoniaFullData = $prepareData('AMMONIA', 'Full');
         $ammoniaEmptyData = $prepareData('AMMONIA', 'Empty');
 
         $trendData = [
@@ -574,7 +591,7 @@ public function getUtilityGasData(Request $request)
             'hydrogen' => $h2Trends,
             'nitrogen' => [
                 [
-                    'label' => $n2Master ? $n2Master->name : 'Nitrogen Level', 
+                    'label' => $n2Master ? $n2Master->name : 'Nitrogen Level',
                     'data' => $n2Data
                 ]
             ],
@@ -584,6 +601,10 @@ public function getUtilityGasData(Request $request)
             ]
         ];
 
-        return response()->json(['snapshot' => $snapshotData, 'trend' => $trendData]);
+        return response()->json([
+            'snapshot' => $snapshotData,
+            'trend' => $trendData,
+            'last_update_label' => $lastUpdateText // <--- KITA KIRIM INI KE VIEW
+        ]);
     }
 }

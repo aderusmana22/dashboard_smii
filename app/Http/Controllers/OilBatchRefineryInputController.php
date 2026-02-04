@@ -82,7 +82,7 @@ class OilBatchRefineryInputController extends Controller
         ]);
 
         // PERUBAHAN: Redirect ke stasiun input dengan tipe yang benar
-        return redirect()->route('input_station.index', ['type' => 'batch_refinery']);
+        return redirect()->route('oil.input_station.index', ['type' => 'batch_refinery']);
     }
 
     /**
@@ -95,7 +95,7 @@ class OilBatchRefineryInputController extends Controller
         // Cek jika sesi sudah tidak valid
         if ($step >= count($this->stepOrder) || !Session::has('br_session_active')) {
              Session::forget(['br_session_active', 'br_step']);
-             return redirect()->route('input_station.index')->with('success', 'Sesi input telah selesai.');
+             return redirect()->route('oil.input_station.index')->with('success', 'Sesi input telah selesai.');
         }
 
         $groupName = $this->stepOrder[$step];
@@ -138,12 +138,12 @@ class OilBatchRefineryInputController extends Controller
         if ($isLastStep) {
             // Jika ini langkah terakhir, bersihkan sesi dan kembali ke halaman utama
             Session::forget(['br_session_active', 'br_step']);
-            return redirect()->route('input_station.index')
+            return redirect()->route('oil.input_station.index')
                              ->with('success', 'Input Batch Refinery berhasil diselesaikan!');
         } else {
             // Jika belum selesai, lanjutkan ke step berikutnya
             Session::put('br_step', $step + 1);
-            return redirect()->route('input_station.index', ['type' => 'batch_refinery']);
+            return redirect()->route('oil.input_station.index', ['type' => 'batch_refinery']);
         }
     }
 

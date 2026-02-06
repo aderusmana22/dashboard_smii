@@ -561,12 +561,19 @@ if (cancelBtn) {
             this.reset();
         });
 
-        document.getElementById('closeJobForm')?.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const jobId = this.querySelector('#close_job_id').value;
-            closeModal('closeJobModal');
-            handleFormSubmit(`/jobs/${jobId}/close`, new FormData(this));
-        });
+        // Cari bagian ini di script Anda dan GANTI dengan kode di bawah ini:
+// Di file Blade Anda, pastikan bagian closeJobForm seperti ini:
+// GANTI bagian closeJobForm di script Blade Anda dengan ini:
+document.getElementById('closeJobForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const jobId = this.querySelector('#close_job_id').value;
+    const formData = new FormData(this);
+
+    // Kirim sebagai POST murni (karena Route Anda adalah Route::post)
+    closeModal('closeJobModal');
+    handleFormSubmit(`/jobs/${jobId}/close`, formData);
+    this.reset();
+});
 
         document.getElementById('cancelJobForm')?.addEventListener('submit', function(e) {
     e.preventDefault();

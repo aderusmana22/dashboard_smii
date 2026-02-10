@@ -1,3 +1,11 @@
+{{-- /resources/views/oil/gas_utility/input.blade.php --}}
+
+{{-- 
+    FINAL CODE - UTILITY GAS INPUT
+    - Original design is maintained.
+    - [NEW] Uses SweetAlert2 for submission confirmation.
+--}}
+
 <div class="mx-auto">
 
     <!-- PAGE HEADER -->
@@ -11,7 +19,7 @@
         </div>
     </div>
 
-    <form action="{{ route('utility.gas.store') }}" method="POST">
+    <form action="{{ route('utility.gas.store') }}" method="POST" id="gas-form">
         @csrf
 
         <!-- INFO BAR -->
@@ -94,7 +102,7 @@
 
             <!-- SUBMIT -->
             <div class="pt-6 md:pt-10 space-y-5">
-                <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-4 md:py-5 rounded-2xl shadow-lg hover:bg-emerald-700 transition-all active:scale-[0.98] flex justify-center items-center gap-3 text-lg md:text-xl">
+                <button type="button" id="submit-btn-gas" class="w-full bg-blue-600 text-white font-bold py-4 md:py-5 rounded-2xl shadow-lg hover:bg-emerald-700 transition-all active:scale-[0.98] flex justify-center items-center gap-3 text-lg md:text-xl">
                     <i class="mdi mdi-content-save-all text-2xl"></i>
                     SAVE ALL CHANGES
                 </button>
@@ -106,9 +114,9 @@
     </form>
 </div>
 
-<!-- JS -->
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        // --- SCRIPT FOR AMMONIA TOTAL & STEPPER ---
         function updateAmmoniaTotal() {
             let total = 0;
             document.querySelectorAll('input[data-type="AMMONIA"]').forEach(input => {
@@ -132,6 +140,31 @@
                 }
             }
         }
-        updateAmmoniaTotal();
+        updateAmmoniaTotal(); // Initial call
+
+        // --- SCRIPT FOR SWEETALERT CONFIRMATION ---
+        const gasForm = document.getElementById('gas-form');
+        const gasSubmitBtn = document.getElementById('submit-btn-gas');
+
+        if (gasSubmitBtn) {
+            gasSubmitBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+
+                Swal.fire({
+                    title: 'Confirm Submission',
+                    text: "Please ensure all data is correct. Are you sure you want to save?",
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, save it!',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        gasForm.submit();
+                    }
+                });
+            });
+        }
     });
 </script>

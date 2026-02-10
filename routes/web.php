@@ -393,6 +393,8 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
         Route::post('/input/store', [OilBatchRefineryInputController::class, 'storeStep'])->name('input.store');
         Route::get('/input/reset', [OilBatchRefineryInputController::class, 'resetSession'])->name('input.reset');
 
+          Route::post('/input/store-full', [OilBatchRefineryInputController::class, 'storeFull'])->name('input.store_full');
+
         Route::get('/config', [OilBatchRefineryConfigController::class, 'index'])->name('config.index');
         Route::post('/config', [OilBatchRefineryConfigController::class, 'store'])->name('config.store');
         Route::put('/config/{id}', [OilBatchRefineryConfigController::class, 'update'])->name('config.update');

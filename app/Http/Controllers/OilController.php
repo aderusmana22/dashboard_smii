@@ -119,11 +119,9 @@ class OilController extends Controller
         $endDate = \Carbon\Carbon::parse($validated['end_date']);
 
         // --- 1. DATA TABEL (Snapshot) ---
-        // Kita ambil Tank Master dulu agar urutannya sesuai 'sort_order'
         $tanks = \App\Models\OilBatchRefineryTank::orderBy('sort_order')
             ->with([
                 'readings' => function ($q) use ($endDate) {
-                    // Ambil reading terakhir pada/sebelum tanggal filter
                     $q->whereDate('reading_date', '<=', $endDate)
                         ->orderBy('reading_date', 'desc')
                         ->limit(1);
@@ -134,26 +132,28 @@ class OilController extends Controller
         $tableData = $tanks->map(function ($tank) {
             $reading = $tank->readings->first();
             return [
-                'name' => $tank->name, // Nama Tangki
+                'name' => $tank->name,
+                // [BARU] Menambahkan Current Value
+                'current_value' => number_format($reading ? $reading->current_value_kg : 0),
                 'capacity_kg' => number_format($tank->capacity_kg),
                 'status' => $reading ? $reading->status : 'N/A',
-                'group' => $tank->group_name, // Nama Grup Asli (Hydro, N.W.B, dll)
+                'group' => $tank->group_name,
+                'description' => $tank->description,
+                'updated_at' => $reading ? $reading->updated_at : null,
             ];
         });
 
-        // --- 2. DATA SNAPSHOT CARD (Ringkasan per Grup) ---
-        // Kelompokkan data snapshot berdasarkan nama grup asli
+        // --- 2. DATA SNAPSHOT CARD ---
         $summaryData = $tanks->groupBy('group_name')->map(function ($groupTanks) {
             return $groupTanks->sum(fn($t) => $t->readings->first()?->current_value_kg ?? 0);
         });
 
-        // --- 3. DATA CHART (Tren Harian) ---
+        // --- 3. DATA CHART ---
         $rangeReadings = \App\Models\OilBatchRefineryReading::with('tank')
             ->whereBetween('reading_date', [$startDate, $endDate])
             ->orderBy('reading_date')
             ->get();
 
-        // Grouping: Tanggal -> Nama Grup -> List Data
         $chartDetailData = $rangeReadings->groupBy(fn($item) => $item->reading_date->format('Y-m-d'))
             ->map(
                 fn($readingsOnDate) =>

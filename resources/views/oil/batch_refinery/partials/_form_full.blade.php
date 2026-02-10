@@ -110,7 +110,7 @@
                                                     autocomplete="off">
                                                 
                                                 <ul id="suggestion_box_{{$globalIndex}}" 
-                                                    class="hidden absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-xl mt-1 max-h-60 overflow-y-auto">
+                                                    class="hidden absolute z-50 w-full bg-white border border-slate-200 rounded-lg shadow-xl mt-1 overflow-y-auto">
                                                 </ul>
                                             </div>
                                         </td>

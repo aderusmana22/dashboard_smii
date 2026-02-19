@@ -18,6 +18,8 @@ use App\Models\BleachedOilTankReading;
 use App\Models\PackingTank;
 use App\Models\PackingTankReading;
 use App\Models\UtilityGasReading;
+use App\Models\OilBatchRefineryTank;
+use App\Models\OilBatchRefineryReading;
 
 class OilController extends Controller
 {
@@ -35,7 +37,8 @@ class OilController extends Controller
             return view('oil.partials.' . $componentName, compact('tanks'));
         }
         if ($componentName === 'batch_refinery') {
-            return view('oil.partials.' . $componentName);
+            $groups = OilBatchRefineryTank::select('group_name')->distinct()->orderBy('group_name')->pluck('group_name');
+            return view('oil.partials.' . $componentName, compact('groups'));
         }
         if ($componentName === 'fat_blend_tank') {
             return view('oil.partials.' . $componentName);
@@ -108,66 +111,159 @@ class OilController extends Controller
         return response()->json(['labels' => $labels, 'datasets' => $datasets, 'tableData' => $tableData]);
     }
 
+    public function getTanksByGroup($group)
+    {
+        $tanks = OilBatchRefineryTank::where('group_name', $group)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+        return response()->json($tanks);
+    }
+
     public function getRefineryData(Request $request)
     {
         $validated = $request->validate([
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
+            'group' => 'nullable|string',
+            'tank_id' => 'nullable|string',
         ]);
 
-        $startDate = \Carbon\Carbon::parse($validated['start_date']);
-        $endDate = \Carbon\Carbon::parse($validated['end_date']);
+        $startDate = Carbon::parse($validated['start_date']);
+        $endDate = Carbon::parse($validated['end_date']);
+        $filterGroup = $request->group && $request->group !== 'ALL' ? $request->group : null;
+        $filterTank = $request->tank_id && $request->tank_id !== 'ALL' ? $request->tank_id : null;
 
-        // --- 1. DATA TABEL (Snapshot) ---
-        $tanks = \App\Models\OilBatchRefineryTank::orderBy('sort_order')
-            ->with([
-                'readings' => function ($q) use ($endDate) {
-                    $q->whereDate('reading_date', '<=', $endDate)
-                        ->orderBy('reading_date', 'desc')
-                        ->limit(1);
-                }
-            ])
-            ->get();
+        $tankQuery = OilBatchRefineryTank::query()->orderBy('sort_order');
+        if ($filterGroup)
+            $tankQuery->where('group_name', $filterGroup);
+        if ($filterTank)
+            $tankQuery->where('id', $filterTank);
+
+        $tanks = $tankQuery->with(['readings' => fn($q) => $q->whereDate('reading_date', '<=', $endDate)->orderBy('reading_date', 'desc')->orderBy('shift', 'desc')->limit(1)])->get();
 
         $tableData = $tanks->map(function ($tank) {
             $reading = $tank->readings->first();
-            return [
-                'name' => $tank->name,
-                // [BARU] Menambahkan Current Value
-                'current_value' => number_format($reading ? $reading->current_value_kg : 0),
-                'capacity_kg' => number_format($tank->capacity_kg),
-                'status' => $reading ? $reading->status : 'N/A',
-                'group' => $tank->group_name,
-                'description' => $tank->description,
-                'updated_at' => $reading ? $reading->updated_at : null,
-            ];
+            $currentVal = $reading ? $reading->current_value_kg : 0;
+            $percent = $tank->capacity_kg > 0 ? ($currentVal / $tank->capacity_kg) * 100 : 0;
+            return ['id' => $tank->id, 'name' => $tank->name, 'current_value' => number_format($currentVal), 'raw_value' => $currentVal, 'capacity_kg' => number_format($tank->capacity_kg), 'fill_percent' => number_format($percent, 1), 'status' => $reading ? $reading->status : 'N/A', 'description' => $tank->description];
         });
 
-        // --- 2. DATA SNAPSHOT CARD ---
-        $summaryData = $tanks->groupBy('group_name')->map(function ($groupTanks) {
-            return $groupTanks->sum(fn($t) => $t->readings->first()?->current_value_kg ?? 0);
+        $avgQuery = OilBatchRefineryReading::query()->join('oil_batch_refinery_tanks', 'oil_batch_refinery_readings.tank_id', '=', 'oil_batch_refinery_tanks.id')->whereBetween('reading_date', [$startDate, $endDate])->select('oil_batch_refinery_tanks.group_name', DB::raw('AVG(oil_batch_refinery_readings.current_value_kg) as average_stock'))->groupBy('oil_batch_refinery_tanks.group_name');
+        if ($filterGroup)
+            $avgQuery->where('oil_batch_refinery_tanks.group_name', $filterGroup);
+        if ($filterTank)
+            $avgQuery->where('oil_batch_refinery_tanks.id', $filterTank);
+        $averageSummary = $avgQuery->pluck('average_stock', 'group_name');
+
+        $readingQuery = OilBatchRefineryReading::with('tank')->whereBetween('reading_date', [$startDate, $endDate])->orderBy('reading_date');
+        if ($filterGroup)
+            $readingQuery->whereHas('tank', fn($q) => $q->where('group_name', $filterGroup));
+        if ($filterTank)
+            $readingQuery->where('tank_id', $filterTank);
+        $rangeReadings = $readingQuery->get();
+        $chartDetailData = $rangeReadings->groupBy(fn($item) => $item->reading_date->format('Y-m-d'))->map(fn($readingsOnDate) => $readingsOnDate->groupBy('tank.group_name')->map(fn($groupReadings) => $groupReadings->map(fn($r) => ['name' => $r->tank->name, 'value' => $r->current_value_kg])));
+
+        return response()->json(['tableData' => $tableData, 'chartDetailData' => $chartDetailData, 'averageSummary' => $averageSummary]);
+    }
+
+    // --- REVISI TOTAL METHOD EKSPOR ---
+    // --- REVISI FINAL METHOD EKSPOR ---
+    public function exportRefineryData(Request $request)
+    {
+        $startDate = Carbon::parse($request->start_date);
+        $endDate = Carbon::parse($request->end_date);
+        $exportType = $request->input('export_type', 'daily');
+
+        $tanks = OilBatchRefineryTank::orderBy('group_name')->orderBy('sort_order')->get();
+        $dateRange = Carbon::parse($startDate)->toPeriod($endDate);
+
+        // --- OPTIMISASI: Ambil semua data yang relevan dalam satu query ---
+        $allReadingsQuery = OilBatchRefineryReading::whereBetween('reading_date', [$startDate, $endDate]);
+
+        // Jika tipe ekspor adalah shift spesifik, kita bisa memfilter lebih awal
+        if (str_starts_with($exportType, 'shift_')) {
+            $shiftNumber = str_replace('shift_', '', $exportType);
+            $allReadingsQuery->where('shift', $shiftNumber);
+        }
+
+        // Ambil data dan kelompokkan dalam format yang mudah diakses: 'YYYY-MM-DD-tank_id'
+        $readingsCollection = $allReadingsQuery->get()->groupBy(function ($item) {
+            return $item->reading_date->format('Y-m-d') . '-' . $item->tank_id;
         });
 
-        // --- 3. DATA CHART ---
-        $rangeReadings = \App\Models\OilBatchRefineryReading::with('tank')
-            ->whereBetween('reading_date', [$startDate, $endDate])
-            ->orderBy('reading_date')
-            ->get();
+        // --- Tentukan Nama File dan Header berdasarkan Tipe Ekspor ---
+        $fileName = 'Refinery_Report.csv';
+        $reportTitle = 'REFINERY REPORT';
+        $headers = ['Date', 'Group', 'Tank Name', 'Oil Code', 'Stock (Kg)', 'Status'];
 
-        $chartDetailData = $rangeReadings->groupBy(fn($item) => $item->reading_date->format('Y-m-d'))
-            ->map(
-                fn($readingsOnDate) =>
-                $readingsOnDate->groupBy('tank.group_name')
-                    ->map(fn($groupReadings) => $groupReadings->map(fn($r) => [
-                        'name' => $r->tank->name,
-                        'value' => $r->current_value_kg
-                    ]))
-            );
+        if ($exportType === 'daily') {
+            $fileName = 'Refinery_Daily_Report_' . $startDate->format('Ymd') . '_to_' . $endDate->format('Ymd') . '.csv';
+            $reportTitle = 'DAILY REPORT (LAST SHIFT)';
+            $headers = ['Date', 'Group', 'Tank Name', 'Oil Code', 'Stock (Kg)', 'Status', 'Last Shift'];
+        } elseif (str_starts_with($exportType, 'shift_')) {
+            $shiftNumber = str_replace('shift_', '', $exportType);
+            $fileName = 'Refinery_Shift_' . $shiftNumber . '_Report_' . $startDate->format('Ymd') . '_to_' . $endDate->format('Ymd') . '.csv';
+            $reportTitle = 'SHIFT ' . $shiftNumber . ' REPORT';
+        }
 
-        return response()->json([
-            'tableData' => $tableData,
-            'chartDetailData' => $chartDetailData,
-            'summaryData' => $summaryData
+        // --- Mulai Proses Pembuatan CSV ---
+        $callback = function () use ($tanks, $dateRange, $readingsCollection, $exportType, $reportTitle, $headers, $startDate, $endDate) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, [$reportTitle]);
+            fputcsv($file, ['Period: ' . $startDate->format('d M Y') . ' - ' . $endDate->format('d M Y')]);
+            fputcsv($file, []);
+            fputcsv($file, $headers);
+
+            foreach ($dateRange as $date) {
+                $dateString = $date->format('Y-m-d');
+                foreach ($tanks as $tank) {
+                    $key = $dateString . '-' . $tank->id;
+                    $readingsForDayAndTank = $readingsCollection->get($key);
+                    $reading = null;
+
+                    if ($readingsForDayAndTank) {
+                        if ($exportType === 'daily') {
+                            // Ambil yang shiftnya paling besar
+                            $reading = $readingsForDayAndTank->sortByDesc('shift')->first();
+                        } else {
+                            // Karena sudah difilter di query awal, ambil saja yang pertama
+                            $reading = $readingsForDayAndTank->first();
+                        }
+                    }
+
+                    // Tulis data ke file CSV
+                    if ($reading) {
+                        $rowData = [
+                            $dateString,
+                            $tank->group_name,
+                            $tank->name,
+                            $reading->oil_code,
+                            $reading->current_value_kg,
+                            $reading->status,
+                        ];
+                        if ($exportType === 'daily') {
+                            $rowData[] = $reading->shift; // Tambah kolom shift untuk laporan harian
+                        }
+                        fputcsv($file, $rowData);
+                    } else {
+                        // Tulis baris kosong jika tidak ada data
+                        $rowData = [$dateString, $tank->group_name, $tank->name, '-', '0', 'No Data'];
+                        if ($exportType === 'daily') {
+                            $rowData[] = '-';
+                        }
+                        fputcsv($file, $rowData);
+                    }
+                }
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, [
+            "Content-type" => "text/csv",
+            "Content-Disposition" => "attachment; filename=$fileName",
+            "Pragma" => "no-cache",
+            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
+            "Expires" => "0"
         ]);
     }
 

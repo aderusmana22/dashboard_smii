@@ -42,7 +42,7 @@ class ProductionTankSeeder extends Seeder
             // Deodorizers
             ['name' => 'Deodorizer 1', 'capacity_kg' => 10000, 'group_name' => 'DEODORIZER', 'status' => 'Heating'],
             ['name' => 'Deodorizer 2', 'capacity_kg' => 10000, 'group_name' => 'DEODORIZER', 'status' => 'Heating'],
-            ['name' => 'Wead Tank', 'capacity_kg' => 10000, 'group_name' => 'DEODORIZER', 'status' => 'Other'], // Masuk grup Deodorizer
+            ['name' => 'Head Tank', 'capacity_kg' => 10000, 'group_name' => 'DEODORIZER', 'status' => 'Other'], // Masuk grup Deodorizer
         ];
 
         $today = Carbon::today();

@@ -10,9 +10,10 @@
                 <p class="text-sm text-gray-500">Manage gas items, units, and safety limits.</p>
             </div>
             <div class="flex gap-2">
-                <a href="{{ route('utility.gas.input') }}"
+                <!-- LINK BACK DIUBAH KE CENTER -->
+                <a href="{{ route('oil.config.center') }}"
                    class="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 font-medium">
-                    &larr; Back to Input
+                    &larr; Back to Center
                 </a>
                 <button onclick="openModal('add')"
                         class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium shadow flex items-center gap-2">
@@ -177,28 +178,34 @@
         const modalTitle = document.getElementById('modalTitle');
         const gasTypeDiv = document.getElementById('gasTypeDiv');
         const statusDiv = document.getElementById('statusDiv');
+        const inputName = document.getElementById('inputName');
+        const inputUnit = document.getElementById('inputUnit');
+        const inputType = document.getElementById('inputType');
+        const inputMin = document.getElementById('inputMin');
+        const inputMax = document.getElementById('inputMax');
+        const inputSort = document.getElementById('inputSort');
+        const inputActive = document.getElementById('inputActive');
 
         function openModal(type, data = null) {
             modal.classList.remove('hidden');
 
             if (type === 'add') {
                 modalTitle.innerText = 'Add New Item';
-                form.action = "{{ route('utility.gas.config.store') }}";
+                form.action = "{{ route('oil.config.utility_gas.store') }}";
                 methodField.value = "POST";
                 gasTypeDiv.classList.remove('hidden');
                 statusDiv.classList.add('hidden');
                 form.reset();
-            }  else {
+            } else {
                 modalTitle.innerText = 'Edit Item';
-                form.action = "{{ url('oil/utility-gas/config') }}/" + data.id;
+                // Update Route untuk Config Path Baru
+                form.action = "{{ url('oil/config/utility-gas') }}/" + data.id;
                 methodField.value = "PUT";
-                
-                // Meskipun hidden, value harus tetap diset sesuai data asli
-                // Agar jika validasi controller lolos, datanya tetap benar
-                gasTypeDiv.classList.add('hidden');
-                document.querySelector('select[name="gas_type"]').value = data.gas_type; 
 
-                document.getElementById('inputName').value = data.name;
+                gasTypeDiv.classList.add('hidden');
+                document.querySelector('select[name="gas_type"]').value = data.gas_type;
+
+                inputName.value = data.name;
                 statusDiv.classList.remove('hidden');
 
                 inputName.value = data.name;

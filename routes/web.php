@@ -46,7 +46,8 @@ use App\Http\Controllers\OilUtilityGasConfigController;
 use App\Http\Controllers\OilBatchRefineryController;
 use App\Http\Controllers\OilBatchRefineryInputController;
 use App\Http\Controllers\OilBatchRefineryConfigController;
-use App\Http\Controllers\InputStationController; 
+use App\Http\Controllers\OilInputStationController;
+use App\Http\Controllers\OilConfigController;
 
 /*
 |--------------------------------------------------------------------------
@@ -360,50 +361,77 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
         Route::get('forecast/template', [ForecastController::class, 'downloadTemplate'])->name('forecast.template');
     });
 
-    Route::get('/oil-monitoring', [OilController::class, 'index'])->name('oil.index');
-    Route::get('/oil/load-component/{componentName}', [OilController::class, 'loadComponent'])->name('oil.loadComponent');
-    Route::get('/oil/get-tank-data', [OilController::class, 'getTankData'])->name('oil.getTankData');
-    Route::get('/oil/get-refinery-data', [OilController::class, 'getRefineryData'])->name('oil.getRefineryData');
-    Route::get('/oil/get-fat-blend-data', [OilController::class, 'getFatBlendData'])->name('oil.getFatBlendData');
-    Route::get('/oil/get-yard-1t-data', [OilController::class, 'getYard1tData'])->name('oil.getYard1tData');
-    Route::get('/oil/get-bleached-oil-data', [OilController::class, 'getBleachedOilData'])->name('oil.getBleachedOilData');
-    Route::get('/oil/get-packing-data', [OilController::class, 'getPackingData'])->name('oil.getPackingData');
-    Route::get('/oil/get-current-stock-data', [OilController::class, 'getCurrentStockData'])->name('oil.getCurrentStockData');
+    Route::prefix('oil')->group(function () {
 
-    Route::prefix('oil/utility-gas')->name('utility.gas.')->group(function () {
-        Route::get('/data', [OilController::class, 'getUtilityGasData'])->name('data');
-        Route::get('/input', [OilUtilityGasInputController::class, 'index'])->name('input');
-        Route::post('/store', [OilUtilityGasInputController::class, 'store'])->name('store');
-        Route::get('/logs', [OilUtilityGasInputController::class, 'logs'])->name('logs');
+        // --- DASHBOARD & MONITORING ---
+        Route::get('/oil-monitoring', [OilController::class, 'index'])->name('oil.index');
+        Route::get('/load-component/{componentName}', [OilController::class, 'loadComponent'])->name('oil.loadComponent');
+        Route::get('/get-tank-data', [OilController::class, 'getTankData'])->name('oil.getTankData');
+        Route::get('/get-refinery-data', [OilController::class, 'getRefineryData'])->name('oil.getRefineryData');
+        Route::get('/get-fat-blend-data', [OilController::class, 'getFatBlendData'])->name('oil.getFatBlendData');
+        Route::get('/get-yard-1t-data', [OilController::class, 'getYard1tData'])->name('oil.getYard1tData');
+        Route::get('/get-bleached-oil-data', [OilController::class, 'getBleachedOilData'])->name('oil.getBleachedOilData');
+        Route::get('/get-packing-data', [OilController::class, 'getPackingData'])->name('oil.getPackingData');
+        Route::get('/get-current-stock-data', [OilController::class, 'getCurrentStockData'])->name('oil.getCurrentStockData');
 
-        Route::get('/config', [OilUtilityGasConfigController::class, 'index'])->name('config.index');
-        Route::post('/config', [OilUtilityGasConfigController::class, 'store'])->name('config.store');
-        Route::put('/config/{id}', [OilUtilityGasConfigController::class, 'update'])->name('config.update');
-        Route::delete('/config/{id}', [OilUtilityGasConfigController::class, 'destroy'])->name('config.destroy');
+        Route::get('/tanks-by-group/{group}', [App\Http\Controllers\OilController::class, 'getTanksByGroup'])->name('oil.getTanksByGroup');
+        // --- INPUT STATION ---
+        Route::get('/oil-input', [OilInputStationController::class, 'index'])->name('oil.input_station.index');
+      
+        // ============================================================
+        // --- CENTRAL CONFIGURATION (NEW STRUCTURE) ---
+        // ============================================================
+        Route::prefix('config')->name('oil.config.')->group(function () {
+
+            // 1. Config Center Dashboard (Menu Utama)
+            Route::get('/', [OilConfigController::class, 'index'])->name('center');
+
+            // 2. Shift Configuration
+            Route::get('/shifts', [OilConfigController::class, 'shifts'])->name('shifts');
+            Route::put('/shifts/{id}', [OilConfigController::class, 'updateShift'])->name('shifts.update');
+
+            // 3. Utility Gas Config (Moved Here)
+            Route::get('/utility-gas', [OilUtilityGasConfigController::class, 'index'])->name('utility_gas.index');
+            Route::post('/utility-gas', [OilUtilityGasConfigController::class, 'store'])->name('utility_gas.store');
+            Route::put('/utility-gas/{id}', [OilUtilityGasConfigController::class, 'update'])->name('utility_gas.update');
+            Route::delete('/utility-gas/{id}', [OilUtilityGasConfigController::class, 'destroy'])->name('utility_gas.destroy');
+
+            // 4. Batch Refinery Config (Moved Here)
+            Route::get('/batch-refinery', [OilBatchRefineryConfigController::class, 'index'])->name('batch_refinery.index');
+            Route::post('/batch-refinery', [OilBatchRefineryConfigController::class, 'store'])->name('batch_refinery.store');
+            Route::put('/batch-refinery/{id}', [OilBatchRefineryConfigController::class, 'update'])->name('batch_refinery.update');
+            Route::delete('/batch-refinery/{id}', [OilBatchRefineryConfigController::class, 'destroy'])->name('batch_refinery.destroy');
+        });
+
+        // ============================================================
+        // --- DATA LOGS & INPUT ACTIONS (NON-CONFIG) ---
+        // ============================================================
+
+        // Utility Gas Data/Logs
+        Route::prefix('utility-gas')->name('utility.gas.')->group(function () {
+            Route::get('/data', [OilController::class, 'getUtilityGasData'])->name('data');
+            Route::get('/input', [OilUtilityGasInputController::class, 'index'])->name('input');
+            Route::post('/store', [OilUtilityGasInputController::class, 'store'])->name('store');
+            Route::get('/logs', [OilUtilityGasInputController::class, 'logs'])->name('logs');
+        });
+
+        Route::get('/export-refinery-data', [OilController::class, 'exportRefineryData'])->name('oil.exportRefineryData');
+
+        // Batch Refinery Data/Logs
+        Route::prefix('batch-refinery')->name('oil.batch_refinery.')->group(function () {
+            Route::get('/', [OilBatchRefineryController::class, 'index'])->name('index');
+            Route::get('/data', [OilBatchRefineryController::class, 'getData'])->name('data');
+            Route::get('/logs', [OilBatchRefineryController::class, 'logs'])->name('logs');
+
+            // Input Logic
+            Route::get('/input', [OilBatchRefineryInputController::class, 'index'])->name('input');
+            Route::post('/input/start', [OilBatchRefineryInputController::class, 'startSession'])->name('input.start');
+            Route::post('/input/store', [OilBatchRefineryInputController::class, 'storeStep'])->name('input.store');
+            Route::get('/input/reset', [OilBatchRefineryInputController::class, 'resetSession'])->name('input.reset');
+            Route::post('/input/store-full', [OilBatchRefineryInputController::class, 'storeFull'])->name('input.store_full');
+        });
+
     });
-
-
-    Route::prefix('oil/batch-refinery')->name('oil.batch_refinery.')->group(function () {
-        Route::get('/', [OilBatchRefineryController::class, 'index'])->name('index');
-        Route::get('/data', [OilBatchRefineryController::class, 'getData'])->name('data');
-        Route::get('/logs', [OilBatchRefineryController::class, 'logs'])->name('logs');
-
-        Route::get('/input', [OilBatchRefineryInputController::class, 'index'])->name('input');
-        Route::post('/input/start', [OilBatchRefineryInputController::class, 'startSession'])->name('input.start');
-        Route::post('/input/store', [OilBatchRefineryInputController::class, 'storeStep'])->name('input.store');
-        Route::get('/input/reset', [OilBatchRefineryInputController::class, 'resetSession'])->name('input.reset');
-
-          Route::post('/input/store-full', [OilBatchRefineryInputController::class, 'storeFull'])->name('input.store_full');
-
-        Route::get('/config', [OilBatchRefineryConfigController::class, 'index'])->name('config.index');
-        Route::post('/config', [OilBatchRefineryConfigController::class, 'store'])->name('config.store');
-        Route::put('/config/{id}', [OilBatchRefineryConfigController::class, 'update'])->name('config.update');
-        Route::delete('/config/{id}', [OilBatchRefineryConfigController::class, 'destroy'])->name('config.destroy');
-    });
-
-    Route::get('/oil-input', [InputStationController::class, 'index'])->name('oil.input_station.index');
-
-
 
     Route::get('/inward-dashboard', [InwardDashboardController::class, 'index'])->name('inward.dashboard');
 });

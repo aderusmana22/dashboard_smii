@@ -66,11 +66,11 @@ class OilBatchRefinerySeeder extends Seeder
                 'capacity_kg' => 10000,
             ],
 
-            // 5. Wead Tank Group
+            // 5. Head Tank Group
             [
-                'name' => 'Wead Tank',
+                'name' => 'Head Tank',
                 'code' => 'WEAD',
-                'group_name' => 'Wead Tank',
+                'group_name' => 'Head Tank',
                 'capacity_kg' => 10000,
             ],
 

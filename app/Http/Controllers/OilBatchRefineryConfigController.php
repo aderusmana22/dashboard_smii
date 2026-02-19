@@ -21,7 +21,7 @@ class OilBatchRefineryConfigController extends Controller
             'name' => 'required',
             'code' => 'required|unique:oil_batch_refinery_tanks,code',
             'capacity_kg' => 'required|numeric',
-            'group_name' => 'required|in:Hydro,N.W.B,Deodorizer,Drop Tank,Wead Tank,Crystalizer,SX Tank',
+            'group_name' => 'required|in:Hydro,N.W.B,Deodorizer,Drop Tank,Head Tank,Crystalizer,SX Tank',
             'sort_order' => 'required|integer'
         ]);
         

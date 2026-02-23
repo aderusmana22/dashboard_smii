@@ -4,13 +4,13 @@
         <div class="lg:col-span-7 flex flex-col h-full">
             <div class="card rounded-xl shadow-md border border-slate-200 flex flex-col h-[650px]">
                 <div class="rounded-t-xl bg-indigo-500 px-6 py-4 flex justify-between items-center shrink-0">
-                    <h4 class="text-white font-semibold text-lg flex items-center gap-2"><i
+                    <h4 class="text-white font-semibold text-xl flex items-center gap-2"><i
                             class="mdi mdi-bottle-tonic-outline"></i> Data Batch Refinery</h4>
-                    <span id="totalTankBadge" class="card/20 text-white text-xs px-2 py-1 rounded">Loading...</span>
+                    <span id="totalTankBadge" class="card/20 text-white text-base px-2 py-1 rounded">Loading...</span>
                 </div>
                 <div class="overflow-auto flex-grow">
                     <table class="w-full text-left border-collapse">
-                        <thead class="text-[10px] text-slate-500 uppercase card sticky top-0 z-10 shadow-sm">
+                        <thead class="text-base text-slate-500 uppercase card sticky top-0 z-10 shadow-sm">
                             <tr>
                                 <th class="px-3 py-3 font-bold border-b">Tank Code</th>
                                 <th class="px-3 py-3 font-bold border-b text-right">Capacity (Kg)</th>
@@ -21,9 +21,9 @@
                                 <th class="px-3 py-3 font-bold border-b text-right">Current Value (Kg)</th>
                             </tr>
                         </thead>
-                        <tbody id="tableBody" class="divide-y divide-slate-100 text-xs text-slate-700">
+                        <tbody id="tableBody" class="divide-y divide-slate-100 text-base text-slate-700">
                             <tr>
-                                <td colspan="7" class="p-8 text-center text-slate-400">Pilih filter dan klik tombol
+                                <td colspan="7" class="p-8 text-center text-slate-400 text-lg">Pilih filter dan klik tombol
                                     untuk menampilkan data.</td>
                             </tr>
                         </tbody>
@@ -36,19 +36,19 @@
             <div class="card rounded-xl shadow-sm border border-slate-200 p-5 w-full">
                 <div class="flex flex-col sm:flex-row gap-4 items-end w-full">
                     <div class="w-full">
-                        <label for="dateStart" class="mb-1 text-[10px] font-bold text-slate-500 uppercase">Tanggal
+                        <label for="dateStart" class="mb-1 text-base font-bold text-slate-500 uppercase">Tanggal
                             Mulai</label>
-                        <input type="date" id="dateStart" class="w-full card border-slate-300 text-sm rounded-lg p-2.5">
+                        <input type="date" id="dateStart" class="w-full card border-slate-300 text-base rounded-lg p-2.5">
                     </div>
                     <div class="w-full">
-                        <label for="dateEnd" class="mb-1 text-[10px] font-bold text-slate-500 uppercase">Tanggal
+                        <label for="dateEnd" class="mb-1 text-base font-bold text-slate-500 uppercase">Tanggal
                             Akhir</label>
-                        <input type="date" id="dateEnd" class="w-full card border-slate-300 text-sm rounded-lg p-2.5">
+                        <input type="date" id="dateEnd" class="w-full card border-slate-300 text-base rounded-lg p-2.5">
                     </div>
                     <div class="w-full">
                         <label for="globalTankSelector"
-                            class="mb-1 text-[10px] font-bold text-slate-500 uppercase">Pilih Tangki</label>
-                        <select id="globalTankSelector" class="w-full card border-slate-300 text-sm rounded-lg p-2.5">
+                            class="mb-1 text-base font-bold text-slate-500 uppercase">Pilih Tangki</label>
+                        <select id="globalTankSelector" class="w-full card border-slate-300 text-base rounded-lg p-2.5">
                             <option value="ALL">🔵 TAMPILKAN SEMUA</option>
                             @foreach($tanks as $tank)
                                 <option value="{{ $tank->id }}">{{ $tank->tank_code }}</option>
@@ -58,12 +58,12 @@
                 </div>
             </div>
             <button type="button" id="btnApplyFilter"
-                class="w-full sm:w-auto text-white bg-indigo-600 hover:bg-indigo-700 font-medium rounded-lg text-sm px-5 py-2.5 flex items-center justify-center gap-2">
+                class="w-full sm:w-auto text-white bg-indigo-600 hover:bg-indigo-700 font-medium rounded-lg text-lg px-5 py-2.5 flex items-center justify-center gap-2">
                 <i class="mdi mdi-filter-variant"></i>Filter
             </button>
             <div class="card rounded-xl shadow-md border border-slate-200 flex-grow w-full h-[550px] flex flex-col">
                 <div class="px-6 py-4 border-b border-slate-100">
-                    <h5 class="font-bold text-slate-700">📈 Tren Stok Harian (Kg)</h5>
+                    <h5 class="font-bold text-slate-700 text-xl">📈 Tren Stok Harian (Kg)</h5>
                 </div>
                 <div class="relative w-full flex-grow p-4"><canvas id="tankYardBDTChart"></canvas></div>
             </div>
@@ -80,7 +80,7 @@
         function updateTable(data) {
             const tableBody = $('#tableBody');
             tableBody.empty();
-            if (data.length === 0) { tableBody.html(`<tr><td colspan="7" class="p-8 text-center text-slate-400">Tidak ada data untuk filter yang dipilih.</td></tr>`); return; }
+            if (data.length === 0) { tableBody.html(`<tr><td colspan="7" class="p-8 text-center text-slate-400 text-lg">Tidak ada data untuk filter yang dipilih.</td></tr>`); return; }
             data.forEach(row => {
                 tableBody.append(`
                     <tr class="hover:bg-indigo-50">

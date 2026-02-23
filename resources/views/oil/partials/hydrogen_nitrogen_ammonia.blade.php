@@ -149,7 +149,8 @@
 </style>
 
 <div class="w-full font-sans">
-    <div class="mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <!-- UPDATE PADA BAGIAN HEADER CONTROL DI DALAM HTML -->
+    <div class="mb-8 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
             <h2 class="text-3xl font-extrabold text-slate-800">Utility Gas Monitor</h2>
             <div class="flex items-center gap-2 text-slate-500 font-medium mt-1">
@@ -161,19 +162,51 @@
                 </span>
             </div>
         </div>
-        <div class="flex flex-col gap-2 w-full sm:w-auto">
-            <div class="flex gap-2">
-                <input type="date" id="gasDateStart"
-                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
-                <input type="date" id="gasDateEnd"
-                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm">
+
+        <!-- Modifikasi Panel Kontrol Baru (Filter & Export) -->
+        <div class="flex flex-col gap-3 w-full sm:w-auto bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+            <div class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1 flex items-center gap-1">
+                <i class="mdi mdi-filter text-blue-500"></i> Filter Data
             </div>
-            <button id="btnUpdateGasData"
-                class="w-full bg-blue-800 hover:bg-slate-700 text-white font-bold py-2.5 rounded-lg shadow-md transition-all flex justify-center items-center">
-                <i class="mdi mdi-refresh mr-2"></i> Update Data
-            </button>
+            <div class="flex flex-col sm:flex-row gap-2">
+                <input type="date" id="gasDateStart"
+                    class="w-full sm:w-32 border border-slate-300 rounded-lg px-3 py-2 text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm text-sm">
+                <input type="date" id="gasDateEnd"
+                    class="w-full sm:w-32 border border-slate-300 rounded-lg px-3 py-2 text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm text-sm">
+                <select id="gasShiftFilter"
+                    class="w-full sm:w-32 border border-slate-300 rounded-lg px-3 py-2 text-slate-700 focus:ring-2 focus:ring-blue-500 outline-none shadow-sm text-sm">
+                    <option value="ALL">All Shifts</option>
+                    <option value="1">Shift 1</option>
+                    <option value="2">Shift 2</option>
+                    <option value="3">Shift 3</option>
+                </select>
+                <button id="btnUpdateGasData"
+                    class="w-full sm:w-auto bg-blue-800 hover:bg-slate-700 text-white font-bold px-4 py-2 rounded-lg shadow-md transition-all flex justify-center items-center text-sm">
+                    <i class="mdi mdi-refresh mr-1"></i> Update
+                </button>
+            </div>
+
+            <div
+                class="text-xs font-bold text-slate-500 uppercase tracking-wide mt-2 mb-1 border-t border-slate-100 pt-3 flex items-center gap-1">
+                <i class="mdi mdi-download text-emerald-500"></i> Export Report
+            </div>
+            <div class="flex flex-col sm:flex-row gap-2">
+                <select id="gasExportType"
+                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-none shadow-sm text-sm">
+                    <option value="daily">Daily Average Report</option>
+                    <option value="shift_1">Shift 1 Report</option>
+                    <option value="shift_2">Shift 2 Report</option>
+                    <option value="shift_3">Shift 3 Report</option>
+                </select>
+                <button id="btnExportGas"
+                    class="w-full sm:w-32 bg-green-600 hover:bg-green-700 text-white font-bold px-4 py-2 rounded-lg shadow-sm transition-all flex justify-center items-center text-sm">
+                    <i class="mdi mdi-file-excel mr-1"></i> Export
+                </button>
+            </div>
         </div>
     </div>
+
+    <!-- (Sisa HTML & Style Container Biarkan Persis Seperti Milikmu) -->
 
     <h3 class="text-xl font-bold text-slate-700 mb-5 flex items-center gap-2">
         <span class="w-1 h-6 bg-slate-600 rounded-full"></span> Status & Stok Terkini
@@ -417,17 +450,28 @@
             }
         }
 
+        // GANTI function fetchData() dengan yang di bawah ini
         function fetchData() {
             const btn = $('#btnUpdateGasData');
-            const payload = { start_date: $('#gasDateStart').val(), end_date: $('#gasDateEnd').val() };
-            if (!payload.start_date || !payload.end_date) { alert('Pilih tanggal.'); return; }
+
+            // Tambahkan payload SHIFT
+            const payload = {
+                start_date: $('#gasDateStart').val(),
+                end_date: $('#gasDateEnd').val(),
+                shift: $('#gasShiftFilter').val()
+            };
+
+            if (!payload.start_date || !payload.end_date) {
+                alert('Pilih tanggal.'); return;
+            }
 
             $('#globalLastUpdate').text('Checking...');
-            btn.prop('disabled', true).html('<i class="mdi mdi-loading mdi-spin mr-2"></i> Loading...');
+            btn.prop('disabled', true).html('<i class="mdi mdi-loading mdi-spin mr-1"></i> Update');
 
             $.ajax({
                 url: '{{ route("utility.gas.data") }}',
-                type: 'GET', data: payload,
+                type: 'GET',
+                data: payload,
                 success: function (res) {
                     updateSnapshot(res.snapshot);
                     updateTrendCharts(res.trend);
@@ -442,10 +486,32 @@
                     $('#globalLastUpdate').text('Error');
                 },
                 complete: function () {
-                    btn.prop('disabled', false).html('<i class="mdi mdi-refresh mr-2"></i> Update Data');
+                    btn.prop('disabled', false).html('<i class="mdi mdi-refresh mr-1"></i> Update');
                 }
             });
         }
+
+        // TAMBAHKAN Logika Tombol Export di dalam $(function() { ... })
+        $('#btnExportGas').on('click', function () {
+            const startDate = $('#gasDateStart').val();
+            const endDate = $('#gasDateEnd').val();
+            const exportType = $('#gasExportType').val();
+
+            if (!startDate || !endDate) {
+                alert("Pilih rentang tanggal terlebih dahulu.");
+                return;
+            }
+
+            const url = new URL('{{ route("oil.exportUtilityGasData") }}', window.location.origin);
+            url.searchParams.append('start_date', startDate);
+            url.searchParams.append('end_date', endDate);
+            url.searchParams.append('export_type', exportType);
+
+            window.location.href = url.href;
+        });
+
+        // Event Listener tombol Update
+        $('#btnUpdateGasData').off('click').on('click', fetchData);
 
         const today = new Date();
         const lastWeek = new Date();

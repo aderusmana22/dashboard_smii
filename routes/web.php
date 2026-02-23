@@ -417,6 +417,8 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
 
         Route::get('/export-refinery-data', [OilController::class, 'exportRefineryData'])->name('oil.exportRefineryData');
 
+        Route::get('/export-utility-gas-data', [OilController::class, 'exportUtilityGasData'])->name('oil.exportUtilityGasData');
+        
         // Batch Refinery Data/Logs
         Route::prefix('batch-refinery')->name('oil.batch_refinery.')->group(function () {
             Route::get('/', [OilBatchRefineryController::class, 'index'])->name('index');

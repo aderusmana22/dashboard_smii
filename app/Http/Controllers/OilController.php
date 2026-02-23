@@ -17,9 +17,10 @@ use App\Models\BleachedOilTank;
 use App\Models\BleachedOilTankReading;
 use App\Models\PackingTank;
 use App\Models\PackingTankReading;
-use App\Models\UtilityGasReading;
 use App\Models\OilBatchRefineryTank;
 use App\Models\OilBatchRefineryReading;
+use App\Models\OilUtilityGasReading;
+use App\Models\OilUtilityGasMaster;
 
 class OilController extends Controller
 {
@@ -582,25 +583,37 @@ class OilController extends Controller
     public function getUtilityGasData(Request $request)
     {
         // Validasi input tanggal
-        $startDate = \Carbon\Carbon::parse($request->start_date);
-        $endDate = \Carbon\Carbon::parse($request->end_date);
+        $startDate = Carbon::parse($request->start_date);
+        $endDate = Carbon::parse($request->end_date);
+        $shift = $request->input('shift', 'ALL');
+
+        // Mengambil nama tabel secara dinamis agar aman
+        $tableName = (new OilUtilityGasReading)->getTable();
 
         // --- 1. SNAPSHOT DATA (Visualisasi Tabung/Torpedo) ---
-        // Ambil data terakhir (Max ID) pada atau sebelum end_date
-        $snapshotReadings = \App\Models\OilUtilityGasReading::with('master')
-            ->whereIn('id', function ($q) use ($endDate) {
-                $q->select(DB::raw('max(id)'))->from('oil_stock_utility_gas_readings')
-                    ->whereDate('reading_date', '<=', $endDate)
-                    ->groupBy('master_id');
-            })->get();
+        $snapshotQuery = OilUtilityGasReading::with('master');
+        
+        $subquery = DB::table($tableName)
+            ->select(DB::raw('max(id) as id'))
+            ->whereDate('reading_date', '<=', $endDate);
+            
+        if ($shift !== 'ALL') {
+            $subquery->where('shift', $shift);
+        }
+        $subquery->groupBy('master_id');
 
-        // --- TAMBAHAN BARU: AMBIL TANGGAL TERAKHIR (GLOBAL) ---
-        // Kita cari 1 record dengan reading_date paling baru di database
-        $lastRecord = \App\Models\OilUtilityGasReading::latest('reading_date')->first();
+        $snapshotReadings = $snapshotQuery->whereIn('id', $subquery)->get();
 
-        // Format tanggalnya (Contoh: "Monday, 03 Feb 2026")
+        // --- TANGGAL TERAKHIR (GLOBAL) ---
+        $lastRecordQuery = OilUtilityGasReading::latest('reading_date')->latest('shift');
+        if ($shift !== 'ALL') {
+            $lastRecordQuery->where('shift', $shift);
+        }
+        $lastRecord = $lastRecordQuery->first();
+
+        // Format tanggal & Shift
         $lastUpdateText = $lastRecord
-            ? \Carbon\Carbon::parse($lastRecord->reading_date)->format('l, d F Y')
+            ? Carbon::parse($lastRecord->reading_date)->format('l, d F Y') . ($shift === 'ALL' ? ' (Shift ' . $lastRecord->shift . ')' : '')
             : '-';
 
         $snapshotData = [
@@ -608,7 +621,6 @@ class OilController extends Controller
                 'unit_name' => $r->master->name,
                 'value' => $r->value
             ])->values(),
-            // Ambil Nitrogen pertama yang ketemu (biasanya cuma 1 tank)
             'nitrogen' => $snapshotReadings->where('master.gas_type', 'NITROGEN')->map(fn($r) => [
                 'unit_name' => $r->master->name,
                 'value' => $r->value
@@ -620,65 +632,67 @@ class OilController extends Controller
         ];
 
         // --- 2. TREND DATA (Grafik Garis) ---
-        $rangeReadings = \App\Models\OilUtilityGasReading::with('master')
+        $rangeQuery = OilUtilityGasReading::with('master')
             ->whereBetween('reading_date', [$startDate, $endDate])
-            ->orderBy('reading_date')
-            ->get();
+            ->orderBy('reading_date');
 
-        // FIX ERROR: Pastikan tanggal diparsing ke Carbon sebelum di-format
+        if ($shift !== 'ALL') {
+            $rangeQuery->where('shift', $shift);
+        }
+        
+        $rangeReadings = $rangeQuery->get();
+
         $labels = $rangeReadings->pluck('reading_date')
             ->unique()
-            ->map(fn($d) => \Carbon\Carbon::parse($d)->format('Y-m-d'))
+            ->map(fn($d) => Carbon::parse($d)->format('Y-m-d'))
             ->sort()
             ->values();
 
-        // Helper function untuk memetakan data berdasarkan tanggal
-        // Kita gunakan $searchName (opsional) untuk filter nama spesifik
-        $prepareData = function ($gasType, $searchName = null) use ($rangeReadings, $labels) {
+        // Fungsi Helper: Jika ALL shift, hitung rata-rata per hari agar grafik rapi
+        $prepareData = function ($gasType, $searchName = null) use ($rangeReadings, $labels, $shift) {
             $q = $rangeReadings->where('master.gas_type', $gasType);
 
-            // Filter nama jika ada (Loose search menggunakan str_contains PHP)
             if ($searchName) {
-                $q = $q->filter(function ($item) use ($searchName) {
-                    return stripos($item->master->name, $searchName) !== false;
-                });
+                $q = $q->filter(fn($item) => stripos($item->master->name, $searchName) !== false);
             }
 
-            // FIX ERROR: KeyBy menggunakan parsing Carbon yang aman
-            $map = $q->keyBy(fn($i) => \Carbon\Carbon::parse($i->reading_date)->format('Y-m-d'));
+            $grouped = $q->groupBy(fn($i) => Carbon::parse($i->reading_date)->format('Y-m-d'));
 
-            // Mapping value sesuai urutan label tanggal
-            return $labels->map(fn($d) => $map[$d]->value ?? null)->all();
+            return $labels->map(function($date) use ($grouped, $shift) {
+                if (!isset($grouped[$date])) return null;
+                return $shift === 'ALL' ? round($grouped[$date]->avg('value'), 2) : $grouped[$date]->first()->value;
+            })->all();
         };
 
-        // --- Dynamic Series Generation ---
-
-        // A. Hydrogen (Semua item HYDROGEN jadi series terpisah)
-        $h2Masters = \App\Models\OilUtilityGasMaster::where('gas_type', 'HYDROGEN')->where('is_active', 1)->get();
+        // A. Hydrogen 
+        $h2Masters = OilUtilityGasMaster::where('gas_type', 'HYDROGEN')->where('is_active', 1)->get();
         $h2Trends = [];
         foreach ($h2Masters as $master) {
-            // Kita ambil data spesifik berdasarkan nama master persis
             $data = $rangeReadings->where('master_id', $master->id)
-                ->keyBy(fn($i) => \Carbon\Carbon::parse($i->reading_date)->format('Y-m-d'));
+                ->groupBy(fn($i) => Carbon::parse($i->reading_date)->format('Y-m-d'));
 
             $h2Trends[] = [
                 'label' => $master->name,
-                'data' => $labels->map(fn($d) => $data[$d]->value ?? null)->all()
+                'data' => $labels->map(function($date) use ($data, $shift) {
+                    if (!isset($data[$date])) return null;
+                    return $shift === 'ALL' ? round($data[$date]->avg('value'), 2) : $data[$date]->first()->value;
+                })->all()
             ];
         }
 
-        // B. Nitrogen (Ambil item pertama NITROGEN)
-        // Kita cari master data Nitrogen yang aktif
-        $n2Master = \App\Models\OilUtilityGasMaster::where('gas_type', 'NITROGEN')->where('is_active', 1)->first();
+        // B. Nitrogen
+        $n2Master = OilUtilityGasMaster::where('gas_type', 'NITROGEN')->where('is_active', 1)->first();
         $n2Data = [];
         if ($n2Master) {
-            $q = $rangeReadings->where('master_id', $n2Master->id)
-                ->keyBy(fn($i) => \Carbon\Carbon::parse($i->reading_date)->format('Y-m-d'));
-            $n2Data = $labels->map(fn($d) => $q[$d]->value ?? null)->all();
+            $data = $rangeReadings->where('master_id', $n2Master->id)
+                ->groupBy(fn($i) => Carbon::parse($i->reading_date)->format('Y-m-d'));
+            $n2Data = $labels->map(function($date) use ($data, $shift) {
+                if (!isset($data[$date])) return null;
+                return $shift === 'ALL' ? round($data[$date]->avg('value'), 2) : $data[$date]->first()->value;
+            })->all();
         }
 
-        // C. Ammonia (Cari yang namanya mengandung 'Full' dan 'Empty')
-        // Ini agar jika nama di DB "Ammonia Full" atau "Full Cylinders", tetap terbaca
+        // C. Ammonia
         $ammoniaFullData = $prepareData('AMMONIA', 'Full');
         $ammoniaEmptyData = $prepareData('AMMONIA', 'Empty');
 
@@ -700,7 +714,89 @@ class OilController extends Controller
         return response()->json([
             'snapshot' => $snapshotData,
             'trend' => $trendData,
-            'last_update_label' => $lastUpdateText // <--- KITA KIRIM INI KE VIEW
+            'last_update_label' => $lastUpdateText
+        ]);
+    }
+
+    // --- TAMBAH METHOD BARU UNTUK EKSPOR ---
+    public function exportUtilityGasData(Request $request)
+    {
+        $startDate = Carbon::parse($request->start_date);
+        $endDate = Carbon::parse($request->end_date);
+        $exportType = $request->input('export_type', 'daily');
+
+        $masters = OilUtilityGasMaster::orderBy('gas_type')->orderBy('sort_order')->get();
+        $dateRange = Carbon::parse($startDate)->toPeriod($endDate);
+
+        $query = OilUtilityGasReading::with('master')
+            ->whereBetween('reading_date', [$startDate, $endDate]);
+
+        if (str_starts_with($exportType, 'shift_')) {
+            $shiftNumber = str_replace('shift_', '', $exportType);
+            $query->where('shift', $shiftNumber);
+        }
+
+        $readings = $query->get();
+        
+        // Group data by: YYYY-MM-DD-master_id
+        $readingsCollection = $readings->groupBy(function ($item) {
+            return Carbon::parse($item->reading_date)->format('Y-m-d') . '-' . $item->master_id;
+        });
+
+        // Setup Headers & Naming
+        if ($exportType === 'daily') {
+            $fileName = 'Utility_Gas_Daily_Avg_' . $startDate->format('Ymd') . '_to_' . $endDate->format('Ymd') . '.csv';
+            $reportTitle = 'DAILY REPORT (AVERAGE)';
+            $headers = ['Date', 'Gas Type', 'Unit Name', 'Average Value'];
+        } else {
+            $shiftNumber = str_replace('shift_', '', $exportType);
+            $fileName = 'Utility_Gas_Shift_' . $shiftNumber . '_' . $startDate->format('Ymd') . '_to_' . $endDate->format('Ymd') . '.csv';
+            $reportTitle = 'SHIFT ' . $shiftNumber . ' REPORT';
+            $headers = ['Date', 'Gas Type', 'Unit Name', 'Value', 'Shift'];
+        }
+
+        $callback = function () use ($masters, $dateRange, $readingsCollection, $exportType, $reportTitle, $headers, $startDate, $endDate) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, [$reportTitle]);
+            fputcsv($file, ['Period: ' . $startDate->format('d M Y') . ' - ' . $endDate->format('d M Y')]);
+            fputcsv($file, []);
+            fputcsv($file, $headers);
+
+            foreach ($dateRange as $date) {
+                $dateString = $date->format('Y-m-d');
+                foreach ($masters as $master) {
+                    $key = $dateString . '-' . $master->id;
+                    $dayReadings = $readingsCollection->get($key);
+                    
+                    if ($dayReadings && $dayReadings->count() > 0) {
+                        if ($exportType === 'daily') {
+                            // Ambil nilai Rata-rata hari itu
+                            $avgValue = round($dayReadings->avg('value'), 2);
+                            fputcsv($file, [$dateString, $master->gas_type, $master->name, $avgValue]);
+                        } else {
+                            // Data Shift spesifik
+                            $reading = $dayReadings->first();
+                            fputcsv($file, [$dateString, $master->gas_type, $master->name, $reading->value, $reading->shift]);
+                        }
+                    } else {
+                        // Data Kosong
+                        if ($exportType === 'daily') {
+                            fputcsv($file, [$dateString, $master->gas_type, $master->name, '0']);
+                        } else {
+                            fputcsv($file, [$dateString, $master->gas_type, $master->name, '0', str_replace('shift_', '', $exportType)]);
+                        }
+                    }
+                }
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, [
+            "Content-type" => "text/csv",
+            "Content-Disposition" => "attachment; filename=$fileName",
+            "Pragma" => "no-cache",
+            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
+            "Expires" => "0"
         ]);
     }
 }

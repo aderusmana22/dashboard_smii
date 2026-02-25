@@ -9,12 +9,54 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use App\Traits\HasShiftLogic;
+use App\Models\OilBatchRefineryTank;
+use Carbon\Carbon;
 
 class OilBatchRefineryInputController extends Controller
 {
     use HasShiftLogic;
 
-    // ... (method index biarkan saja)
+    private $groupOrder = [
+        'Hydro',
+        'N.W.B',
+        'Deodorizer',
+        'Drop Tank',
+        'Wead Tank',
+        'Crystalizer',
+        'SX Tank'
+    ];
+
+    public function index()
+    {
+        return redirect()->route('oil.input_station.index', ['type' => 'batch_refinery']);
+    }
+
+    public function prepareDataForInputFull()
+    {
+        $items = DB::table('items')
+            ->select('pt_part', 'pt_desc1')
+            ->whereIn('inventory_acct', ['1401', '1422'])
+            ->orderBy('pt_part', 'asc')
+            ->get();
+
+        $tanks = OilBatchRefineryTank::where('is_active', true)
+            ->orderBy('sort_order')
+            ->get();
+
+        $groupedTanks = $tanks->groupBy('group_name')
+            ->sortBy(function ($items, $key) {
+                return array_search($key, $this->groupOrder) !== false
+                    ? array_search($key, $this->groupOrder)
+                    : 999;
+            });
+
+        $date = Carbon::today()->format('Y-m-d');
+        $existingReadings = OilBatchRefineryReading::where('reading_date', $date)
+            ->get()
+            ->keyBy('tank_id');
+
+        return compact('groupedTanks', 'existingReadings', 'date', 'items');
+    }
 
     public function storeFull(Request $request)
     {
@@ -25,7 +67,7 @@ class OilBatchRefineryInputController extends Controller
         $isSupervisor = $user->hasRole('supervisor_oil') || $user->role == 'supervisor_oil';
 
         if (!$isOperator && !$isSupervisor) {
-             return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
         }
 
         $context = $this->getShiftContext();
@@ -75,7 +117,7 @@ class OilBatchRefineryInputController extends Controller
                 foreach ($request->readings as $r) {
                     OilBatchRefineryReading::updateOrCreate(
                         [
-                            'tank_id' => $r['tank_id'], 
+                            'tank_id' => $r['tank_id'],
                             'reading_date' => $inputDate,
                             'shift' => $inputShift
                         ],
@@ -83,13 +125,13 @@ class OilBatchRefineryInputController extends Controller
                             'current_value_kg' => $r['current_value_kg'] ?? 0,
                             'oil_code' => $r['oil_code'] ?? null,
                             'description' => $r['description'] ?? null,
-                            
+
                             // --- KOLOM BARU DITAMBAHKAN DISINI ---
                             'temperature' => $r['temperature'] ?? null,
                             'gauge_board' => $r['gauge_board'] ?? null,
-                            
+
                             'status' => $r['status'],
-                            'created_by' => $user->name 
+                            'created_by' => $user->name
                         ]
                     );
                 }
@@ -107,7 +149,7 @@ class OilBatchRefineryInputController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Data saved successfully!',
-                'redirect_url' => route('oil.input_station.index') 
+                'redirect_url' => route('oil.input_station.index')
             ]);
 
         } catch (\Exception $e) {

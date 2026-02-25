@@ -22,6 +22,12 @@ use App\Models\OilBatchRefineryReading;
 use App\Models\OilUtilityGasReading;
 use App\Models\OilUtilityGasMaster;
 
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+
 class OilController extends Controller
 {
     public function index()
@@ -167,104 +173,140 @@ class OilController extends Controller
         return response()->json(['tableData' => $tableData, 'chartDetailData' => $chartDetailData, 'averageSummary' => $averageSummary]);
     }
 
-    // --- REVISI TOTAL METHOD EKSPOR ---
-    // --- REVISI FINAL METHOD EKSPOR ---
     public function exportRefineryData(Request $request)
     {
         $startDate = Carbon::parse($request->start_date);
         $endDate = Carbon::parse($request->end_date);
         $exportType = $request->input('export_type', 'daily');
 
-        $tanks = OilBatchRefineryTank::orderBy('group_name')->orderBy('sort_order')->get();
-        $dateRange = Carbon::parse($startDate)->toPeriod($endDate);
-
-        // --- OPTIMISASI: Ambil semua data yang relevan dalam satu query ---
-        $allReadingsQuery = OilBatchRefineryReading::whereBetween('reading_date', [$startDate, $endDate]);
-
-        // Jika tipe ekspor adalah shift spesifik, kita bisa memfilter lebih awal
-        if (str_starts_with($exportType, 'shift_')) {
-            $shiftNumber = str_replace('shift_', '', $exportType);
-            $allReadingsQuery->where('shift', $shiftNumber);
-        }
-
-        // Ambil data dan kelompokkan dalam format yang mudah diakses: 'YYYY-MM-DD-tank_id'
-        $readingsCollection = $allReadingsQuery->get()->groupBy(function ($item) {
-            return $item->reading_date->format('Y-m-d') . '-' . $item->tank_id;
-        });
-
-        // --- Tentukan Nama File dan Header berdasarkan Tipe Ekspor ---
-        $fileName = 'Refinery_Report.csv';
-        $reportTitle = 'REFINERY REPORT';
-        $headers = ['Date', 'Group', 'Tank Name', 'Oil Code', 'Stock (Kg)', 'Status'];
+        // Deteksi apakah user memilih rentang tanggal (Range) atau satu hari saja (Snapshot)
+        $isRange = !$startDate->isSameDay($endDate);
 
         if ($exportType === 'daily') {
-            $fileName = 'Refinery_Daily_Report_' . $startDate->format('Ymd') . '_to_' . $endDate->format('Ymd') . '.csv';
-            $reportTitle = 'DAILY REPORT (LAST SHIFT)';
-            $headers = ['Date', 'Group', 'Tank Name', 'Oil Code', 'Stock (Kg)', 'Status', 'Last Shift'];
-        } elseif (str_starts_with($exportType, 'shift_')) {
+            $titleHeader = "Daily Oil Stock Daily";
+            $shiftNumber = 'ALL';
+        } else {
             $shiftNumber = str_replace('shift_', '', $exportType);
-            $fileName = 'Refinery_Shift_' . $shiftNumber . '_Report_' . $startDate->format('Ymd') . '_to_' . $endDate->format('Ymd') . '.csv';
-            $reportTitle = 'SHIFT ' . $shiftNumber . ' REPORT';
+            $titleHeader = "Daily Oil Stock Shift " . $shiftNumber;
         }
 
-        // --- Mulai Proses Pembuatan CSV ---
-        $callback = function () use ($tanks, $dateRange, $readingsCollection, $exportType, $reportTitle, $headers, $startDate, $endDate) {
-            $file = fopen('php://output', 'w');
-            fputcsv($file, [$reportTitle]);
-            fputcsv($file, ['Period: ' . $startDate->format('d M Y') . ' - ' . $endDate->format('d M Y')]);
-            fputcsv($file, []);
-            fputcsv($file, $headers);
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
 
-            foreach ($dateRange as $date) {
-                $dateString = $date->format('Y-m-d');
-                foreach ($tanks as $tank) {
-                    $key = $dateString . '-' . $tank->id;
-                    $readingsForDayAndTank = $readingsCollection->get($key);
-                    $reading = null;
+        // Setup Styling
+        $styleHeaderTitle = [
+            'font' => ['bold' => true, 'size' => 14],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
+        ];
+        $styleOrange = [
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFFFC000']],
+            'font' => ['bold' => true],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
+        ];
+        $styleYellow = [
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFFFFF00']]
+        ];
+        $styleBorder = [
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
+        ];
+        $styleCenter = [
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            'font' => ['bold' => true]
+        ];
 
-                    if ($readingsForDayAndTank) {
-                        if ($exportType === 'daily') {
-                            // Ambil yang shiftnya paling besar
-                            $reading = $readingsForDayAndTank->sortByDesc('shift')->first();
-                        } else {
-                            // Karena sudah difilter di query awal, ambil saja yang pertama
-                            $reading = $readingsForDayAndTank->first();
-                        }
-                    }
+        // 1. Header Utama
+        $sheet->setCellValue('A1', $titleHeader);
+        $sheet->getStyle('A1')->applyFromArray($styleHeaderTitle);
+        $sheet->mergeCells('A1:G1');
 
-                    // Tulis data ke file CSV
-                    if ($reading) {
-                        $rowData = [
-                            $dateString,
-                            $tank->group_name,
-                            $tank->name,
-                            $reading->oil_code,
-                            $reading->current_value_kg,
-                            $reading->status,
-                        ];
-                        if ($exportType === 'daily') {
-                            $rowData[] = $reading->shift; // Tambah kolom shift untuk laporan harian
-                        }
-                        fputcsv($file, $rowData);
-                    } else {
-                        // Tulis baris kosong jika tidak ada data
-                        $rowData = [$dateString, $tank->group_name, $tank->name, '-', '0', 'No Data'];
-                        if ($exportType === 'daily') {
-                            $rowData[] = '-';
-                        }
-                        fputcsv($file, $rowData);
-                    }
+        // 2. Baris Judul Batch Refinery & Tanggal
+        $sheet->setCellValue('A2', 'Batch Refinery');
+        $sheet->getStyle('A2:E2')->applyFromArray($styleOrange);
+        $sheet->mergeCells('A2:E2');
+
+        $sheet->setCellValue('F2', 'Latest Update:');
+        $sheet->setCellValue('G2', $endDate->format('d/m/Y'));
+        $sheet->getStyle('F2:G2')->applyFromArray($styleBorder);
+
+        // 3. Header Tabel
+        $headers = ['Tank Code', 'Capacity', 'Oil Code', 'Description', 'Gauge Board', 'Temperature', 'Current Value'];
+        $col = 'A';
+        foreach ($headers as $header) {
+            $sheet->setCellValue($col . '3', $header);
+            $col++;
+        }
+        $sheet->getStyle('A3:G3')->applyFromArray($styleBorder);
+        $sheet->getStyle('A3:G3')->applyFromArray($styleCenter);
+
+        // 4. Proses Data
+        $tanks = OilBatchRefineryTank::orderBy('group_name')->orderBy('sort_order')->get();
+        $row = 4;
+
+        foreach ($tanks as $tank) {
+            $query = OilBatchRefineryReading::where('tank_id', $tank->id)
+                ->whereBetween('reading_date', [$startDate, $endDate]);
+
+            if ($shiftNumber !== 'ALL') {
+                $query->where('shift', $shiftNumber);
+            }
+
+            $readings = $query->get();
+
+            // Default nilai jika kosong
+            $oilCode = '-';
+            $description = $tank->description;
+            $gauge = 0;
+            $temp = 0;
+            $currentValue = 0;
+
+            if ($readings->isNotEmpty()) {
+                if ($isRange) {
+                    // Jika range, cari rata-rata & logika Various Code
+                    $uniqueCodes = $readings->pluck('oil_code')->filter()->unique();
+                    $oilCode = $uniqueCodes->count() > 1 ? 'Various Code' : ($uniqueCodes->first() ?? '-');
+
+                    // Asumsi kolom ada di DB. Jika belum ada di migrasi, ignore error dengan property fallback ?? 0
+                    $gauge = round($readings->avg('gauge_board_meter') ?? 0, 2);
+                    $temp = round($readings->avg('temperature_celsius') ?? 0, 2);
+                    $currentValue = round($readings->avg('current_value_kg'), 2);
+                } else {
+                    // Jika snapshot, ambil data paling akhir di hari itu
+                    $latest = $readings->sortByDesc('reading_date')->sortByDesc('shift')->first();
+                    $oilCode = $latest->oil_code ?? '-';
+                    $gauge = $latest->gauge_board_meter ?? 0;
+                    $temp = $latest->temperature_celsius ?? 0;
+                    $currentValue = $latest->current_value_kg ?? 0;
                 }
             }
-            fclose($file);
-        };
 
-        return response()->stream($callback, 200, [
-            "Content-type" => "text/csv",
-            "Content-Disposition" => "attachment; filename=$fileName",
-            "Pragma" => "no-cache",
-            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
-            "Expires" => "0"
+            $sheet->setCellValue('A' . $row, $tank->name);
+            $sheet->setCellValue('B' . $row, number_format($tank->capacity_kg));
+            $sheet->setCellValue('C' . $row, $oilCode);
+            $sheet->setCellValue('D' . $row, $description);
+            $sheet->setCellValue('E' . $row, $gauge);
+            $sheet->setCellValue('F' . $row, $temp);
+            $sheet->setCellValue('G' . $row, $currentValue);
+
+            // Warna kuning di Current Value
+            $sheet->getStyle('G' . $row)->applyFromArray($styleYellow);
+            $row++;
+        }
+
+        // Terapkan border ke seluruh isi tabel
+        $sheet->getStyle('A3:G' . ($row - 1))->applyFromArray($styleBorder);
+        foreach (range('A', 'G') as $colID) {
+            $sheet->getColumnDimension($colID)->setAutoSize(true);
+        }
+
+        $fileName = 'Refinery_Report_' . str_replace(' ', '_', $titleHeader) . '_' . $startDate->format('Ymd') . '.xlsx';
+
+        ob_clean();
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, $fileName, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0',
         ]);
     }
 
@@ -592,11 +634,11 @@ class OilController extends Controller
 
         // --- 1. SNAPSHOT DATA (Visualisasi Tabung/Torpedo) ---
         $snapshotQuery = OilUtilityGasReading::with('master');
-        
+
         $subquery = DB::table($tableName)
             ->select(DB::raw('max(id) as id'))
             ->whereDate('reading_date', '<=', $endDate);
-            
+
         if ($shift !== 'ALL') {
             $subquery->where('shift', $shift);
         }
@@ -639,7 +681,7 @@ class OilController extends Controller
         if ($shift !== 'ALL') {
             $rangeQuery->where('shift', $shift);
         }
-        
+
         $rangeReadings = $rangeQuery->get();
 
         $labels = $rangeReadings->pluck('reading_date')
@@ -658,8 +700,9 @@ class OilController extends Controller
 
             $grouped = $q->groupBy(fn($i) => Carbon::parse($i->reading_date)->format('Y-m-d'));
 
-            return $labels->map(function($date) use ($grouped, $shift) {
-                if (!isset($grouped[$date])) return null;
+            return $labels->map(function ($date) use ($grouped, $shift) {
+                if (!isset($grouped[$date]))
+                    return null;
                 return $shift === 'ALL' ? round($grouped[$date]->avg('value'), 2) : $grouped[$date]->first()->value;
             })->all();
         };
@@ -673,8 +716,9 @@ class OilController extends Controller
 
             $h2Trends[] = [
                 'label' => $master->name,
-                'data' => $labels->map(function($date) use ($data, $shift) {
-                    if (!isset($data[$date])) return null;
+                'data' => $labels->map(function ($date) use ($data, $shift) {
+                    if (!isset($data[$date]))
+                        return null;
                     return $shift === 'ALL' ? round($data[$date]->avg('value'), 2) : $data[$date]->first()->value;
                 })->all()
             ];
@@ -686,8 +730,9 @@ class OilController extends Controller
         if ($n2Master) {
             $data = $rangeReadings->where('master_id', $n2Master->id)
                 ->groupBy(fn($i) => Carbon::parse($i->reading_date)->format('Y-m-d'));
-            $n2Data = $labels->map(function($date) use ($data, $shift) {
-                if (!isset($data[$date])) return null;
+            $n2Data = $labels->map(function ($date) use ($data, $shift) {
+                if (!isset($data[$date]))
+                    return null;
                 return $shift === 'ALL' ? round($data[$date]->avg('value'), 2) : $data[$date]->first()->value;
             })->all();
         }
@@ -724,79 +769,162 @@ class OilController extends Controller
         $startDate = Carbon::parse($request->start_date);
         $endDate = Carbon::parse($request->end_date);
         $exportType = $request->input('export_type', 'daily');
+        $isRange = !$startDate->isSameDay($endDate);
 
-        $masters = OilUtilityGasMaster::orderBy('gas_type')->orderBy('sort_order')->get();
-        $dateRange = Carbon::parse($startDate)->toPeriod($endDate);
-
-        $query = OilUtilityGasReading::with('master')
-            ->whereBetween('reading_date', [$startDate, $endDate]);
-
-        if (str_starts_with($exportType, 'shift_')) {
-            $shiftNumber = str_replace('shift_', '', $exportType);
-            $query->where('shift', $shiftNumber);
-        }
-
-        $readings = $query->get();
-        
-        // Group data by: YYYY-MM-DD-master_id
-        $readingsCollection = $readings->groupBy(function ($item) {
-            return Carbon::parse($item->reading_date)->format('Y-m-d') . '-' . $item->master_id;
-        });
-
-        // Setup Headers & Naming
         if ($exportType === 'daily') {
-            $fileName = 'Utility_Gas_Daily_Avg_' . $startDate->format('Ymd') . '_to_' . $endDate->format('Ymd') . '.csv';
-            $reportTitle = 'DAILY REPORT (AVERAGE)';
-            $headers = ['Date', 'Gas Type', 'Unit Name', 'Average Value'];
+            $titleHeader = "Daily Oil Stock Daily";
+            $shiftNumber = 'ALL';
         } else {
             $shiftNumber = str_replace('shift_', '', $exportType);
-            $fileName = 'Utility_Gas_Shift_' . $shiftNumber . '_' . $startDate->format('Ymd') . '_to_' . $endDate->format('Ymd') . '.csv';
-            $reportTitle = 'SHIFT ' . $shiftNumber . ' REPORT';
-            $headers = ['Date', 'Gas Type', 'Unit Name', 'Value', 'Shift'];
+            $titleHeader = "Daily Oil Stock Shift " . $shiftNumber;
         }
 
-        $callback = function () use ($masters, $dateRange, $readingsCollection, $exportType, $reportTitle, $headers, $startDate, $endDate) {
-            $file = fopen('php://output', 'w');
-            fputcsv($file, [$reportTitle]);
-            fputcsv($file, ['Period: ' . $startDate->format('d M Y') . ' - ' . $endDate->format('d M Y')]);
-            fputcsv($file, []);
-            fputcsv($file, $headers);
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
 
-            foreach ($dateRange as $date) {
-                $dateString = $date->format('Y-m-d');
-                foreach ($masters as $master) {
-                    $key = $dateString . '-' . $master->id;
-                    $dayReadings = $readingsCollection->get($key);
-                    
-                    if ($dayReadings && $dayReadings->count() > 0) {
-                        if ($exportType === 'daily') {
-                            // Ambil nilai Rata-rata hari itu
-                            $avgValue = round($dayReadings->avg('value'), 2);
-                            fputcsv($file, [$dateString, $master->gas_type, $master->name, $avgValue]);
-                        } else {
-                            // Data Shift spesifik
-                            $reading = $dayReadings->first();
-                            fputcsv($file, [$dateString, $master->gas_type, $master->name, $reading->value, $reading->shift]);
-                        }
-                    } else {
-                        // Data Kosong
-                        if ($exportType === 'daily') {
-                            fputcsv($file, [$dateString, $master->gas_type, $master->name, '0']);
-                        } else {
-                            fputcsv($file, [$dateString, $master->gas_type, $master->name, '0', str_replace('shift_', '', $exportType)]);
-                        }
-                    }
-                }
+        // Setup Styling
+        $styleHeaderTitle = [
+            'font' => ['bold' => true, 'size' => 14],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER]
+        ];
+        $styleOrange = [
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFFFC000']],
+            'font' => ['bold' => true],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
+        ];
+        $styleBorder = [
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
+        ];
+        $styleCenter = [
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            'font' => ['bold' => true]
+        ];
+
+        // Header Utama Sesuai Request
+        $sheet->setCellValue('A1', $titleHeader);
+        $sheet->getStyle('A1')->applyFromArray($styleHeaderTitle);
+        $sheet->mergeCells('A1:G1');
+
+        // Fungsi Helper untuk ambil data (Rata-rata bila range, Nilai terbaru bila snapshot)
+        $getGasValue = function ($gasType, $searchName = null) use ($startDate, $endDate, $shiftNumber, $isRange) {
+            $q = OilUtilityGasReading::with('master')
+                ->whereHas('master', function ($m) use ($gasType) {
+                    $m->where('gas_type', $gasType);
+                })
+                ->whereBetween('reading_date', [$startDate, $endDate]);
+
+            if ($shiftNumber !== 'ALL') {
+                $q->where('shift', $shiftNumber);
             }
-            fclose($file);
+
+            $readings = $q->get();
+
+            if ($searchName) {
+                $readings = $readings->filter(fn($item) => stripos($item->master->name, $searchName) !== false);
+            }
+
+            if ($readings->isEmpty())
+                return 0;
+
+            if ($isRange) {
+                return round($readings->avg('value'), 2);
+            } else {
+                return $readings->sortByDesc('reading_date')->sortByDesc('shift')->first()->value ?? 0;
+            }
         };
 
-        return response()->stream($callback, 200, [
-            "Content-type" => "text/csv",
-            "Content-Disposition" => "attachment; filename=$fileName",
-            "Pragma" => "no-cache",
-            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
-            "Expires" => "0"
+        // --- SECTION: HYDROGEN (Kiri Atas) ---
+        $sheet->setCellValue('A3', 'Hydrogen');
+        $sheet->mergeCells('A3:B3');
+        $sheet->getStyle('A3:B3')->applyFromArray($styleOrange);
+
+        $sheet->setCellValue('A4', 'Torpedo No.');
+        $sheet->setCellValue('B4', 'Pressure');
+        $sheet->setCellValue('C4', ''); // Sesuai kolom kosong unit
+
+        $hRow = 5;
+        $hMasters = OilUtilityGasMaster::where('gas_type', 'HYDROGEN')->where('is_active', 1)->get();
+
+        foreach ($hMasters as $master) {
+            $val = $getGasValue('HYDROGEN', $master->name);
+            $sheet->setCellValue('A' . $hRow, $master->name); // cth: 04
+            $sheet->setCellValue('B' . $hRow, $val);
+            $sheet->setCellValue('C' . $hRow, 'Bar');
+            $hRow++;
+        }
+
+        $sheet->setCellValue('A' . $hRow, 'Latest Update');
+        $sheet->setCellValue('B' . $hRow, $endDate->format('d/m/Y'));
+        $sheet->getStyle('A4:C' . $hRow)->applyFromArray($styleBorder);
+        $sheet->getStyle('A4:B4')->applyFromArray($styleCenter);
+
+        // --- SECTION: NITROGEN (Kanan Atas) ---
+        $sheet->setCellValue('E3', 'Nitrogen');
+        $sheet->getStyle('E3')->applyFromArray($styleOrange);
+
+        $sheet->setCellValue('F3', 'Stock');
+        $sheet->mergeCells('F3:G3');
+        $sheet->getStyle('F3:G3')->applyFromArray($styleCenter);
+        $sheet->getStyle('F3:G3')->applyFromArray($styleOrange);
+
+        $nVal = $getGasValue('NITROGEN'); // Current stock nitrogen
+        // Asumsi minimum statis (seperti gambar) atau anda bisa ubah jika di DB dinamis
+        $nMin = 65;
+
+        $sheet->setCellValue('E4', 'Current Stock');
+        $sheet->setCellValue('F4', $nVal);
+        $sheet->setCellValue('G4', 'Inch Water');
+
+        $sheet->setCellValue('E5', 'Minimum');
+        $sheet->setCellValue('F5', $nMin);
+        $sheet->setCellValue('G5', 'Inch Water');
+
+        $sheet->setCellValue('E6', 'Latest Update');
+        $sheet->setCellValue('F6', $endDate->format('d/m/Y'));
+        $sheet->mergeCells('F6:G6');
+
+        $sheet->getStyle('E3:G6')->applyFromArray($styleBorder);
+
+        // --- SECTION: AMMONIA (Kiri Bawah, di bawah Hydrogen) ---
+        $amRow = $hRow + 2;
+        $sheet->setCellValue('A' . $amRow, 'Ammonia');
+        $sheet->getStyle('A' . $amRow)->applyFromArray($styleOrange);
+
+        $sheet->setCellValue('B' . $amRow, 'Stock');
+        $sheet->getStyle('B' . $amRow)->applyFromArray($styleCenter);
+        $sheet->getStyle('B' . $amRow)->applyFromArray($styleOrange);
+
+        $amFull = $getGasValue('AMMONIA', 'Full');
+        $amEmpty = $getGasValue('AMMONIA', 'Empty');
+
+        $sheet->setCellValue('A' . ($amRow + 1), 'Full');
+        $sheet->setCellValue('B' . ($amRow + 1), $amFull);
+        $sheet->setCellValue('C' . ($amRow + 1), 'Cylinder');
+
+        $sheet->setCellValue('A' . ($amRow + 2), 'Empty');
+        $sheet->setCellValue('B' . ($amRow + 2), $amEmpty);
+        $sheet->setCellValue('C' . ($amRow + 2), 'Cylinder');
+
+        $sheet->setCellValue('A' . ($amRow + 3), 'Latest Update');
+        $sheet->setCellValue('B' . ($amRow + 3), $endDate->format('d/m/Y'));
+        $sheet->mergeCells('B' . ($amRow + 3) . ':C' . ($amRow + 3));
+
+        $sheet->getStyle('A' . $amRow . ':C' . ($amRow + 3))->applyFromArray($styleBorder);
+
+        // Rapihkan lebar kolom
+        foreach (range('A', 'G') as $colID) {
+            $sheet->getColumnDimension($colID)->setAutoSize(true);
+        }
+
+        $fileName = 'Utility_Gas_Report_' . str_replace(' ', '_', $titleHeader) . '_' . $startDate->format('Ymd') . '.xlsx';
+
+        ob_clean();
+        return response()->streamDownload(function () use ($spreadsheet) {
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, $fileName, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0',
         ]);
     }
 }

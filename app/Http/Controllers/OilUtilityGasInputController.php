@@ -18,7 +18,7 @@ class OilUtilityGasInputController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
-        
+
         // 1. CEK ROLE
         $isOperator = $user->hasRole('operator_oil') || $user->role == 'operator_oil';
         $isSupervisor = $user->hasRole('supervisor_oil') || $user->role == 'supervisor_oil';
@@ -33,8 +33,8 @@ class OilUtilityGasInputController extends Controller
         // 3. VALIDASI INPUT
         $validator = Validator::make($request->all(), [
             'reading_date' => 'required|date',
-            'shift'        => 'required|integer',
-            'readings'     => 'present|array',
+            'shift' => 'required|integer',
+            'readings' => 'present|array',
         ]);
 
         if ($validator->fails()) {
@@ -60,11 +60,11 @@ class OilUtilityGasInputController extends Controller
             if ($inputDate != $context->current_date || $inputShift != $context->current_shift) {
                 return response()->json(['status' => 'error', 'message' => 'Operators can only input for the CURRENT shift.'], 403);
             }
-            
+
             // Cek apakah data di shift tersebut sudah ada
             $exists = OilUtilityGasReading::where('reading_date', $inputDate)
-                                          ->where('shift', $inputShift)
-                                          ->exists();
+                ->where('shift', $inputShift)
+                ->exists();
             if ($exists) {
                 return response()->json(['status' => 'error', 'message' => 'Data untuk shift ini sudah ada. Hubungi Supervisor untuk mengedit.'], 400);
             }
@@ -74,16 +74,17 @@ class OilUtilityGasInputController extends Controller
         DB::beginTransaction();
         try {
             foreach ($request->readings as $masterId => $value) {
-                if ($value === null || $value === '') continue;
+                if ($value === null || $value === '')
+                    continue;
 
                 $master = OilUtilityGasMaster::find($masterId);
-                
+
                 // Cek data lama berdasarkan ID, Tanggal, dan SHIFT
                 $oldRecord = OilUtilityGasReading::where('master_id', $masterId)
                     ->where('reading_date', $inputDate)
                     ->where('shift', $inputShift) // Query by Shift
                     ->first();
-                    
+
                 $oldValue = $oldRecord ? $oldRecord->value : null;
 
                 // Simpan jika nilai berubah atau data baru
@@ -105,11 +106,11 @@ class OilUtilityGasInputController extends Controller
                 }
             }
             DB::commit();
-            
+
             return response()->json([
                 'status' => 'success',
                 'message' => 'Data Utility Gas berhasil disimpan!',
-                'redirect_url' => route('oil.input_station.index') 
+                'redirect_url' => url('oil/oil-input')
             ]);
 
         } catch (\Exception $e) {

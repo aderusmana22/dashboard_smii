@@ -149,7 +149,7 @@ class OilBatchRefineryInputController extends Controller
             return response()->json([
                 'status' => 'success',
                 'message' => 'Data saved successfully!',
-                'redirect_url' => route('oil.input_station.index')
+                'redirect_url' => url('oil/oil-input')
             ]);
 
         } catch (\Exception $e) {

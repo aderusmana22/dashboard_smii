@@ -327,7 +327,7 @@
     </div>
 
     <h3 class="text-xl font-bold text-slate-700 mb-5 flex items-center gap-2">
-        <span class="w-1 h-6 bg-slate-600 rounded-full"></span> Tren Harian (7 Hari Terakhir)
+        <span class="w-1 h-6 bg-slate-600 rounded-full"></span> Tren Harian
     </h3>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div class="rounded-2xl shadow-sm border border-slate-200 p-4 h-[250px]"><canvas
@@ -344,9 +344,11 @@
         let hydrogenTrendChart, nitrogenTrendChart, ammoniaTrendChart;
 
         function updateSnapshot(data) {
+            if (!data) return; // Safety check
+
             let h2Val = 0, activeTorpedo = 0;
             if (data.hydrogen && data.hydrogen.length > 0) {
-                const total = data.hydrogen.reduce((acc, curr) => acc + parseFloat(curr.value), 0);
+                const total = data.hydrogen.reduce((acc, curr) => acc + parseFloat(curr.value || 0), 0);
                 activeTorpedo = data.hydrogen.length;
                 h2Val = (total / activeTorpedo).toFixed(1);
             }
@@ -357,7 +359,7 @@
             $('#h2Liquid').css('height', `${h2Pct}%`);
 
             let n2Val = 0;
-            if (data.nitrogen) {
+            if (data.nitrogen && data.nitrogen.value !== undefined) {
                 n2Val = parseFloat(data.nitrogen.value).toFixed(1);
             }
             $('#n2Value').text(n2Val);
@@ -385,25 +387,25 @@
             $('#nh3PctLabel').text(`${nh3Pct}%`);
         }
 
+        // ==========================================
+        // PERBAIKAN: Konfigurasi Chart Defaults
+        // ==========================================
         const chartDefaults = {
             responsive: true,
             maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
-                x: { grid: { display: false }, ticks: { font: { size: 9 } } },
-                y: { beginAtZero: true, grid: { color: '#f8fafc' } }
+                x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                y: { beginAtZero: true, grid: { color: '#f1f5f9' } }
             },
             elements: {
                 line: { tension: 0.4, borderWidth: 2 },
-                point: { radius: 0, hoverRadius: 5, hitRadius: 10, backgroundColor: 'white' }
+                // PERBAIKAN DI SINI: radius diubah dari 0 menjadi 4 agar titik terlihat
+                point: { radius: 4, hoverRadius: 6, hitRadius: 10, backgroundColor: '#ffffff', borderWidth: 2 } 
             },
             interaction: {
                 mode: 'index',
                 intersect: false
-            },
-            tooltips: {
-                mode: 'index',
-                intersect: false,
             }
         };
 
@@ -421,40 +423,50 @@
         };
 
         function updateTrendCharts(data) {
+            // Validasi jika data kosong agar graphic tidak error
+            if (!data || !data.labels || data.labels.length === 0) return;
+
             const labels = data.labels.map(d => new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }));
 
-            const h2Data = data.hydrogen.map(h => ({ ...h, borderColor: '#dc2626', backgroundColor: '#dc2626' }));
-            hydrogenTrendChart = createChart('hydrogenTrendChart', hydrogenTrendChart, labels, h2Data);
+            if (data.hydrogen) {
+                const h2Data = data.hydrogen.map(h => ({ ...h, borderColor: '#dc2626', backgroundColor: '#dc2626' }));
+                hydrogenTrendChart = createChart('hydrogenTrendChart', hydrogenTrendChart, labels, h2Data);
+            }
 
-            const n2Data = data.nitrogen.map(n => ({ ...n, borderColor: '#2563eb', backgroundColor: '#2563eb' }));
-            nitrogenTrendChart = createChart('nitrogenTrendChart', nitrogenTrendChart, labels, n2Data);
+            if (data.nitrogen) {
+                const n2Data = data.nitrogen.map(n => ({ ...n, borderColor: '#2563eb', backgroundColor: '#2563eb' }));
+                nitrogenTrendChart = createChart('nitrogenTrendChart', nitrogenTrendChart, labels, n2Data);
+            }
 
-            if (ammoniaTrendChart) ammoniaTrendChart.destroy();
-            const ctxNH3 = document.getElementById('ammoniaTrendChart');
-            if (ctxNH3) {
-                const nh3Datasets = data.ammonia.map((a, i) => ({
-                    ...a,
-                    label: a.label.replace(' Cylinders', ''),
-                    borderColor: i === 0 ? '#059669' : '#94a3b8',
-                    backgroundColor: i === 0 ? '#059669' : '#94a3b8',
-                    borderDash: i === 1 ? [4, 4] : [],
-                    pointBorderColor: i === 0 ? '#059669' : '#94a3b8',
-                    pointHoverBorderColor: i === 0 ? '#059669' : '#94a3b8',
-                }));
+            if (data.ammonia) {
+                if (ammoniaTrendChart) ammoniaTrendChart.destroy();
+                const ctxNH3 = document.getElementById('ammoniaTrendChart');
+                if (ctxNH3) {
+                    const nh3Datasets = data.ammonia.map((a, i) => ({
+                        ...a,
+                        label: a.label.replace(' Cylinders', ''),
+                        borderColor: i === 0 ? '#059669' : '#94a3b8',
+                        backgroundColor: i === 0 ? '#059669' : '#94a3b8',
+                        borderDash: i === 1 ? [4, 4] :[],
+                        pointBorderColor: i === 0 ? '#059669' : '#94a3b8',
+                        pointHoverBorderColor: i === 0 ? '#059669' : '#94a3b8',
+                    }));
 
-                ammoniaTrendChart = new Chart(ctxNH3, {
-                    type: 'line',
-                    data: { labels: labels, datasets: nh3Datasets },
-                    options: { ...chartDefaults, plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 8, usePointStyle: true } } } }
-                });
+                    ammoniaTrendChart = new Chart(ctxNH3, {
+                        type: 'line',
+                        data: { labels: labels, datasets: nh3Datasets },
+                        options: { 
+                            ...chartDefaults, 
+                            plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 8, usePointStyle: true } } } 
+                        }
+                    });
+                }
             }
         }
 
-        // GANTI function fetchData() dengan yang di bawah ini
         function fetchData() {
             const btn = $('#btnUpdateGasData');
 
-            // Tambahkan payload SHIFT
             const payload = {
                 start_date: $('#gasDateStart').val(),
                 end_date: $('#gasDateEnd').val(),
@@ -462,7 +474,7 @@
             };
 
             if (!payload.start_date || !payload.end_date) {
-                alert('Pilih tanggal.'); return;
+                alert('Pilih tanggal terlebih dahulu.'); return;
             }
 
             $('#globalLastUpdate').text('Checking...');
@@ -473,8 +485,9 @@
                 type: 'GET',
                 data: payload,
                 success: function (res) {
-                    updateSnapshot(res.snapshot);
-                    updateTrendCharts(res.trend);
+                    if(res.snapshot) updateSnapshot(res.snapshot);
+                    if(res.trend) updateTrendCharts(res.trend);
+                    
                     if (res.last_update_label) {
                         $('#globalLastUpdate').text(res.last_update_label);
                     } else {
@@ -482,7 +495,7 @@
                     }
                 },
                 error: function () {
-                    alert('Gagal mengambil data.');
+                    alert('Gagal mengambil data dari server.');
                     $('#globalLastUpdate').text('Error');
                 },
                 complete: function () {
@@ -491,7 +504,6 @@
             });
         }
 
-        // TAMBAHKAN Logika Tombol Export di dalam $(function() { ... })
         $('#btnExportGas').on('click', function () {
             const startDate = $('#gasDateStart').val();
             const endDate = $('#gasDateEnd').val();
@@ -510,14 +522,16 @@
             window.location.href = url.href;
         });
 
-        // Event Listener tombol Update
         $('#btnUpdateGasData').off('click').on('click', fetchData);
 
+        // Set Default Date: 7 Hari terakhir
         const today = new Date();
         const lastWeek = new Date();
         lastWeek.setDate(today.getDate() - 6);
         $('#gasDateEnd').val(today.toISOString().split('T')[0]);
         $('#gasDateStart').val(lastWeek.toISOString().split('T')[0]);
+        
+        // Auto Load Data on init
         fetchData();
     });
 </script>

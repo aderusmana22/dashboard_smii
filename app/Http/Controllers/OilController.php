@@ -126,6 +126,7 @@ class OilController extends Controller
         return response()->json($tanks);
     }
 
+    // --- PERBAIKAN: GET REFINERY DATA (DASHBOARD) ---
     public function getRefineryData(Request $request)
     {
         $validated = $request->validate([
@@ -133,53 +134,86 @@ class OilController extends Controller
             'end_date' => 'required|date|after_or_equal:start_date',
             'group' => 'nullable|string',
             'tank_id' => 'nullable|string',
+            'shift' => 'nullable|string',
         ]);
 
         $startDate = Carbon::parse($validated['start_date']);
         $endDate = Carbon::parse($validated['end_date']);
         $filterGroup = $request->group && $request->group !== 'ALL' ? $request->group : null;
         $filterTank = $request->tank_id && $request->tank_id !== 'ALL' ? $request->tank_id : null;
+        $filterShift = $request->shift && $request->shift !== 'ALL' ? $request->shift : null;
 
         $tankQuery = OilBatchRefineryTank::query()->orderBy('sort_order');
         if ($filterGroup)
             $tankQuery->where('group_name', $filterGroup);
         if ($filterTank)
             $tankQuery->where('id', $filterTank);
+        $tanks = $tankQuery->get();
 
-        $tanks = $tankQuery->with(['readings' => fn($q) => $q->whereDate('reading_date', '<=', $endDate)->orderBy('reading_date', 'desc')->orderBy('shift', 'desc')->limit(1)])->get();
+        // FIX: MENGHINDARI PENGGUNAAN MAX(id) KARENA BUG PADA UUID
+        // Ambil data (maks. mundur 30 hari agar query ringan), urutkan dari lama ke baru
+        $readingsQuery = OilBatchRefineryReading::whereDate('reading_date', '<=', $endDate)
+            ->whereDate('reading_date', '>=', $endDate->copy()->subDays(30))
+            ->orderBy('reading_date', 'asc')
+            ->orderBy('shift', 'asc');
 
-        $tableData = $tanks->map(function ($tank) {
-            $reading = $tank->readings->first();
+        if ($filterShift) {
+            $readingsQuery->where('shift', $filterShift);
+        }
+
+        // keyBy akan otomatis menimpa tangki yang sama dengan iterasi terakhir (Data Paling Baru)
+        $latestReadings = $readingsQuery->get()->keyBy('tank_id');
+
+        $tableData = $tanks->map(function ($tank) use ($latestReadings) {
+            $reading = $latestReadings->get($tank->id);
             $currentVal = $reading ? $reading->current_value_kg : 0;
             $percent = $tank->capacity_kg > 0 ? ($currentVal / $tank->capacity_kg) * 100 : 0;
-            return ['id' => $tank->id, 'name' => $tank->name, 'current_value' => number_format($currentVal), 'raw_value' => $currentVal, 'capacity_kg' => number_format($tank->capacity_kg), 'fill_percent' => number_format($percent, 1), 'status' => $reading ? $reading->status : 'N/A', 'description' => $tank->description];
+            return [
+                'id' => $tank->id,
+                'name' => $tank->name,
+                'current_value' => number_format($currentVal),
+                'raw_value' => $currentVal,
+                'capacity_kg' => number_format($tank->capacity_kg),
+                'fill_percent' => number_format($percent, 1),
+                'status' => $reading ? $reading->status : 'N/A',
+                'description' => $tank->description
+            ];
         });
 
-        $avgQuery = OilBatchRefineryReading::query()->join('oil_batch_refinery_tanks', 'oil_batch_refinery_readings.tank_id', '=', 'oil_batch_refinery_tanks.id')->whereBetween('reading_date', [$startDate, $endDate])->select('oil_batch_refinery_tanks.group_name', DB::raw('AVG(oil_batch_refinery_readings.current_value_kg) as average_stock'))->groupBy('oil_batch_refinery_tanks.group_name');
-        if ($filterGroup)
-            $avgQuery->where('oil_batch_refinery_tanks.group_name', $filterGroup);
-        if ($filterTank)
-            $avgQuery->where('oil_batch_refinery_tanks.id', $filterTank);
-        $averageSummary = $avgQuery->pluck('average_stock', 'group_name');
-
+        // DATA CHART & AVERAGE (Tetap menggunakan Range untuk visualisasi Tren)
         $readingQuery = OilBatchRefineryReading::with('tank')->whereBetween('reading_date', [$startDate, $endDate])->orderBy('reading_date');
         if ($filterGroup)
             $readingQuery->whereHas('tank', fn($q) => $q->where('group_name', $filterGroup));
         if ($filterTank)
             $readingQuery->where('tank_id', $filterTank);
-        $rangeReadings = $readingQuery->get();
-        $chartDetailData = $rangeReadings->groupBy(fn($item) => $item->reading_date->format('Y-m-d'))->map(fn($readingsOnDate) => $readingsOnDate->groupBy('tank.group_name')->map(fn($groupReadings) => $groupReadings->map(fn($r) => ['name' => $r->tank->name, 'value' => $r->current_value_kg])));
+        if ($filterShift)
+            $readingQuery->where('shift', $filterShift);
 
-        return response()->json(['tableData' => $tableData, 'chartDetailData' => $chartDetailData, 'averageSummary' => $averageSummary]);
+        $rangeReadings = $readingQuery->get();
+
+        $averageSummary = $rangeReadings->groupBy('tank.group_name')->map(function ($group) {
+            return $group->avg('current_value_kg');
+        });
+
+        $chartDetailData = $rangeReadings->groupBy(fn($item) => $item->reading_date->format('Y-m-d'))
+            ->map(fn($readingsOnDate) => $readingsOnDate->groupBy('tank.group_name')
+                ->map(fn($groupReadings) => $groupReadings->map(fn($r) => ['name' => $r->tank->name, 'value' => $r->current_value_kg])));
+
+        return response()->json([
+            'tableData' => $tableData,
+            'chartDetailData' => $chartDetailData,
+            'averageSummary' => $averageSummary
+        ]);
     }
 
+
+
+    // --- PERBAIKAN: EXPORT REFINERY DATA ---
     public function exportRefineryData(Request $request)
     {
         $startDate = Carbon::parse($request->start_date);
         $endDate = Carbon::parse($request->end_date);
         $exportType = $request->input('export_type', 'daily');
-
-        // Deteksi apakah user memilih rentang tanggal (Range) atau satu hari saja (Snapshot)
         $isRange = !$startDate->isSameDay($endDate);
 
         if ($exportType === 'daily') {
@@ -240,17 +274,17 @@ class OilController extends Controller
 
         // 4. Proses Data
         $tanks = OilBatchRefineryTank::orderBy('group_name')->orderBy('sort_order')->get();
+
+        $query = OilBatchRefineryReading::whereBetween('reading_date', [$startDate, $endDate]);
+        if ($shiftNumber !== 'ALL') {
+            $query->where('shift', $shiftNumber);
+        }
+        $allReadings = $query->get();
+
         $row = 4;
-
         foreach ($tanks as $tank) {
-            $query = OilBatchRefineryReading::where('tank_id', $tank->id)
-                ->whereBetween('reading_date', [$startDate, $endDate]);
-
-            if ($shiftNumber !== 'ALL') {
-                $query->where('shift', $shiftNumber);
-            }
-
-            $readings = $query->get();
+            // FIX: Menggunakan filter untuk memastikan tank_id matching dengan akurat (anti bug index UUID)
+            $readings = $allReadings->filter(fn($r) => $r->tank_id === $tank->id);
 
             // Default nilai jika kosong
             $oilCode = '-';
@@ -265,13 +299,12 @@ class OilController extends Controller
                     $uniqueCodes = $readings->pluck('oil_code')->filter()->unique();
                     $oilCode = $uniqueCodes->count() > 1 ? 'Various Code' : ($uniqueCodes->first() ?? '-');
 
-                    // Asumsi kolom ada di DB. Jika belum ada di migrasi, ignore error dengan property fallback ?? 0
                     $gauge = round($readings->avg('gauge_board_meter') ?? 0, 2);
                     $temp = round($readings->avg('temperature_celsius') ?? 0, 2);
                     $currentValue = round($readings->avg('current_value_kg'), 2);
                 } else {
-                    // Jika snapshot, ambil data paling akhir di hari itu
-                    $latest = $readings->sortByDesc('reading_date')->sortByDesc('shift')->first();
+                    // FIX: Sorting secara eksplisit dari Date + Shift memastikan yang diambil benar-benar Shift Terbaru
+                    $latest = $readings->sortByDesc(fn($r) => $r->reading_date->format('Y-m-d') . '_' . $r->shift)->first();
                     $oilCode = $latest->oil_code ?? '-';
                     $gauge = $latest->gauge_board_meter ?? 0;
                     $temp = $latest->temperature_celsius ?? 0;
@@ -289,6 +322,7 @@ class OilController extends Controller
 
             // Warna kuning di Current Value
             $sheet->getStyle('G' . $row)->applyFromArray($styleYellow);
+
             $row++;
         }
 

@@ -85,9 +85,9 @@
     <div class="space-y-8 md:space-y-10 pb-10">
         @php 
             $cardDesigns = [ 
-                'HYDROGEN' => ['icon' => 'mdi-fire', 'title' => 'Hydrogen', 'unit' => 'PRESSURE (BAR)'], 
-                'NITROGEN' => ['icon' => 'mdi-snowflake', 'title' => 'Nitrogen', 'unit' => 'LEVEL (INCH)'], 
-                'AMMONIA'  => ['icon' => 'mdi-flask', 'title' => 'Ammonia', 'unit' => 'STOCK (CYL)'] 
+                'HYDROGEN' =>['icon' => 'mdi-fire', 'title' => 'Hydrogen', 'unit' => 'PRESSURE (BAR)'], 
+                'NITROGEN' =>['icon' => 'mdi-snowflake', 'title' => 'Nitrogen', 'unit' => 'LEVEL (INCH)'], 
+                'AMMONIA'  =>['icon' => 'mdi-flask', 'title' => 'Ammonia', 'unit' => 'STOCK (CYL)'] 
             ]; 
             // Cari last updater
             $lastUpdate = $existingReadings->sortByDesc('updated_at')->first();
@@ -97,7 +97,7 @@
         @foreach($masters as $gasType => $items)
             @if(!empty($items))
                 @php 
-                    $design = $cardDesigns[$gasType] ?? ['icon'=>'mdi-gas-cylinder', 'title'=>$gasType, 'unit'=>'UNIT']; 
+                    $design = $cardDesigns[$gasType] ??['icon'=>'mdi-gas-cylinder', 'title'=>$gasType, 'unit'=>'UNIT']; 
                     $headerGradient = match($gasType) { 
                         'HYDROGEN' => 'linear-gradient(to right, #fee2e2, #ffffff)', 
                         'NITROGEN' => 'linear-gradient(to right, #dbeafe, #ffffff)', 
@@ -118,7 +118,7 @@
                     
                     <div class="px-4 md:px-6 py-4 md:py-6 bg-slate-50/50">
                         @foreach($items as $item) 
-                            @include('oil.gas_utility.partials.row_input', ['item' => $item, 'existingReadings' => $existingReadings]) 
+                            @include('oil.gas_utility.partials.row_input',['item' => $item, 'existingReadings' => $existingReadings]) 
                         @endforeach
                     </div>
                     
@@ -157,17 +157,36 @@
         function updateAmmoniaTotal() {
             let total = 0;
             $('#gas-form input[data-type="AMMONIA"]').each(function() { 
-                total += parseInt($(this).val() || 0); 
+                let val = parseInt($(this).val());
+                if(!isNaN(val)) {
+                    total += val; 
+                }
             });
             $('#ammoniaTotal').text(total);
         }
         
         window.stepValue = function(id, step) {
-            const input = document.getElementById('input_' + id); if (!input) return;
-            let val = parseInt(input.value || 0), newVal = val + step, min = parseFloat(input.dataset.min), max = parseFloat(input.dataset.max);
+            const input = document.getElementById('input_' + id); 
+            if (!input) return;
+            
+            let val = parseInt(input.value || 0);
+            let newVal = val + step;
+            let min = parseFloat(input.dataset.min);
+            let max = parseFloat(input.dataset.max);
+            
+            // Validasi Limit Stepper
             if (newVal >= min && newVal <= max) { 
                 input.value = newVal; 
                 if(input.dataset.type === 'AMMONIA') updateAmmoniaTotal(); 
+            } else {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'warning',
+                    title: 'Batas limit tercapai!',
+                    showConfirmButton: false,
+                    timer: 1500
+                });
             }
         };
         
@@ -179,7 +198,6 @@
             let val = $('#supervisor_shift_selector').val().split('|');
             let date = val[0];
             let shift = val[1];
-            // Update URL parameters dan reload agar controller merender data yang diedit
             window.location.href = window.location.pathname + "?date=" + date + "&shift=" + shift;
         });
 
@@ -190,9 +208,50 @@
             $('#input_shift').val(val[1]);
         });
 
-        // --- SUBMIT AJAX LOGIC ---
+        // --- SUBMIT AJAX LOGIC & VALIDASI MIN/MAX ---
         $('#submit-btn-gas').off('click').on('click', function (e) {
             e.preventDefault();
+
+            let isInvalid = false;
+            let errorMsg = '';
+
+            // 1. CEK VALIDASI KAPASITAS MIN & MAX (Hanya untuk input yg diisi)
+            $('#gas-form input[data-min], #gas-form input[data-max]').each(function() {
+                let valStr = $(this).val();
+                
+                if (valStr !== '' && valStr !== null) {
+                    let val = parseFloat(valStr);
+                    let min = parseFloat($(this).attr('data-min'));
+                    let max = parseFloat($(this).attr('data-max'));
+                    let itemName = $(this).attr('data-name') || 'Item Gas';
+
+                    if (!isNaN(val)) {
+                        // Cek Maksimum Limit
+                        if (!isNaN(max) && val > max) {
+                            isInvalid = true;
+                            errorMsg += `<li class="mb-1"><b>${itemName}</b> <br>Maks: ${max} | Input: <span class="text-red-600 font-bold">${val}</span></li>`;
+                        }
+                        // Cek Minimum Limit
+                        if (!isNaN(min) && val < min) {
+                            isInvalid = true;
+                            errorMsg += `<li class="mb-1"><b>${itemName}</b> <br>Min: ${min} | Input: <span class="text-red-600 font-bold">${val}</span></li>`;
+                        }
+                    }
+                }
+            });
+
+            // Munculkan error dan BLOCK submit jika tidak valid
+            if (isInvalid) {
+                Swal.fire({
+                    title: 'Invalid Input!',
+                    html: `Beberapa nilai tidak sesuai batas (min/max):<br><ul class="text-left mt-3 text-sm text-slate-700 list-disc pl-5">${errorMsg}</ul><br><b>Silakan perbaiki data sebelum disimpan!</b>`,
+                    icon: 'error',
+                    confirmButtonColor: '#ef4444'
+                });
+                return false; 
+            }
+
+            // 2. JIKA VALIDASI AMAN, LANJUT SUBMIT
             Swal.fire({ 
                 title: 'Confirm Submission', 
                 text: "Pastikan data Gas Utility sudah benar.", 
@@ -217,7 +276,7 @@
                         success: function(response) {
                             if(response.status === 'success') {
                                 Swal.fire('Saved!', response.message, 'success').then(() => {
-                                    window.location.href = response.redirect_url;
+                                    window.location.href = response.redirect_url || '/oil/oil-input';
                                 });
                             }
                         },

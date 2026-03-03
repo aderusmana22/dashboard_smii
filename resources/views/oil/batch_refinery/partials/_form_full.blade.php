@@ -1,4 +1,4 @@
-<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<script src="https://cdn.tailwindcss.com"></script>
 
 {{-- CUSTOM CSS UNTUK LAYOUT YANG PASTI --}}
 <style>
@@ -120,15 +120,14 @@
                             @endphp
 
                             <!-- 
-                                CUSTOM CLASS APPLIED HERE: refinery-row-grid 
-                                Ini akan memaksa layout sesuai CSS di atas, mengabaikan grid tailwind yang mungkin bermasalah.
+                                PERBAIKAN 1: Tambahkan focus-within:z-[90] dan inline style Z-Index menurun 
                             -->
-                            <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow relative refinery-row-grid">
+                            <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow relative refinery-row-grid focus-within:z-[90]" style="z-index: {{ 500 - $globalIndex }};">
                                 
                                 <input type="hidden" name="readings[{{$globalIndex}}][tank_id]" value="{{ $tank->id }}">
 
                                 {{-- 1. TANK NAME --}}
-                                <div class="input-wrapper justify-center"> <!-- justify-center agar teks vertikal center -->
+                                <div class="input-wrapper justify-center">
                                     <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tank Name</label>
                                     <div>
                                         <div class="font-bold text-slate-700 text-sm leading-tight">{{ $tank->name }}</div>
@@ -149,17 +148,19 @@
                                 </div>
 
                                 {{-- 3. OIL CODE --}}
-                                <div class="input-wrapper relative z-20">
+                                <!-- PERBAIKAN 2: Tambahkan focus-within:z-[100] pada wrapper ini -->
+                                <div class="input-wrapper relative z-20 focus-within:z-[100]">
                                     <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Oil Code</label>
                                     <input type="text" name="readings[{{$globalIndex}}][oil_code]" id="code_input_{{$globalIndex}}" 
                                            value="{{ $currentVal ? $currentVal->oil_code : '' }}" 
                                            {{ $isLocked && !$isSupervisor ? 'disabled' : '' }} 
                                            oninput="handleInputSearch(this, {{$globalIndex}})" 
                                            onfocus="handleInputSearch(this, {{$globalIndex}})" 
-                                           class="w-full h-[40px] text-sm rounded-lg border-slate-300 focus:ring-blue-500 focus:border-blue-500 uppercase font-bold text-slate-700 placeholder-slate-300 px-3" 
+                                           class="w-full h-[40px] text-sm rounded-lg border-slate-300 focus:ring-blue-500 focus:border-blue-500 uppercase font-bold text-slate-700 placeholder-slate-300 px-3 relative z-10" 
                                            placeholder="CODE" autocomplete="off">
                                     
-                                    <ul id="suggestion_box_{{$globalIndex}}" class="hidden absolute top-[65px] left-0 w-[250px] bg-white border border-slate-200 rounded-lg shadow-2xl overflow-y-auto max-h-48 z-[100]"></ul>
+                                    <!-- PERBAIKAN 3: Ganti top-[65px] menjadi top-[100%] mt-1 agar dinamis menempel bawah form input -->
+                                    <ul id="suggestion_box_{{$globalIndex}}" class="hidden absolute top-[100%] mt-1 left-0 w-[250px] bg-white border border-slate-200 rounded-lg shadow-2xl overflow-y-auto max-h-48 z-[999]"></ul>
                                 </div>
 
                                 {{-- 4. DESCRIPTION --}}
@@ -195,10 +196,12 @@
                                 <div class="input-wrapper">
                                     <label class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider label-numeric">Value (Kg)</label>
                                     <input type="number" step="0.01" name="readings[{{$globalIndex}}][current_value_kg]" 
-                                           value="{{ $currentVal ? $currentVal->current_value_kg : '' }}" 
-                                           {{ $isLocked && !$isSupervisor ? 'disabled' : '' }} 
-                                           class="w-full h-[40px] text-sm font-bold text-slate-800 rounded-lg border-slate-300 focus:ring-emerald-500 focus:border-emerald-500 bg-emerald-50/50 px-3 text-numeric" 
-                                           placeholder="0">
+                                        value="{{ $currentVal ? $currentVal->current_value_kg : '' }}" 
+                                        {{ $isLocked && !$isSupervisor ? 'disabled' : '' }} 
+                                        data-max="{{ $tank->capacity_kg }}"
+                                        data-tankname="{{ $tank->name }}"
+                                        class="w-full h-[40px] text-sm font-bold text-slate-800 rounded-lg border-slate-300 focus:ring-emerald-500 focus:border-emerald-500 bg-emerald-50/50 px-3 text-numeric" 
+                                        placeholder="0">
                                 </div>
 
                             </div>
@@ -222,7 +225,7 @@
 
 <script>
     (function() {
-        const masterItems = @json($items->map(function($item){ return [ 'code' => $item->pt_part, 'desc' => $item->pt_desc1 ]; }));
+        const masterItems = @json($items->map(function($item){ return[ 'code' => $item->pt_part, 'desc' => $item->pt_desc1 ]; }));
 
         window.handleInputSearch = function(inputElement, index) {
             const query = inputElement.value.toUpperCase();
@@ -252,12 +255,63 @@
             if (!$(e.target).closest('ul[id^="suggestion_box_"]').length && !$(e.target).closest('input[id^="code_input_"]').length) { $('ul[id^="suggestion_box_"]').addClass('hidden'); }
         });
 
-        $('#submit-btn-refinery').off('click').on('click', function (e) {
+       $('#submit-btn-refinery').off('click').on('click', function (e) {
             e.preventDefault();
+
+            let isOverCapacity = false;
+            let errorMsg = '';
+
+            $('input[name$="[current_value_kg]"]').each(function() {
+                let val = parseFloat($(this).val());
+                let max = parseFloat($(this).attr('data-max'));
+                let tankName = $(this).attr('data-tankname');
+
+                if (!isNaN(val) && !isNaN(max) && val > max) {
+                    isOverCapacity = true;
+                    errorMsg += `<li class="mb-1"><b>${tankName}</b> <br>Max: ${max.toLocaleString('id-ID')} Kg | Input Anda: <span class="text-red-600 font-bold">${val.toLocaleString('id-ID')} Kg</span></li>`;
+                }
+            });
+
+            if (isOverCapacity) {
+                Swal.fire({
+                    title: 'Over Capacity!',
+                    html: `Beberapa input melebihi kapasitas maksimal tangki:<br><ul class="text-left mt-3 text-sm text-slate-700 list-disc pl-5">${errorMsg}</ul><br><b>Silakan perbaiki data sebelum submit!</b>`,
+                    icon: 'error',
+                    confirmButtonColor: '#ef4444'
+                });
+                return false; 
+            }
+
             Swal.fire({
                 title: 'Confirm Submission', text: "Pastikan data sudah benar.", icon: 'question',
                 showCancelButton: true, confirmButtonColor: '#2563eb', cancelButtonColor: '#ef4444', confirmButtonText: 'Yes, Save it!'
-            }).then((result) => { if (result.isConfirmed) { $('#refinery-form').submit(); } });
+            }).then((result) => { 
+                if (result.isConfirmed) { 
+                    
+                    Swal.fire({
+                        title: 'Saving Data...', 
+                        allowOutsideClick: false, 
+                        didOpen: () => { Swal.showLoading(); }
+                    });
+
+                    $.ajax({
+                        url: $('#refinery-form').attr('action'),
+                        method: 'POST',
+                        data: $('#refinery-form').serialize(),
+                        success: function(response) {
+                            if(response.status === 'success') {
+                                Swal.fire('Saved!', response.message, 'success').then(() => {
+                                    window.location.href = response.redirect_url;
+                                });
+                            }
+                        },
+                        error: function(xhr) {
+                            let msg = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'Terjadi kesalahan sistem';
+                            Swal.fire('Failed!', msg, 'error');
+                        }
+                    });
+                } 
+            });
         });
     })();
 </script>

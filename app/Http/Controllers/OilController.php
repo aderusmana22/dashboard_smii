@@ -209,6 +209,7 @@ class OilController extends Controller
 
 
     // --- PERBAIKAN: EXPORT REFINERY DATA ---
+    // --- PERBAIKAN: EXPORT REFINERY DATA ---
     public function exportRefineryData(Request $request)
     {
         $startDate = Carbon::parse($request->start_date);
@@ -283,37 +284,50 @@ class OilController extends Controller
 
         $row = 4;
         foreach ($tanks as $tank) {
-            // FIX: Menggunakan filter untuk memastikan tank_id matching dengan akurat (anti bug index UUID)
             $readings = $allReadings->filter(fn($r) => $r->tank_id === $tank->id);
 
             // Default nilai jika kosong
             $oilCode = '-';
-            $description = $tank->description;
+            $description = $tank->description ?? '-';
             $gauge = 0;
             $temp = 0;
             $currentValue = 0;
 
             if ($readings->isNotEmpty()) {
                 if ($isRange) {
-                    // Jika range, cari rata-rata & logika Various Code
-                    $uniqueCodes = $readings->pluck('oil_code')->filter()->unique();
+                    // JIKA RANGE (DARI TANGGAL X KE Y)
+
+                    // 1. Logika Various Code
+                    $uniqueCodes = $readings->pluck('oil_code')->filter(fn($v) => !empty($v))->unique();
                     $oilCode = $uniqueCodes->count() > 1 ? 'Various Code' : ($uniqueCodes->first() ?? '-');
 
-                    $gauge = round($readings->avg('gauge_board_meter') ?? 0, 2);
-                    $temp = round($readings->avg('temperature_celsius') ?? 0, 2);
-                    $currentValue = round($readings->avg('current_value_kg'), 2);
+                    // 2. Logika Various Item (Description)
+                    $uniqueDesc = $readings->pluck('description')->filter(fn($v) => !empty($v))->unique();
+                    $description = $uniqueDesc->count() > 1 ? 'Various Item' : ($uniqueDesc->first() ?? $tank->description ?? '-');
+
+                    // 3. Rata-rata menggunakan kolom yang benar (gauge_board dan temperature)
+                    // Pengecekan is_numeric pada tipe data text sangat penting agar AVG tidak error
+                    $gauge = round($readings->avg(fn($r) => is_numeric($r->gauge_board) ? (float) $r->gauge_board : 0), 2);
+                    $temp = round($readings->avg('temperature') ?? 0, 2);
+                    $currentValue = round($readings->avg('current_value_kg') ?? 0, 2);
+
                 } else {
-                    // FIX: Sorting secara eksplisit dari Date + Shift memastikan yang diambil benar-benar Shift Terbaru
-                    $latest = $readings->sortByDesc(fn($r) => $r->reading_date->format('Y-m-d') . '_' . $r->shift)->first();
+                    // JIKA SNAPSHOT (HANYA 1 HARI / SHIFT TERAKHIR)
+
+                    $latest = $readings->sortByDesc(fn($r) => Carbon::parse($r->reading_date)->format('Y-m-d') . '_' . $r->shift)->first();
+
                     $oilCode = $latest->oil_code ?? '-';
-                    $gauge = $latest->gauge_board_meter ?? 0;
-                    $temp = $latest->temperature_celsius ?? 0;
+                    $description = $latest->description ?? $tank->description ?? '-';
+
+                    // Ambil nilai dengan nama kolom yang benar
+                    $gauge = $latest->gauge_board ?? 0;
+                    $temp = $latest->temperature ?? 0;
                     $currentValue = $latest->current_value_kg ?? 0;
                 }
             }
 
             $sheet->setCellValue('A' . $row, $tank->name);
-            $sheet->setCellValue('B' . $row, number_format($tank->capacity_kg));
+            $sheet->setCellValue('B' . $row, number_format((float) $tank->capacity_kg));
             $sheet->setCellValue('C' . $row, $oilCode);
             $sheet->setCellValue('D' . $row, $description);
             $sheet->setCellValue('E' . $row, $gauge);

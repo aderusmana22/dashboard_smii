@@ -48,6 +48,7 @@ use App\Http\Controllers\OilBatchRefineryInputController;
 use App\Http\Controllers\OilBatchRefineryConfigController;
 use App\Http\Controllers\OilInputStationController;
 use App\Http\Controllers\OilConfigController;
+use App\Http\Controllers\OIL\Inventory\InventoryOilController;
 
 /*
 |--------------------------------------------------------------------------
@@ -377,7 +378,7 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
         Route::get('/tanks-by-group/{group}', [App\Http\Controllers\OilController::class, 'getTanksByGroup'])->name('oil.getTanksByGroup');
         // --- INPUT STATION ---
         Route::get('/oil-input', [OilInputStationController::class, 'index'])->name('oil.input_station.index');
-      
+
         // ============================================================
         // --- CENTRAL CONFIGURATION (NEW STRUCTURE) ---
         // ============================================================
@@ -418,7 +419,7 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
         Route::get('/export-refinery-data', [OilController::class, 'exportRefineryData'])->name('oil.exportRefineryData');
 
         Route::get('/export-utility-gas-data', [OilController::class, 'exportUtilityGasData'])->name('oil.exportUtilityGasData');
-        
+
         // Batch Refinery Data/Logs
         Route::prefix('batch-refinery')->name('oil.batch_refinery.')->group(function () {
             Route::get('/', [OilBatchRefineryController::class, 'index'])->name('index');
@@ -436,6 +437,8 @@ Route::middleware('auth', 'redirect.if.role')->group(function () {
     });
 
     Route::get('/inward-dashboard', [InwardDashboardController::class, 'index'])->name('inward.dashboard');
+
+    Route::get('/rbd-dashboard', [InventoryOilController::class, 'index'])->name('rbd.dashboard');
 });
 
 

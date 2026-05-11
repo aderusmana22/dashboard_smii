@@ -63,6 +63,19 @@ return [
             ]) : [],
         ],
 
+        'mysql_oil' => [ // Koneksi tambahan untuk sistem Oil
+            'driver' => 'mysql',
+            'host' => env('DB_OIL_HOST', '127.0.0.1'),
+            'port' => env('DB_OIL_PORT', '3306'),
+            'database' => env('DB_OIL_DATABASE', 'forge'),
+            'username' => env('DB_OIL_USERNAME', 'forge'),
+            'password' => env('DB_OIL_PASSWORD', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'engine' => null,
+        ],
+
 
         'pgsql' => [
             'driver' => 'pgsql',
@@ -126,7 +139,7 @@ return [
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            'prefix' => env('REDIS_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_').'_database_'),
+            'prefix' => env('REDIS_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_') . '_database_'),
         ],
 
         'default' => [

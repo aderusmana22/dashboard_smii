@@ -13,15 +13,14 @@
             --slate-border: #e2e8f0;
         }
 
+        /* CONTAINER UTAMA (SUDAH DIPERBAIKI - TANPA SPACE KOSONG BAWAH) */
         .dashboard-container {
             font-family: "Inter", sans-serif;
-            background-color: #f8fafc;
             color: #1e293b;
-            min-height: calc(100vh - 64px);
             display: flex;
             flex-direction: column;
-            padding: 16px;
-            gap: 16px;
+            padding: 12px;
+            gap: 12px; 
         }
 
         .mono { font-family: "JetBrains Mono", monospace; }
@@ -29,109 +28,126 @@
         /* COMMAND BAR */
         .command-bar {
             background: #ffffff;
-            padding: 12px 20px;
-            border-radius: 12px;
+            padding: 8px 16px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             border: 1px solid var(--slate-border);
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+            flex-shrink: 0;
         }
 
         .filter-item { display: flex; flex-direction: column; gap: 2px; }
-        .filter-label { font-size: 9px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.025em; }
+        .filter-label { font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.025em; }
         .filter-input-clean {
             background: #f1f5f9;
             border: 1px solid transparent;
             border-radius: 6px;
-            padding: 5px 10px;
-            font-size: 11px;
+            padding: 4px 8px;
             font-weight: 600;
             color: #334155;
             transition: all 0.2s;
         }
         .filter-input-clean:focus { background: #ffffff; border-color: var(--brand-amber); outline: none; box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.1); }
 
-        /* TANGKI DINAMIS MULTI-LAYER */
+        /* =========================================
+           TANGKI DINAMIS & REALISTIS
+           ========================================= */
+        #tank-container {
+            display: grid;
+            grid-template-columns: repeat(13, minmax(0, 1fr));
+            gap: 1.5vh 0.5vw;
+            justify-items: center;
+            align-items: end;
+            width: 100%;
+        }
+
         .tank-wrapper {
-            position: relative;
             display: flex;
             flex-direction: column;
             align-items: center;
-            flex: 1; 
-            min-width: 60px; 
-            max-width: 80px; 
         }
 
-        .tank-roof { width: 100%; max-width: 54px; height: 10px; background: linear-gradient(to right, #94a3b8, #f1f5f9, #94a3b8); border-radius: 50% 50% 0 0; z-index: 5; border: 2px solid #64748b; }
+        /* TANGKI DIKUNCI MENTOK 14VW DENGAN RASIO PATEN */
+        .tank-graphic {
+            height: 14vw; 
+            max-height: 180px; 
+            aspect-ratio: 85 / 160; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .tank-roof { width: 100%; height: 5%; background: linear-gradient(to right, #94a3b8, #f1f5f9, #94a3b8); border-radius: 50% 50% 0 0; z-index: 5; border: 2px solid #64748b; border-bottom: none; }
         
         .tank-body { 
             position: relative; 
             width: 100%; 
-            max-width: 50px; 
-            height: 80px; 
+            flex: 1; 
             background: #ffffff; 
             border: 3px solid #475569; 
             border-top: none; 
             overflow: hidden; 
             display: flex; 
-            flex-direction: column-reverse; /* Cairan menumpuk dari bawah */
+            flex-direction: column-reverse; 
         }
 
-        .tank-base { width: 110%; max-width: 58px; height: 5px; background: #334155; border-radius: 2px; }
+        .tank-base { width: 120%; height: 4%; background: #334155; border-radius: 3px; }
 
-        /* EFEK CAIRAN BERGELOMBANG (WAVY FLUID) */
+        /* =========================================
+           EFEK CAIRAN BERGELOMBANG
+           ========================================= */
         .liquid-layer {
             position: relative;
             width: 100%;
             transition: height 1s cubic-bezier(0.4, 0, 0.2, 1);
-            overflow: hidden; /* Penting agar gelombang tidak bocor keluar */
-            border-top: 1px solid rgba(255,255,255,0.1);
+            overflow: hidden; 
         }
 
-        /* Elemen Gelombang di permukaan cairan */
         .liquid-surface {
             position: absolute;
-            top: -35px; /* Mengatur kedalaman ombak */
-            left: -50%;
-            width: 200%;
-            height: 40px;
-            border-radius: 40%; /* Kunci animasi air */
-            animation: wave-spin 3s infinite linear;
-            filter: brightness(1.15); /* Puncak gelombang terlihat lebih cerah */
+            top: 0; left: 0; width: 200%; height: 20px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 20'%3E%3Cpath d='M0 10 Q 25 0, 50 10 T 100 10 L 100 20 L 0 20 Z' fill='rgba(255,255,255,0.3)'/%3E%3C/svg%3E");
+            background-size: 50% 100%;
+            animation: wave-slide 2.5s infinite linear;
             z-index: 10;
         }
 
-        @keyframes wave-spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .liquid-surface-shadow {
+            position: absolute;
+            top: 0; left: -100%; width: 200%; height: 20px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 20'%3E%3Cpath d='M0 10 Q 25 20, 50 10 T 100 10 L 100 0 L 0 0 Z' fill='rgba(0,0,0,0.1)'/%3E%3C/svg%3E");
+            background-size: 50% 100%;
+            animation: wave-slide-left 3.5s infinite linear;
+            z-index: 9;
         }
 
-        /* Animasi Gelembung Naik */
+        @keyframes wave-slide { 100% { transform: translateX(-50%); } }
+        @keyframes wave-slide-left { 100% { transform: translateX(50%); } }
+
         .bubble {
             position: absolute;
             bottom: -10px;
             background: rgba(255, 255, 255, 0.4);
             border-radius: 50%;
             animation: rise 2s infinite ease-in;
-            z-index: 11;
+            z-index: 5;
         }
         @keyframes rise {
             0% { transform: translateY(0) scale(0.5); opacity: 0; }
             50% { opacity: 1; }
-            100% { transform: translateY(-30px) scale(1.2); opacity: 0; }
+            100% { transform: translateY(-40px) scale(1.5); opacity: 0; }
         }
 
         /* TABLE & CARDS */
-        .section-card { background: white; border-radius: 12px; border: 1px solid var(--slate-border); overflow: hidden; display: flex; flex-direction: column; }
-        .scroll-container { max-height: 380px; overflow-y: auto; }
-        
-        .custom-table { width: 100%; font-size: 11px; border-collapse: collapse; }
-        .custom-table th { background: #f8fafc; color: #64748b; text-align: left; padding: 10px 12px; border-bottom: 2px solid #f1f5f9; font-weight: 800; position: sticky; top: 0; z-index: 10; }
-        .custom-table td { padding: 8px 12px; border-bottom: 1px solid #f1f5f9; }
+        .section-card { background: white; border-radius: 10px; border: 1px solid var(--slate-border); overflow: hidden; display: flex; flex-direction: column; }
+        .custom-table { width: 100%; border-collapse: collapse; white-space: nowrap; }
+        .custom-table th { background: #f8fafc; color: #64748b; text-align: left; padding: 6px 8px; border-bottom: 2px solid #f1f5f9; font-weight: 800; position: sticky; top: 0; z-index: 10; }
+        .custom-table td { padding: 4px 8px; border-bottom: 1px solid #f1f5f9; }
         .custom-table tr:hover { background-color: #fcfcfd; }
 
-        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
@@ -139,31 +155,30 @@
     <div class="dashboard-container">
         <!-- HEADER & FILTER -->
         <form id="filter-form" action="{{ route('rbd.dashboard') }}" method="GET" class="command-bar">
-            <div class="flex items-center gap-4">
-                <div class="bg-amber-100 p-2.5 rounded-xl">
+            <div class="flex items-center gap-3">
+                <div class="bg-amber-100 p-2 rounded-lg">
                     <i class="mdi mdi-database-cog text-amber-600 text-xl"></i>
                 </div>
                 <div>
-                    <h1 class="text-sm font-black text-slate-800 uppercase tracking-tight leading-none">Silo Intelligence</h1>
+                    <h1 class="text-base font-black text-slate-800 uppercase tracking-tight leading-none">Silo Intelligence</h1>
                     <div class="flex items-center gap-1.5 mt-1">
-                        <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                        <span class="text-[10px] font-bold text-slate-400 uppercase">Operational Live Mode</span>
+                        <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                        <span class="text-xs font-bold text-slate-400 uppercase">Live Mode</span>
                     </div>
                 </div>
             </div>
 
-            <div class="flex items-center gap-6">
+            <div class="flex items-center gap-4">
                 <div class="filter-item">
-                    <label class="filter-label">Period</label>
+                    <label class="filter-label text-xs">Period</label>
                     <div class="flex gap-2">
-                        <!-- Perbaikan Bug Filter Tahun -->
-                        <select name="year" class="filter-input-clean min-w-[80px]">
+                        <select name="year" class="filter-input-clean text-sm min-w-[70px]">
                             @php $currYear = date('Y'); @endphp
                             @for ($y = $currYear - 3; $y <= $currYear + 1; $y++)
                                 <option value="{{ $y }}" {{ $selectedYear == $y ? 'selected' : '' }}>{{ $y }}</option>
                             @endfor
                         </select>
-                        <select name="month" class="filter-input-clean min-w-[100px]">
+                        <select name="month" class="filter-input-clean text-sm min-w-[90px]">
                             @foreach(range(1, 12) as $m)
                                 <option value="{{ str_pad($m, 2, '0', STR_PAD_LEFT) }}" {{ $selectedMonth == $m ? 'selected' : '' }}>
                                     {{ date('F', mktime(0, 0, 0, $m, 1)) }}
@@ -173,130 +188,116 @@
                     </div>
                 </div>
 
-                <div class="h-8 w-[1px] bg-slate-100"></div>
+                <div class="h-6 w-[1px] bg-slate-200"></div>
 
                 <div class="filter-item">
-                    <label class="filter-label">Search</label>
+                    <label class="filter-label text-xs">Search</label>
                     <div class="flex gap-2">
-                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Search Part/Item..." class="filter-input-clean w-48">
+                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Search..." class="filter-input-clean text-sm w-80">
                     </div>
                 </div>
 
-                <!-- Perbaikan Warna Tombol Abu-abu -->
-                <button type="submit" id="btn-apply" class="bg-slate-500 mt-5m text-white px-5 py-2 rounded-lg text-[11px] font-black uppercase hover:bg-slate-600 transition flex items-center gap-2 shadow-sm">
+                <button type="submit" id="btn-apply" class="bg-slate-500 mt-3 text-white px-4 py-1.5 rounded-lg text-sm font-black uppercase hover:bg-slate-600 transition flex items-center gap-2 shadow-sm">
                     <i class="mdi mdi-filter" id="btn-icon"></i> <span id="btn-text">Apply</span>
                 </button>
             </div>
 
-            <div class="flex items-center gap-8 pl-6 border-l border-slate-100">
-                <div class="text-center bg-slate-50 px-4 py-2 rounded-lg">
-                    <p id="sync-time" class="text-amber-600 text-lg font-bold mono leading-none">00:00:00</p>
-                    <p class="text-[8px] text-slate-400 font-bold uppercase mt-1">System Time</p>
+            <div class="flex items-center gap-4 pl-4 border-l border-slate-100">
+                <div class="text-center bg-slate-50 px-3 py-1.5 rounded-lg">
+                    <p id="sync-time" class="text-amber-600 text-xl font-bold mono leading-none">00:00:00</p>
+                    <p class="text-xs text-slate-400 font-bold uppercase mt-0.5">System Time</p>
                 </div>
             </div>
         </form>
 
-        <!-- MIDDLE SECTION -->
-        <div class="grid grid-cols-12 gap-4 flex-shrink-0" style="min-height: 280px;">
+        <!-- ROW 1: TANGKI DINAMIS (Dikunci) -->
+        <div class="section-card p-2 flex flex-col flex-shrink-0">
+            <h2 class="text-sm font-black text-slate-500 uppercase mb-2 flex items-center gap-2 flex-shrink-0">
+                <span class="w-1 h-2.5 bg-amber-500 rounded-full"></span> Real-Time Silo Stock
+            </h2>
             
-            <!-- LEFT: INCOMING CHART -->
-            <div class="col-span-3 section-card p-4">
-                <h2 class="text-[10px] font-black text-slate-500 uppercase mb-4 flex items-center gap-2">
-                    <span class="w-1 h-3 bg-emerald-500 rounded-full"></span> Incoming (IN) Ranking
-                </h2>
-                <div class="flex-1 relative h-[220px]">
-                    <canvas id="incomingChart"></canvas>
-                </div>
-            </div>
-
-            <!-- CENTER: DYNAMIC TANKS & LEGEND -->
-            <div class="col-span-6 section-card p-4 flex flex-col">
-                <h2 class="text-[10px] font-black text-slate-500 uppercase mb-6 flex items-center gap-2">
-                    <span class="w-1 h-3 bg-amber-500 rounded-full"></span> Real-Time Silo Stock
-                </h2>
-                
-                <div id="tank-container" class="flex flex-wrap justify-center items-end flex-1 pb-2 px-2 gap-y-6 gap-x-3 overflow-y-auto max-h-[180px]">
-                    @forelse ($tanks as $tank)
-                        @php 
-                            $percent = $tank['capacity'] > 0 ? ($tank['total_qty'] / $tank['capacity']) * 100 : 0;
-                            $cappedPercent = $percent > 100 ? 100 : $percent;
-                        @endphp
-                        <div class="tank-wrapper" title="Items: {{ $tank['item_list'] ?? 'Empty' }} | Volume: {{ number_format($tank['total_qty'], 2) }}">
-                            <div class="text-[9px] font-black text-slate-600 mono mb-1">{{ number_format($percent, 1) }}%</div>
+            <div id="tank-container">
+                @forelse ($tanks as $tank)
+                    @php 
+                        $percent = $tank['capacity'] > 0 ? ($tank['total_qty'] / $tank['capacity']) * 100 : 0;
+                    @endphp
+                    <div class="tank-wrapper" title="Items: {{ $tank['item_list'] ?? 'Empty' }} | Volume: {{ number_format($tank['total_qty'], 2) }}">
+                        <div class="text-md font-black text-slate-700 mono mb-1 whitespace-nowrap">{{ number_format($percent, 1) }}%</div>
+                        
+                        <!-- WADAH TANGKI -->
+                        <div class="tank-graphic">
                             <div class="tank-roof"></div>
                             <div class="tank-body">
-                                <!-- Multi-Layer Liquid Loop dengan Animasi Bergelombang -->
                                 @foreach($tank['items'] as $item)
-                                    @php 
-                                        $h = ($item['qty'] / $tank['capacity']) * 100; 
-                                    @endphp
+                                    @php $h = ($item['qty'] / $tank['capacity']) * 100; @endphp
                                     <div class="liquid-layer" style="height: {{ $h }}%; background-color: {{ $item['color'] }};" title="{{ $item['part'] }}: {{ number_format($item['qty'], 2) }}">
-                                        <!-- Animasi Permukaan Gelombang -->
-                                        <div class="liquid-surface" style="background-color: {{ $item['color'] }}; animation-duration: {{ rand(30, 50)/10 }}s;"></div>
-                                        <!-- Gelembung Air -->
+                                        <!-- Gelombang CSS Realistis -->
+                                        <div class="liquid-surface" style="animation-duration: {{ rand(20, 35)/10 }}s;"></div>
+                                        <div class="liquid-surface-shadow" style="animation-duration: {{ rand(30, 45)/10 }}s;"></div>
+                                        
                                         <div class="bubble" style="left: 20%; animation-delay: 0.1s;"></div>
-                                        <div class="bubble" style="left: 60%; animation-delay: 0.5s; width: 6px; height: 6px;"></div>
+                                        <div class="bubble" style="left: 60%; animation-delay: 0.5s; width: 4px; height: 4px;"></div>
                                     </div>
                                 @endforeach
                             </div>
                             <div class="tank-base"></div>
-                            <div class="text-[8px] font-bold text-slate-500 mt-2 truncate w-full text-center">{{ $tank['tank_name'] }}</div>
                         </div>
-                    @empty
-                        <div class="text-xs font-bold text-slate-400 w-full text-center my-auto">No Tanks Data Configured.</div>
-                    @endforelse
-                </div>
 
-                <!-- TANK LEGEND (Keterangan Warna) -->
-                @php
-                    $legendItems =[];
-                    foreach($tanks as $tank) {
-                        if(isset($tank['items'])) {
-                            foreach($tank['items'] as $item) {
-                                $legendItems[$item['part']] = $item['color'];
-                            }
-                        }
-                    }
-                @endphp
-                <div id="tank-legend" class="flex flex-wrap justify-center gap-x-5 gap-y-2 mt-4 pt-4 border-t border-slate-100">
-                    @forelse($legendItems as $part => $color)
-                        <div class="flex items-center gap-1.5">
-                            <span class="w-3 h-3 rounded-full shadow-sm" style="background-color: {{ $color }}"></span>
-                            <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wide">{{ $part }}</span>
-                        </div>
-                    @empty
-                        <div class="text-[9px] font-bold text-slate-400 uppercase">Awaiting Stock...</div>
-                    @endforelse
-                </div>
+                        <div class="text-md font-bold text-slate-600 mt-1.5 truncate w-full text-center uppercase tracking-wider">{{ $tank['tank_name'] }}</div>
+                    </div>
+                @empty
+                    <div class="text-sm font-bold text-slate-400 w-full text-center my-auto" style="grid-column: span 13;">No Tanks Data Configured.</div>
+                @endforelse
             </div>
 
-            <!-- RIGHT: OUTGOING CHART -->
-            <div class="col-span-3 section-card p-4">
-                <h2 class="text-[10px] font-black text-slate-500 uppercase mb-4 flex items-center gap-2">
-                    <span class="w-1 h-3 bg-orange-500 rounded-full"></span> Outgoing (OUT) Dispatch
-                </h2>
-                <div class="flex-1 relative h-[220px]">
-                    <canvas id="outgoingChart"></canvas>
-                </div>
+            <!-- TANK LEGEND -->
+            @php
+                $legendItems =[];
+                foreach($tanks as $tank) {
+                    if(isset($tank['items'])) {
+                        foreach($tank['items'] as $item) { $legendItems[$item['part']] = $item['color']; }
+                    }
+                }
+            @endphp
+            <div id="tank-legend" class="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-2 pt-2 border-t border-slate-100 flex-shrink-0">
+                @forelse($legendItems as $part => $color)
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-2.5 h-2.5 rounded-full shadow-sm" style="background-color: {{ $color }}"></span>
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wide">{{ $part }}</span>
+                    </div>
+                @empty
+                    <div class="text-xs font-bold text-slate-400 uppercase">Awaiting Stock...</div>
+                @endforelse
             </div>
         </div>
 
-        <!-- BOTTOM SECTION: TABLES -->
-        <div class="grid grid-cols-2 gap-4">
-            <div class="section-card">
-                <div class="p-3 border-b flex justify-between items-center bg-white sticky top-0 z-20">
-                    <h2 class="text-[10px] font-black text-slate-800 uppercase tracking-widest">Incoming Feed (IN)</h2>
+        <!-- ROW 2: GRAFIK & TABEL (Dikunci Tinggi 210px agar pas dengan Tabel 5 Baris) -->
+        <div class="grid grid-cols-12 gap-3 flex-shrink-0">
+            
+            <div class="col-span-3 section-card p-2 flex flex-col h-[210px]">
+                <h2 class="text-sm font-black text-slate-500 uppercase mb-1 flex items-center gap-2 flex-shrink-0">
+                    <span class="w-1 h-2.5 bg-emerald-500 rounded-full"></span> Incoming (IN) Ranking
+                </h2>
+                <div class="w-full relative flex-1 min-h-0">
+                    <canvas id="incomingChart"></canvas>
                 </div>
-                <div class="scroll-container">
-                    <table class="custom-table">
-                        <thead><tr><th>Supplier</th><th>Item Code</th><th>Qty (KG)</th><th>Date/Time</th></tr></thead>
+            </div>
+
+            <div class="col-span-3 section-card flex flex-col h-[210px]">
+                <div class="p-2 border-b flex justify-between items-center bg-white sticky top-0 z-20 flex-shrink-0">
+                    <h2 class="text-sm font-black text-slate-800 uppercase tracking-widest">Incoming Feed (Top 5)</h2>
+                </div>
+                <div class="overflow-y-auto flex-1 p-0.5">
+                    <table class="custom-table text-xs">
+                        <thead><tr><th>Supplier</th><th>Item</th><th>Qty(KG)</th></tr></thead>
                         <tbody id="tbody-incoming">
-                            @foreach ($incomingTable as $row)
+                            @foreach ($incomingTable->take(5) as $row)
                                 <tr>
-                                    <td class="font-semibold">{{ $row->tr_addr_name ?? $row->tr_addr ?? 'Unknown' }}</td>
-                                    <td class="mono text-slate-500">{{ $row->tr_part }}</td>
+                                    <td class="font-semibold" title="{{ $row->tr_addr_name ?? $row->tr_addr ?? 'Unknown' }}">
+                                        {{ Str::limit($row->tr_addr_name ?? $row->tr_addr ?? 'Unknown', 12) }}
+                                    </td>
+                                    <td class="mono text-slate-500" title="{{ $row->tr_part }}">{{ Str::limit($row->tr_part, 8) }}</td>
                                     <td class="font-bold text-emerald-600">{{ $row->qty_formatted }}</td>
-                                    <td class="text-slate-400">{{ $row->date_formatted }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -304,176 +305,144 @@
                 </div>
             </div>
 
-            <div class="section-card">
-                <div class="p-3 border-b flex justify-between items-center bg-white sticky top-0 z-20">
-                    <h2 class="text-[10px] font-black text-slate-800 uppercase tracking-widest">Outgoing Feed (OUT)</h2>
+            <div class="col-span-3 section-card flex flex-col h-[210px]">
+                <div class="p-2 border-b flex justify-between items-center bg-white sticky top-0 z-20 flex-shrink-0">
+                    <h2 class="text-sm font-black text-slate-800 uppercase tracking-widest">Outgoing Feed (Top 5)</h2>
                 </div>
-                <div class="scroll-container">
-                    <table class="custom-table">
-                        <thead><tr><th>Item Code</th><th>Item Description</th><th>Quantity (KG)</th><th>Status</th></tr></thead>
+                <div class="overflow-y-auto flex-1 p-0.5">
+                    <table class="custom-table text-xs">
+                        <thead><tr><th>Item</th><th>Desc</th><th>Qty(KG)</th></tr></thead>
                         <tbody id="tbody-outgoing">
-                            @foreach ($outgoingTable as $row)
+                            @foreach ($outgoingTable->take(5) as $row)
                                 <tr>
-                                    <td class="mono font-bold text-blue-600">{{ $row->tr_part }}</td>
-                                    <td class="font-semibold">{{ $row->tr_part_name ?? 'Internal Dispatch' }}</td>
+                                    <td class="mono font-bold text-blue-600" title="{{ $row->tr_part }}">{{ Str::limit($row->tr_part, 8) }}</td>
+                                    <td class="font-semibold" title="{{ $row->tr_part_name ?? 'Internal Dispatch' }}">
+                                        {{ Str::limit($row->tr_part_name ?? 'Internal Dispatch', 12) }}
+                                    </td>
                                     <td class="font-bold text-orange-600">{{ $row->qty_formatted }}</td>
-                                    <td><span class="text-[9px] font-black uppercase text-slate-400 bg-slate-100 px-2 py-1 rounded">Dispatched</span></td>
                                 </tr>
                             @endforeach
                         </tbody>
                     </table>
                 </div>
             </div>
+
+            <div class="col-span-3 section-card p-2 flex flex-col h-[210px]">
+                <h2 class="text-sm font-black text-slate-500 uppercase mb-1 flex items-center gap-2 flex-shrink-0">
+                    <span class="w-1 h-2.5 bg-orange-500 rounded-full"></span> Outgoing (OUT) Dispatch
+                </h2>
+                <div class="w-full relative flex-1 min-h-0">
+                    <canvas id="outgoingChart"></canvas>
+                </div>
+            </div>
+
         </div>
     </div>
 
     <script>
-        // 1. Clock Sync
         setInterval(() => {
             document.getElementById('sync-time').textContent = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         }, 1000);
 
-        // 2. Setup Chart.js Objects
+        // FONT CHART.JS JUGA SUDAH DIPERBESAR MENJADI SIZE: 10
         const commonOptions = {
             indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, usePointStyle: true, font: { size: 9, family: 'Inter' } } }, tooltip: { mode: 'index', intersect: false } },
+            plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, usePointStyle: true, font: { size: 10, family: 'Inter' } } }, tooltip: { mode: 'index', intersect: false } },
             scales: {
-                x: { stacked: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 9 }, color: '#94a3b8' } },
-                y: { stacked: true, grid: { display: false }, ticks: { font: { size: 9, weight: 'bold' }, color: '#475569' } }
+                x: { stacked: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 }, color: '#94a3b8' } },
+                y: { stacked: true, grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' }, color: '#475569' } }
             }
         };
 
         let inChart = new Chart(document.getElementById('incomingChart').getContext('2d'), {
-            type: 'bar',
-            data: { labels: {!! json_encode($inLabels) !!}, datasets: {!! json_encode($inDatasets) !!} },
-            options: commonOptions
+            type: 'bar', data: { labels: {!! json_encode($inLabels) !!}, datasets: {!! json_encode($inDatasets) !!} }, options: commonOptions
         });
 
         let outOpt = JSON.parse(JSON.stringify(commonOptions)); outOpt.plugins.legend.display = false;
         let outChart = new Chart(document.getElementById('outgoingChart').getContext('2d'), {
-            type: 'bar',
-            data: { labels: {!! json_encode($outLabels) !!}, datasets:[{ label: 'Dispatched Qty', data: {!! json_encode($outValues) !!}, backgroundColor: '#f97316', borderRadius: 4 }] },
-            options: outOpt
+            type: 'bar', data: { labels: {!! json_encode($outLabels) !!}, datasets:[{ label: 'Dispatched Qty', data: {!! json_encode($outValues) !!}, backgroundColor: '#f97316', borderRadius: 4 }] }, options: outOpt
         });
 
-        // 3. AJAX FILTERING LOGIC (TANPA RELOAD)
+        function limitStr(str, limit) { return (!str) ? '' : (str.length > limit ? str.substring(0, limit) + '...' : str); }
+
         document.getElementById('filter-form').addEventListener('submit', function(e) {
             e.preventDefault();
-
             let btnIcon = document.getElementById('btn-icon');
             let btnText = document.getElementById('btn-text');
-            
-            btnIcon.className = "mdi mdi-loading mdi-spin";
-            btnText.textContent = "Loading...";
+            btnIcon.className = "mdi mdi-loading mdi-spin"; btnText.textContent = "Loading...";
 
-            const url = new URL(this.action);
-            const formData = new FormData(this);
-            const params = new URLSearchParams(formData);
-
-            fetch(url.pathname + '?' + params.toString(), {
-                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
-            })
+            fetch(new URL(this.action).pathname + '?' + new URLSearchParams(new FormData(this)).toString(), { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
             .then(response => response.json())
             .then(data => {
-                // Update Chart Kiri
-                inChart.data.labels = data.inLabels;
-                inChart.data.datasets = data.inDatasets;
-                inChart.update();
+                inChart.data.labels = data.inLabels; inChart.data.datasets = data.inDatasets; inChart.update();
+                outChart.data.labels = data.outLabels; outChart.data.datasets[0].data = data.outValues; outChart.update();
 
-                // Update Chart Kanan
-                outChart.data.labels = data.outLabels;
-                outChart.data.datasets[0].data = data.outValues;
-                outChart.update();
-
-                // Update Tangki Dinamis & Kumpulkan Data Legend
-                let tankHtml = '';
-                let newLegendItems = {};
-
+                let tankHtml = ''; let newLegendItems = {};
                 if(data.tanks.length === 0) {
-                    tankHtml = '<div class="text-xs font-bold text-slate-400 w-full text-center my-auto">No Tanks Data Configured.</div>';
+                    tankHtml = '<div class="text-sm font-bold text-slate-400 w-full text-center my-auto" style="grid-column: span 13;">No Tanks Data Configured.</div>';
                 } else {
                     data.tanks.forEach(tank => {
                         let percent = tank.capacity > 0 ? (tank.total_qty / tank.capacity) * 100 : 0;
-                        let cappedPercent = percent > 100 ? 100 : percent;
-                        
                         let liquidHtml = '';
                         tank.items.forEach(item => {
                             let h = (item.qty / tank.capacity) * 100;
-                            // Random durasi ombak agar antar minyak terlihat tidak seragam persis
-                            let waveSpeed = (Math.random() * 2 + 3).toFixed(1); 
+                            let ws1 = (Math.random() * 1.5 + 2).toFixed(1); 
+                            let ws2 = (Math.random() * 1.5 + 3).toFixed(1); 
                             
                             liquidHtml += `
                                 <div class="liquid-layer" style="height: ${h}%; background-color: ${item.color};" title="${item.part}: ${parseFloat(item.qty).toFixed(2)}">
-                                    <div class="liquid-surface" style="background-color: ${item.color}; animation-duration: ${waveSpeed}s;"></div>
+                                    <div class="liquid-surface" style="animation-duration: ${ws1}s;"></div>
+                                    <div class="liquid-surface-shadow" style="animation-duration: ${ws2}s;"></div>
                                     <div class="bubble" style="left: 20%; animation-delay: 0.1s;"></div>
-                                    <div class="bubble" style="left: 60%; animation-delay: 0.5s; width: 6px; height: 6px;"></div>
+                                    <div class="bubble" style="left: 60%; animation-delay: 0.5s; width: 4px; height: 4px;"></div>
                                 </div>`;
-                                
-                            // Rekam data legend
                             newLegendItems[item.part] = item.color;
                         });
 
                         tankHtml += `
                         <div class="tank-wrapper" title="Items: ${tank.item_list} | Volume: ${parseFloat(tank.total_qty).toFixed(2)}">
-                            <div class="text-[9px] font-black text-slate-600 mono mb-1">${percent.toFixed(1)}%</div>
-                            <div class="tank-roof"></div>
-                            <div class="tank-body">${liquidHtml}</div>
-                            <div class="tank-base"></div>
-                            <div class="text-[8px] font-bold text-slate-500 mt-2 truncate w-full text-center">${tank.tank_name}</div>
+                            <div class="text-sm font-black text-slate-700 mono mb-1 whitespace-nowrap">${percent.toFixed(1)}%</div>
+                            <div class="tank-graphic">
+                                <div class="tank-roof"></div>
+                                <div class="tank-body">${liquidHtml}</div>
+                                <div class="tank-base"></div>
+                            </div>
+                            <div class="text-xs font-bold text-slate-600 mt-1.5 truncate w-full text-center uppercase tracking-wider">${tank.tank_name}</div>
                         </div>`;
                     });
                 }
                 document.getElementById('tank-container').innerHTML = tankHtml;
 
-                // Update Legend
                 let legendHtml = '';
                 if(Object.keys(newLegendItems).length === 0) {
-                    legendHtml = '<div class="text-[9px] font-bold text-slate-400 uppercase">Awaiting Stock...</div>';
+                    legendHtml = '<div class="text-xs font-bold text-slate-400 uppercase">Awaiting Stock...</div>';
                 } else {
                     for (const [part, color] of Object.entries(newLegendItems)) {
-                        legendHtml += `
-                            <div class="flex items-center gap-1.5">
-                                <span class="w-3 h-3 rounded-full shadow-sm" style="background-color: ${color}"></span>
-                                <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wide">${part}</span>
-                            </div>`;
+                        legendHtml += `<div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full shadow-sm" style="background-color: ${color}"></span><span class="text-xs font-bold text-slate-500 uppercase tracking-wide">${part}</span></div>`;
                     }
                 }
                 document.getElementById('tank-legend').innerHTML = legendHtml;
 
-                // Update Tabel Kiri
-                let inTb = '';
-                if(data.incomingTable.length === 0) { inTb = '<tr><td colspan="4" class="text-center py-4 text-slate-400">No incoming data.</td></tr>'; }
-                data.incomingTable.forEach(row => {
-                    inTb += `<tr>
-                        <td class="font-semibold">${row.tr_addr_name || row.tr_addr || 'Unknown'}</td>
-                        <td class="mono text-slate-500">${row.tr_part}</td>
-                        <td class="font-bold text-emerald-600">${row.qty_formatted}</td>
-                        <td class="text-slate-400">${row.date_formatted}</td>
-                    </tr>`;
+                let inTb = ''; let incomingSlice = data.incomingTable.slice(0, 5);
+                if(incomingSlice.length === 0) { inTb = '<tr><td colspan="3" class="text-center py-4 text-slate-400">No incoming data.</td></tr>'; }
+                incomingSlice.forEach(row => {
+                    let supplierName = row.tr_addr_name || row.tr_addr || 'Unknown';
+                    inTb += `<tr><td class="font-semibold" title="${supplierName}">${limitStr(supplierName, 12)}</td><td class="mono text-slate-500" title="${row.tr_part}">${limitStr(row.tr_part, 8)}</td><td class="font-bold text-emerald-600">${row.qty_formatted}</td></tr>`;
                 });
                 document.getElementById('tbody-incoming').innerHTML = inTb;
 
-                // Update Tabel Kanan
-                let outTb = '';
-                if(data.outgoingTable.length === 0) { outTb = '<tr><td colspan="4" class="text-center py-4 text-slate-400">No outgoing data.</td></tr>'; }
-                data.outgoingTable.forEach(row => {
-                    outTb += `<tr>
-                        <td class="mono font-bold text-blue-600">${row.tr_part}</td>
-                        <td class="font-semibold">${row.tr_part_name || 'Internal Dispatch'}</td>
-                        <td class="font-bold text-orange-600">${row.qty_formatted}</td>
-                        <td><span class="text-[9px] font-black uppercase text-slate-400 bg-slate-100 px-2 py-1 rounded">Dispatched</span></td>
-                    </tr>`;
+                let outTb = ''; let outgoingSlice = data.outgoingTable.slice(0, 5);
+                if(outgoingSlice.length === 0) { outTb = '<tr><td colspan="3" class="text-center py-4 text-slate-400">No outgoing data.</td></tr>'; }
+                outgoingSlice.forEach(row => {
+                    let descName = row.tr_part_name || 'Internal Dispatch';
+                    outTb += `<tr><td class="mono font-bold text-blue-600" title="${row.tr_part}">${limitStr(row.tr_part, 8)}</td><td class="font-semibold" title="${descName}">${limitStr(descName, 12)}</td><td class="font-bold text-orange-600">${row.qty_formatted}</td></tr>`;
                 });
                 document.getElementById('tbody-outgoing').innerHTML = outTb;
 
-                // Restore Button State
-                btnIcon.className = "mdi mdi-filter";
-                btnText.textContent = "Apply";
+                btnIcon.className = "mdi mdi-filter"; btnText.textContent = "Apply";
             })
             .catch(error => {
-                console.error('Error:', error);
-                btnIcon.className = "mdi mdi-alert-circle";
-                btnText.textContent = "Error";
+                console.error('Error:', error); btnIcon.className = "mdi mdi-alert-circle"; btnText.textContent = "Error";
                 setTimeout(() => { btnIcon.className = "mdi mdi-filter"; btnText.textContent = "Apply"; }, 2000);
             });
         });

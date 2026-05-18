@@ -40,19 +40,43 @@
             flex-shrink: 0;
         }
 
-        .filter-item { display: flex; flex-direction: column; gap: 2px; }
-        .filter-label { font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.025em; font-size: 0.7rem;}
+        .filter-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .filter-label {
+            font-weight: 800;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+            font-size: 0.7rem;
+        }
+
         .filter-input-clean {
-            background: #f1f5f9;
-            border: 1px solid transparent;
+            /* UBAH ke background-color agar tidak menimpa panah bawaan browser/Tailwind */
+            background-color: #f1f5f9;
+            border: 1px solid #e2e8f0;
             border-radius: 6px;
             padding: 4px 8px;
             font-weight: 600;
             color: #334155;
-            transition: all 0.2s;
             font-size: 0.8rem;
+            outline: none;
+            /* Pastikan background image (panah) tidak ikut ter-reset */
+            background-repeat: no-repeat;
+            background-position: right 0.5rem center;
+            background-size: 1.5em 1.5em;
         }
-        .filter-input-clean:focus { background: #ffffff; border-color: var(--brand-amber); outline: none; box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.1); }
+
+        .filter-input-clean:focus {
+            outline: none;
+            border: 1px solid #e2e8f0;
+            box-shadow: none;
+            /* UBAH juga di sini ke background-color */
+            background-color: #f1f5f9;
+        }
 
         /* TANGKI CSS */
         .tank-wrapper {
@@ -151,14 +175,14 @@
                     <label class="filter-label text-[9px] xl:text-[10px]">Period</label>
                     <div class="flex gap-2">
                         <!-- Ditambahkan !pr-8 agar panah tidak menabrak angka, Lebar pakai w-28 & w-32 -->
-                        <select name="year" class="filter-input-clean w-28 xl:w-32 !pr-8 cursor-pointer h-[28px] xl:h-[30px] flex items-center">
+                        <select name="year" class="filter-input-clean w-28 xl:w-32 !pr-8 cursor-pointer h-[28px] xl:h-[30px]">
                             @php $currYear = date('Y'); @endphp
                             @for ($y = $currYear - 3; $y <= $currYear + 1; $y++)
                                 <option value="{{ $y }}" {{ $selectedYear == $y ? 'selected' : '' }}>{{ $y }}</option>
                             @endfor
                         </select>
                         <!-- Lebar Month diperlebar signifikan pakai w-36 & w-44 -->
-                        <select name="month" class="filter-input-clean w-36 xl:w-44 !pr-8 cursor-pointer h-[28px] xl:h-[30px] flex items-center">
+                        <select name="month" class="filter-input-clean w-36 xl:w-44 !pr-8 cursor-pointer h-[28px] xl:h-[30px]">
                             @foreach(range(1, 12) as $m)
                                 <option value="{{ str_pad($m, 2, '0', STR_PAD_LEFT) }}" {{ $selectedMonth == $m ? 'selected' : '' }}>
                                     {{ date('F', mktime(0, 0, 0, $m, 1)) }}

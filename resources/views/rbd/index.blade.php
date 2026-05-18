@@ -130,30 +130,35 @@
     <div class="dashboard-container">
         <!-- HEADER & FILTER -->
         <form id="filter-form" action="{{ route('rbd.dashboard') }}" method="GET" class="command-bar">
-            <div class="flex items-center gap-3">
-                <div class="bg-amber-100 p-2 rounded-lg">
-                    <i class="mdi mdi-database-cog text-amber-600 text-lg xl:text-xl"></i>
+            <!-- SISI KIRI: TITLE & LOGO (Diperkecil) -->
+            <div class="flex items-center gap-2.5">
+                <div class="bg-amber-100 p-1.5 rounded-lg">
+                    <i class="mdi mdi-database-cog text-amber-600 text-base xl:text-lg"></i>
                 </div>
                 <div>
-                    <h1 class="text-sm xl:text-base 2xl:text-lg font-black text-slate-800 uppercase tracking-tight leading-none">Silo Intelligence</h1>
+                    <h1 class="text-xs xl:text-sm 2xl:text-base font-black text-slate-800 uppercase tracking-tight leading-none">Silo Intelligence</h1>
                     <div class="flex items-center gap-1.5 mt-1">
                         <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-                        <span class="text-[9px] xl:text-[10px] 2xl:text-xs font-bold text-slate-400 uppercase">Live Mode</span>
+                        <span class="text-[8px] xl:text-[9px] 2xl:text-[10px] font-bold text-slate-400 uppercase">Live Mode</span>
                     </div>
                 </div>
             </div>
 
-            <div class="flex items-center gap-3 xl:gap-4">
+            <!-- BAGIAN TENGAH: FILTER & SEARCH (Sejajar Bawah) -->
+            <!-- items-end digunakan agar button apply sejajar rata bawah dengan input -->
+            <div class="flex items-end gap-3 xl:gap-4">
                 <div class="filter-item">
-                    <label class="filter-label">Period</label>
+                    <label class="filter-label text-[9px] xl:text-[10px]">Period</label>
                     <div class="flex gap-2">
-                        <select name="year" class="filter-input-clean w-16 xl:w-20">
+                        <!-- Ditambahkan !pr-8 agar panah tidak menabrak angka, Lebar pakai w-28 & w-32 -->
+                        <select name="year" class="filter-input-clean w-28 xl:w-32 !pr-8 cursor-pointer h-[28px] xl:h-[30px] flex items-center">
                             @php $currYear = date('Y'); @endphp
                             @for ($y = $currYear - 3; $y <= $currYear + 1; $y++)
                                 <option value="{{ $y }}" {{ $selectedYear == $y ? 'selected' : '' }}>{{ $y }}</option>
                             @endfor
                         </select>
-                        <select name="month" class="filter-input-clean w-24 xl:w-28">
+                        <!-- Lebar Month diperlebar signifikan pakai w-36 & w-44 -->
+                        <select name="month" class="filter-input-clean w-36 xl:w-44 !pr-8 cursor-pointer h-[28px] xl:h-[30px] flex items-center">
                             @foreach(range(1, 12) as $m)
                                 <option value="{{ str_pad($m, 2, '0', STR_PAD_LEFT) }}" {{ $selectedMonth == $m ? 'selected' : '' }}>
                                     {{ date('F', mktime(0, 0, 0, $m, 1)) }}
@@ -163,24 +168,26 @@
                     </div>
                 </div>
 
-                <div class="h-6 w-[1px] bg-slate-200"></div>
+                <div class="h-6 w-[1px] bg-slate-200 mb-[2px]"></div>
 
                 <div class="filter-item">
-                    <label class="filter-label">Search</label>
+                    <label class="filter-label text-[9px] xl:text-[10px]">Search</label>
                     <div class="flex gap-2">
-                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Search..." class="filter-input-clean w-48 xl:w-64 2xl:w-80">
+                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Search..." class="filter-input-clean w-48 xl:w-64 2xl:w-80 h-[28px] xl:h-[30px]">
                     </div>
                 </div>
 
-                <button type="submit" id="btn-apply" class="bg-slate-500 mt-4 text-white px-4 py-1.5 xl:px-5 xl:py-2 rounded-lg text-xs xl:text-sm font-black uppercase hover:bg-slate-600 transition flex items-center gap-2 shadow-sm">
-                    <i class="mdi mdi-filter" id="btn-icon"></i> <span id="btn-text">Apply</span>
+                <!-- Tombol Apply disesuaikan tingginya agar sinkron dengan input -->
+                <button type="submit" id="btn-apply" class="bg-slate-500 text-white px-3 xl:px-4 rounded-lg text-[10px] xl:text-xs font-black uppercase hover:bg-slate-600 transition flex items-center gap-1.5 shadow-sm h-[28px] xl:h-[30px]">
+                    <i class="mdi mdi-filter text-sm" id="btn-icon"></i> <span id="btn-text">Apply</span>
                 </button>
             </div>
 
+            <!-- SISI KANAN: SYSTEM TIME (Diperkecil) -->
             <div class="flex items-center gap-4 pl-4 border-l border-slate-100">
-                <div class="text-center bg-slate-50 px-3 py-1.5 xl:px-4 xl:py-2 rounded-lg">
-                    <p id="sync-time" class="text-amber-600 text-lg xl:text-xl 2xl:text-2xl font-bold mono leading-none">00:00:00</p>
-                    <p class="text-[9px] xl:text-[10px] 2xl:text-xs text-slate-400 font-bold uppercase mt-1">System Time</p>
+                <div class="text-center bg-slate-50 px-3 py-1 xl:px-4 xl:py-1.5 rounded-lg">
+                    <p id="sync-time" class="text-amber-600 text-base xl:text-lg 2xl:text-xl font-bold mono leading-none mt-0.5">00:00:00</p>
+                    <p class="text-[8px] xl:text-[9px] 2xl:text-[10px] text-slate-400 font-bold uppercase mt-1">System Time</p>
                 </div>
             </div>
         </form>

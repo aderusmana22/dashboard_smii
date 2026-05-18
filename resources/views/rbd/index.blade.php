@@ -88,7 +88,7 @@
         /* TABLE & CARDS */
         .section-card { background: white; border-radius: 10px; border: 1px solid var(--slate-border); overflow: hidden; display: flex; flex-direction: column; }
         .custom-table { width: 100%; border-collapse: collapse; white-space: nowrap; }
-        .custom-table th { background: #f8fafc; color: #64748b; text-align: left; border-bottom: 2px solid #f1f5f9; font-weight: 800; position: sticky; top: 0; z-index: 10; font-size: 10px; text-transform: uppercase; }
+        .custom-table th { background: #f8fafc; color: #64748b; text-align: center; border-bottom: 2px solid #f1f5f9; font-weight: 800; position: sticky; top: 0; z-index: 10; font-size: 10px; text-transform: uppercase; }
         .custom-table td { padding: 1vh 1vw; border-bottom: 1px solid #f1f5f9; }
         .custom-table tr:hover { background-color: #fcfcfd; }
 

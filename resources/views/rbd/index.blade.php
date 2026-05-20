@@ -386,10 +386,27 @@
         const chartLegendBox = isLargeScreen ? 10 : 8; 
 
         const commonOptions = {
-            indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+            indexAxis: 'y', 
+            responsive: true, 
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: true
+            },
             plugins: { 
-                legend: { position: 'bottom', labels: { boxWidth: chartLegendBox, usePointStyle: true, font: { size: chartLegendFont, family: 'Inter', weight: 'bold' } } }, 
-                tooltip: { mode: 'index', intersect: false } 
+                legend: { 
+                    position: 'bottom', 
+                    labels: { boxWidth: chartLegendBox, usePointStyle: true, font: { size: chartLegendFont, family: 'Inter', weight: 'bold' } } 
+                }, 
+                tooltip: { 
+                    mode: 'index', 
+                    intersect: true,
+                    // PERUBAHAN UTAMA KEDUA: Filter Nilai 0 agar Tooltip Cerdas (Smart Tooltip Filter)
+                    filter: function(tooltipItem) {
+                        // Hanya kembalikan nilai boolean true jika datanya (raw) lebih besar dari 0
+                        return tooltipItem.raw > 0;
+                    }
+                } 
             },
             scales: {
                 x: { stacked: true, grid: { color: '#f1f5f9' }, ticks: { font: { size: chartScaleFont, weight: 'bold' }, color: '#64748b' } },
